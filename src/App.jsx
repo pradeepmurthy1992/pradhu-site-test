@@ -2,9 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
    PRADHU — Dual Theme (Light / Dark) + Intro Overlay + Wide Layout
-   - Single theme toggle at end of navbar (no duplicates)
-   - Wide container up to ~1800px, hero full-bleed
-   - Portfolio pulls images from your GitHub repo
+   - Brand text in navbar slightly larger (items unchanged)
+   - Force-refresh switch ?refresh=1 added to bypass 5-min cache
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -342,13 +341,20 @@ async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
   const now = Date.now();
+
+  // ---- Quick patch: force-refresh switch (?refresh=1) ----
+  const nocache =
+    new URLSearchParams(window.location.search).get("refresh") === "1";
+  // --------------------------------------------------------
+
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
-    if (ts && now - ts < GH_CACHE_TTL_MS) {
+    if (!nocache && ts && now - ts < GH_CACHE_TTL_MS) {
       const cached = JSON.parse(sessionStorage.getItem(key) || "[]");
       return cached;
     }
   } catch {}
+
   const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
     repo
   )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
@@ -828,9 +834,11 @@ export default function App() {
       {/* NAVBAR */}
       <header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
         <nav className={`${CONTAINER} flex items-center justify-between`}>
-          {/* Brand */}
+          {/* Brand — slightly larger only here */}
           <div className="leading-tight">
-            <p className={`font-semibold tracking-tight ${T.navTextStrong}`}>{NAV_BRAND}</p>
+            <p className={`font-semibold tracking-tight leading-none ${T.navTextStrong} text-lg md:text-xl lg:text-2xl`}>
+              {NAV_BRAND}
+            </p>
           </div>
 
           {/* Center nav (desktop) */}
@@ -851,7 +859,7 @@ export default function App() {
             ))}
           </ul>
 
-          {/* Right controls (ONLY ONE THEME TOGGLE HERE) */}
+          {/* Right controls */}
           <div className="flex items-center gap-2">
             <button
               className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm border ${T.btnOutline}`}
@@ -875,7 +883,7 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Mobile menu (NO theme toggle here) */}
+        {/* Mobile menu */}
         {menuOpen && (
           <div id="mobile-menu" className={`md:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}>
             <ul className="px-4 py-3 grid gap-1">
