@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
    - Navbar brand ALL CAPS with fluid size (fits one line)
    - Portfolio images fetched from GitHub repo folders
    - Enquiry form posts to your Google Sheet via Apps Script Web App
+   - Preferred Date: cannot be earlier than today + 2 days
    - Force-refresh photo cache with ?refresh=1
 ============================================================ */
 
@@ -563,6 +564,26 @@ function BookingSection({ T }) {
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState("");
 
+  // ---- Preferred Date minimum: today + 2 days, block typing/paste ----
+  const minDateStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off * 60000);
+    return local.toISOString().slice(0, 10);
+  }, []);
+
+  const fmtHuman = (yyyy_mm_dd) => {
+    if (!yyyy_mm_dd) return "";
+    const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+  // --------------------------------------------------------------------
+
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const onSubmit = async (e) => {
@@ -574,6 +595,7 @@ function BookingSection({ T }) {
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
+    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
     if (missing.length) {
       setNote(`Please fill: ${missing.join(", ")}`);
       return;
@@ -581,7 +603,6 @@ function BookingSection({ T }) {
 
     setSubmitting(true);
     try {
-      // Apps Script often lacks CORS headers; 'no-cors' sends the request but returns an opaque response.
       await fetch(SHEET_WEB_APP, {
         method: "POST",
         mode: "no-cors",
@@ -749,24 +770,62 @@ function BookingSection({ T }) {
                 required
                 placeholder="+91-XXXXXXXXXX"
               />
+
+              {/* Preferred Date: enforce today + 2 days, block typing/paste */}
               <div>
-                <label className={`text-sm ${T.muted}`}>Service</label>
-                <select
-                  name="service"
-                  className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                  value={form.service}
-                  onChange={onChange}
-                >
-                  {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map(
-                    (s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    )
-                  )}
-                </select>
+                <label className={`text-sm ${T.muted}`}>Preferred Date</label>
+                <input
+                  name="date"
+                  type="date"
+                  min={minDateStr}
+                  value={form.date}
+                  onKeyDown={(e) => e.preventDefault()}
+                  onPaste={(e) => e.preventDefault()}
+                  onChange={(e) => {
+                    let v = e.target.value;
+                    if (v && v < minDateStr) {
+                      v = minDateStr;
+                      setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
+                    }
+                    setForm({ ...form, date: v });
+                  }}
+                  className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+                />
+                <p className="text-xs opacity-70 mt-1">
+                  Earliest selectable: {fmtHuman(minDateStr)}
+                </p>
               </div>
+
+              <div>
+                <label className={`text-sm ${T.muted}`}>Message</label>
+                <textarea
+                  name="message"
+                  value={form.message}
+                  onChange={onChange}
+                  rows={5}
+                  className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+                  placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={`text-sm ${T.muted}`}>Service</label>
+                  <select
+                    name="service"
+                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                    value={form.service}
+                    onChange={onChange}
+                  >
+                    {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map(
+                      (s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
                 <div>
                   <label className={`text-sm ${T.muted}`}>City</label>
                   <select
@@ -782,25 +841,6 @@ function BookingSection({ T }) {
                     <option>Other</option>
                   </select>
                 </div>
-                <Input
-                  T={T}
-                  label="Preferred Date"
-                  name="date"
-                  type="date"
-                  value={form.date}
-                  onChange={onChange}
-                />
-              </div>
-              <div>
-                <label className={`text-sm ${T.muted}`}>Message</label>
-                <textarea
-                  name="message"
-                  value={form.message}
-                  onChange={onChange}
-                  rows={5}
-                  className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
-                  placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
-                />
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
