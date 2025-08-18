@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
-   PRADHU — Dual Theme (Light / Dark) + Intro Overlay
+   PRADHU — Dual Theme (Light / Dark) + Intro Overlay + Wide Layout
    - Single theme toggle at end of navbar (no duplicates)
+   - Wide container up to ~1800px, hero full-bleed
    - Portfolio pulls images from your GitHub repo
 ============================================================ */
 
@@ -60,6 +61,9 @@ const NAV_ITEMS = [
   { label: "Contact", id: "booking", icon: "mail" },
 ];
 
+// Wide container helper for big screens
+const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
+
 /* ===================== THEME TOKENS ===================== */
 function useThemeTokens(theme) {
   const light = {
@@ -80,8 +84,7 @@ function useThemeTokens(theme) {
     chipActive: "bg-neutral-900 text-white border-neutral-900",
     chipInactive:
       "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-50",
-    btnOutline:
-      "border-neutral-300 text-neutral-900 hover:bg-neutral-50",
+    btnOutline: "border-neutral-300 text-neutral-900 hover:bg-neutral-50",
     inputBg: "bg-white",
     inputBorder: "border-neutral-300",
     inputText: "text-neutral-900",
@@ -110,8 +113,7 @@ function useThemeTokens(theme) {
     chipActive: "bg-white text-neutral-900 border-white",
     chipInactive:
       "bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800",
-    btnOutline:
-      "border-neutral-700 text-neutral-100 hover:bg-neutral-900",
+    btnOutline: "border-neutral-700 text-neutral-100 hover:bg-neutral-900",
     inputBg: "bg-neutral-950",
     inputBorder: "border-neutral-700",
     inputText: "text-neutral-100",
@@ -393,7 +395,7 @@ function Hero() {
       <div className="absolute inset-0 z-[1] bg-black/45" />
       <div className="absolute inset-x-0 bottom-0 z-[1] h-40 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 z-[2]">
-        <div className="mx-auto max-w-7xl px-4 pb-10 md:pb-14 text-white">
+        <div className={`${CONTAINER} pb-10 md:pb-14 text-white`}>
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
             Freeze the moment. <span className="opacity-90">Tell the story.</span>
           </h1>
@@ -426,7 +428,7 @@ function CategoryGrid({ T, label, images, loading, error }) {
         <div className={`px-4 py-6 text-sm text-red-500`}>{String(error)}</div>
       ) : images && images.length ? (
         <div className="p-4">
-          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 [column-fill:_balance] [&>figure:not(:first-child)]:mt-4">
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5 gap-4 [column-fill:_balance] [&>figure:not(:first-child)]:mt-4">
             {images.map((it, i) => (
               <figure
                 key={it.sha || i}
@@ -501,7 +503,7 @@ function Portfolio({ T }) {
   }, [active, states]);
 
   return (
-    <section id="portfolio" className="mx-auto max-w-7xl px-4 py-16">
+    <section id="portfolio" className={`${CONTAINER} py-16`}>
       <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
@@ -590,7 +592,7 @@ function BookingSection({ T }) {
 
   return (
     <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
-      <div className="mx-auto max-w-7xl px-4 py-16">
+      <div className={`${CONTAINER} py-16`}>
         <div className="grid md:grid-cols-2 gap-8">
           <div>
             <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
@@ -825,7 +827,7 @@ export default function App() {
 
       {/* NAVBAR */}
       <header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
-        <nav className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3">
+        <nav className={`${CONTAINER} flex items-center justify-between`}>
           {/* Brand */}
           <div className="leading-tight">
             <p className={`font-semibold tracking-tight ${T.navTextStrong}`}>{NAV_BRAND}</p>
@@ -875,7 +877,7 @@ export default function App() {
 
         {/* Mobile menu (NO theme toggle here) */}
         {menuOpen && (
-          <div id="mobile-menu" className={`md:hidden border-t ${T.navBorder} ${T.sectionAltBg}`}>
+          <div id="mobile-menu" className={`md:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}>
             <ul className="px-4 py-3 grid gap-1">
               {NAV_ITEMS.map(({ label, id, icon }) => (
                 <li key={id}>
@@ -911,7 +913,7 @@ export default function App() {
       <section id="pricing" className="hidden" />
 
       {/* ABOUT */}
-      <section id="about" className="mx-auto max-w-7xl px-4 py-16">
+      <section id="about" className={`${CONTAINER} py-16`}>
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
             <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
@@ -938,7 +940,7 @@ export default function App() {
       </section>
 
       {/* INSTAGRAM */}
-      <section id="instagram" className="mx-auto max-w-7xl px-4 py-16">
+      <section id="instagram" className={`${CONTAINER} py-16`}>
         <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
           Instagram
         </h2>
@@ -960,7 +962,7 @@ export default function App() {
       {/* TESTIMONIALS hidden for now */}
       {false && (
         <section className={`border-t ${T.footerBorder}`} id="testimonials">
-          <div className="mx-auto max-w-7xl px-4 py-16">
+          <div className={`${CONTAINER} py-16`}>
             <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
               What clients say
             </h2>
@@ -969,7 +971,7 @@ export default function App() {
       )}
 
       {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-7xl px-4 py-16">
+      <section id="faq" className={`${CONTAINER} py-16`}>
         <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
           FAQ
         </h2>
@@ -1010,7 +1012,7 @@ export default function App() {
 
       {/* FOOTER */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
-        <div className="mx-auto max-w-7xl px-4 py-10 text-sm">
+        <div className={`${CONTAINER} py-10 text-sm`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <p className={T.muted}>
               © {new Date().getFullYear()} PRADHU — All rights reserved.
