@@ -889,39 +889,86 @@ export default function App() {
       {showIntro && <IntroOverlay onClose={closeIntro} />}
 
       {/* NAVBAR */}
-      <header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
-        <nav
-          className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}
-        >
-          {/* Brand — ALL CAPS, fluid size, no wrapping */}
-          <div className="min-w-0">
-            <p
-              className={`font-semibold uppercase tracking-tight leading-none ${T.navTextStrong}
-                          text-[clamp(20px,2.4vw,40px)] whitespace-nowrap`}
-            >
-              {NAV_BRAND}
-            </p>
-          </div>
+      {/* NAVBAR */}
+<header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
+  <nav className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}>
+    {/* Brand */}
+    <div className="min-w-0">
+      <p
+        className={`font-semibold uppercase tracking-tight leading-none ${T.navTextStrong}
+                    text-[clamp(20px,2.4vw,40px)] whitespace-nowrap`}
+      >
+        {NAV_BRAND}
+      </p>
+    </div>
 
-          {/* Desktop nav with icons (show from lg so brand has room) */}
-          <ul className="hidden lg:flex items-center gap-1 text-sm">
-            {NAV_ITEMS.map(({ label, id, icon }) => (
-              <li key={id}>
-                <button
-                  className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg ${T.navText} focus:outline-none`}
-                  onClick={() => scrollTo(id)}
-                >
-                  <span
-                    className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
-                  />
-                  <span className="relative z-10 flex items-center gap-2">
-                    <Icon name={icon} className="h-4 w-4" />
-                    <span>{label}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+    {/* Desktop nav */}
+    <ul className="hidden lg:flex items-center gap-1 text-sm">
+      {NAV_ITEMS.map(({ label, id, icon }) => (
+        <li key={id}>
+          <button
+            className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg ${T.navText} focus:outline-none`}
+            onClick={() => scrollTo(id)}
+          >
+            <span
+              className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
+            />
+            <span className="relative z-10 flex items-center gap-2">
+              <Icon name={icon} className="h-4 w-4" />
+              <span>{label}</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+
+    {/* Right controls */}
+    <div className="flex items-center gap-2">
+      <ThemeSlider theme={theme} setTheme={setTheme} />
+      {/* Mobile menu toggle */}
+      <button
+        className={`lg:hidden rounded-lg px-3 py-2 text-sm border ${T.btnOutline}`}
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-expanded={menuOpen}
+        aria-controls="mobile-menu"
+      >
+        Menu
+      </button>
+    </div>
+  </nav>
+
+  {/* Mobile sheet (placed OUTSIDE <nav> to avoid mismatched closing tags) */}
+  {menuOpen && (
+    <div
+      id="mobile-menu"
+      className={`lg:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}
+    >
+      <div className={`${CONTAINER} px-2 py-3`}>
+        <ul className="grid gap-1">
+          {NAV_ITEMS.map(({ label, id, icon }) => (
+            <li key={id}>
+              <button
+                className={`relative group w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg ${T.navTextStrong}`}
+                onClick={() => {
+                  scrollTo(id);
+                }}
+              >
+                <span
+                  className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
+                />
+                <span className="relative z-10 flex items-center gap-2">
+                  <Icon name={icon} className="h-4 w-4" />
+                  <span>{label}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )}
+</header>
+
 
           {/* Right controls */}
           <ThemeSlider theme={theme} setTheme={setTheme} />
