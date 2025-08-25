@@ -925,39 +925,7 @@ export default function App() {
       <section id="services" className="hidden" />
       <section id="pricing" className="hidden" />
 
-      {/* ABOUT */}
-      <section id="about" className={`${CONTAINER} py-16`}>
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h2
-              className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
-            >
-              About PRADHU
-            </h2>
-            <p className={`mt-3 ${T.muted}`}>
-              I’m a photographer specialising in fashion, portraits, candids and
-              events. Expect direction, calm energy, and images that feel like you.
-            </p>
-            <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>
-                Genres: Fashion, Portraits, Candids, Street, Landscape, Studio
-              </li>
-              <li>Toolbox: softboxes (octa & strip), multiple flashes, Nikon system</li>
-              <li>{SERVICE_CITIES}</li>
-            </ul>
-          </div>
-          <div
-            className={`rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop"
-              alt="Photographer at work"
-              className="w-full h-auto object-cover"
-            />
-          </div>
-        </div>
-      </section>
-
+      
       {/* INSTAGRAM */}
       <section id="instagram" className={`${CONTAINER} py-16`}>
         <h2
