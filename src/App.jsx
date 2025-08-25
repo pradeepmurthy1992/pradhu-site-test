@@ -576,9 +576,7 @@ function BookingSection({ T }) {
     if (!yyyy_mm_dd) return "";
     const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+      day: "2-digit", month: "short", year: "numeric",
     });
   };
 
@@ -588,7 +586,6 @@ function BookingSection({ T }) {
     e.preventDefault();
     setNote("");
 
-    // Required checks
     const missing = [];
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
@@ -608,13 +605,8 @@ function BookingSection({ T }) {
         body: JSON.stringify({ ...form, source: "website" }),
       });
       setForm({
-        name: "",
-        email: "",
-        phone: "",
-        service: "Portraits",
-        city: "Pune",
-        date: "",
-        message: "",
+        name: "", email: "", phone: "",
+        service: "Portraits", city: "Pune", date: "", message: "",
       });
       setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
@@ -628,101 +620,130 @@ function BookingSection({ T }) {
   return (
     <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
       <div className={`${CONTAINER} py-16`}>
-        {/* Centered, single-column form with heading on top */}
-        <div className="max-w-2xl mx-auto">
-          <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
-            Enquire / Book
-          </h2>
-          <p className={`mt-2 ${T.muted}`}>
-            Share details and I’ll reply with availability and a quote.
-          </p>
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          {/* LEFT: About (kept here). Added id=about so the nav tab still works */}
+          <div id="about">
+            <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+              About PRADHU
+            </h2>
+            <p className={`mt-3 ${T.muted}`}>
+              I’m a photographer specialising in fashion, portraits, candids and events.
+              Expect direction, calm energy, and images that feel like you.
+            </p>
+            <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
+              <li>Genres: Fashion, Portraits, Candids, Street, Landscape, Studio</li>
+              <li>Toolbox: softboxes (octa & strip), multiple flashes, Nikon system</li>
+              <li>{SERVICE_CITIES}</li>
+            </ul>
 
-          <form
-            onSubmit={onSubmit}
-            className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-          >
-            <div className="grid grid-cols-1 gap-4">
-              <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
-              <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
-              <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
-
-              <div>
-                <label className={`text-sm ${T.muted}`}>Preferred Date</label>
-                <input
-                  name="date"
-                  type="date"
-                  min={minDateStr}
-                  value={form.date}
-                  onKeyDown={(e) => e.preventDefault()}
-                  onPaste={(e) => e.preventDefault()}
-                  onChange={(e) => {
-                    let v = e.target.value;
-                    if (v && v < minDateStr) {
-                      v = minDateStr;
-                      setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
-                    }
-                    setForm({ ...form, date: v });
-                  }}
-                  className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
-                />
-                <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
-              </div>
-
-              <div>
-                <label className={`text-sm ${T.muted}`}>Message</label>
-                <textarea
-                  name="message"
-                  value={form.message}
-                  onChange={onChange}
-                  rows={5}
-                  className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
-                  placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={`text-sm ${T.muted}`}>Service</label>
-                  <select
-                    name="service"
-                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                    value={form.service}
-                    onChange={onChange}
-                  >
-                    {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={`text-sm ${T.muted}`}>City</label>
-                  <select
-                    name="city"
-                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                    value={form.city}
-                    onChange={onChange}
-                  >
-                    <option>Pune</option>
-                    <option>Mumbai</option>
-                    <option>Chennai</option>
-                    <option>Bengaluru</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
-                >
-                  {submitting ? "Submitting…" : "Send Enquiry"}
-                </button>
-                {note && <span className="text-sm opacity-80">{note}</span>}
-              </div>
+            {/* Image: fit without cropping */}
+            <div className={`mt-6 rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}>
+              <img
+                src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop"
+                alt="Photographer at work"
+                className="w-full h-auto object-contain"
+                style={{ maxHeight: 420 }}
+                loading="lazy"
+              />
             </div>
-          </form>
+          </div>
+
+          {/* RIGHT: Enquire / Book — heading on top of the form */}
+          <div>
+            <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+              Enquire / Book
+            </h2>
+            <p className={`mt-2 ${T.muted}`}>
+              Share details and I’ll reply with availability and a quote.
+            </p>
+
+            <form
+              onSubmit={onSubmit}
+              className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+            >
+              <div className="grid grid-cols-1 gap-4">
+                <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
+                <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
+                <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
+
+                <div>
+                  <label className={`text-sm ${T.muted}`}>Preferred Date</label>
+                  <input
+                    name="date"
+                    type="date"
+                    min={minDateStr}
+                    value={form.date}
+                    onKeyDown={(e) => e.preventDefault()}
+                    onPaste={(e) => e.preventDefault()}
+                    onChange={(e) => {
+                      let v = e.target.value;
+                      if (v && v < minDateStr) {
+                        v = minDateStr;
+                        setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
+                      }
+                      setForm({ ...form, date: v });
+                    }}
+                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+                  />
+                  <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
+                </div>
+
+                <div>
+                  <label className={`text-sm ${T.muted}`}>Message</label>
+                  <textarea
+                    name="message"
+                    value={form.message}
+                    onChange={onChange}
+                    rows={5}
+                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+                    placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={`text-sm ${T.muted}`}>Service</label>
+                    <select
+                      name="service"
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.service}
+                      onChange={onChange}
+                    >
+                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={`text-sm ${T.muted}`}>City</label>
+                    <select
+                      name="city"
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.city}
+                      onChange={onChange}
+                    >
+                      <option>Pune</option>
+                      <option>Mumbai</option>
+                      <option>Chennai</option>
+                      <option>Bengaluru</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
+                  >
+                    {submitting ? "Submitting…" : "Send Enquiry"}
+                  </button>
+                  {note && <span className="text-sm opacity-80">{note}</span>}
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </section>
