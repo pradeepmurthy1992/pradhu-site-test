@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
-   PRADHU — Dual Theme (Light / Dark) + Intro Overlay + Wide Layout
-   - Tile bar (single line) for Portfolio / Services / Pricing / Instagram / FAQ
-   - Only selected section is shown below the tiles; other tiles dimmed
+   PRADHU — Dual Theme (Light / Dark) + Editorial Intro + Portfolio Landing & Pages
+   - Portfolio landing: magazine-style tiles (cover image + big uppercase serif)
+   - Portfolio page: single centered tall images + right progress rail
    - About + Enquire/Book remains always visible
 ============================================================ */
 
@@ -65,12 +65,18 @@ const SECTION_IDS = ["portfolio", "services", "pricing", "instagram", "faq"];
 // Wide container helper
 const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
 
-// In SectionTiles parent (where you set openId), add:
-const openPortfolioLanding = () => {
-  // Ensure portfolio landing, not a category page
-  window.location.hash = "#portfolio";
-  setOpenId("portfolio");
-};
+/* ===================== Load Fonts (Inter + Playfair Display) ===================== */
+function HeadFonts() {
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800;900&display=swap";
+    document.head.appendChild(link);
+    return () => document.head.removeChild(link);
+  }, []);
+  return null;
+}
 
 /* ===================== THEME TOKENS ===================== */
 function useThemeTokens(theme) {
@@ -225,25 +231,13 @@ function Icon({ name, className = "h-4 w-4" }) {
   }
 }
 
-/* ===================== Intro Overlay ===================== */
+/* ===================== Intro Overlay (Editorial) ===================== */
 function IntroOverlay({ onClose }) {
-  const BLINK_MS = 1600;
-  const brandRef = useRef(null);
-  const nameRef = useRef(null);
-  const [blink, setBlink] = useState(true);
-
   useEffect(() => {
-    const id = setInterval(() => setBlink((b) => !b), BLINK_MS);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    function onKey(e) {
+    const onKey = (e) => {
       if (e.key === "Enter") onClose();
-    }
-    function onWheel() {
-      onClose();
-    }
+    };
+    const onWheel = () => onClose();
     window.addEventListener("keydown", onKey);
     window.addEventListener("wheel", onWheel, { once: true });
     return () => {
@@ -258,81 +252,49 @@ function IntroOverlay({ onClose }) {
     return () => clearTimeout(t);
   }, [onClose]);
 
-  useEffect(() => {
-    const fit = () => {
-      const brand = brandRef.current;
-      const name = nameRef.current;
-      if (!brand || !name) return;
-      name.style.whiteSpace = "nowrap";
-      name.style.display = "inline-block";
-      const brandWidth = brand.getBoundingClientRect().width;
-      const brandFontPx = parseFloat(getComputedStyle(brand).fontSize) || 80;
-      let lo = 8,
-        hi = brandFontPx;
-      for (let i = 0; i < 16; i++) {
-        const mid = (lo + hi) / 2;
-        name.style.fontSize = mid + "px";
-        const w = name.getBoundingClientRect().width;
-        if (w > brandWidth) hi = mid;
-        else lo = mid;
-      }
-      name.style.fontSize = Math.floor(lo) + "px";
-    };
-    const ready = document.fonts?.ready;
-    if (ready && typeof ready.then === "function") ready.then(fit);
-    fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
-  }, []);
-
   return (
     <div
-      className="fixed inset-0 bg-black text-white"
+      className="fixed inset-0 bg-white text-neutral-900"
       style={{ zIndex: 9999 }}
       role="dialog"
       aria-label="Intro overlay"
       onClick={onClose}
     >
-      <div className="h-full grid grid-rows-1 md:grid-cols-2">
-        <div className="hidden md:flex items-center justify-center bg-black relative">
-          <img
-            src={INTRO_LEFT_IMAGE_URL}
-            alt="Intro visual"
-            className="w-1/2 max-w-[520px] h-auto object-contain pointer-events-none"
-          />
-        </div>
-        <div className="relative flex items-center justify-center p-8">
-          <div className="w-full max-w-[880px] text-center select-none">
-            <h1
-              ref={brandRef}
-              className="font-semibold tracking-[0.06em] leading-none text-[18vw] sm:text-[14vw] md:text-[10vw] lg:text-[8.5vw]"
-              style={{ wordSpacing: "0.06em" }}
-            >
-              {INTRO_BRAND}
-            </h1>
-            <div className="mt-2">
-              <span
-                ref={nameRef}
-                className="inline-block font-medium tracking-[0.08em] opacity-95"
-                style={{ lineHeight: 1.1 }}
-              >
-                {INTRO_NAME}
-              </span>
+      <div className="h-full flex items-center justify-center p-6">
+        <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
+          {/* Left rail: small vertical text (desktop) */}
+          <div className="hidden md:flex items-center justify-start">
+            <div className="rotate-[-90deg] origin-left translate-x-6 text-[11px] tracking-[0.3em] opacity-60">
+              PRADHU • HONEST VISUAL STORYTELLER
             </div>
-            <div className="mt-6">
-              <p className="text-sm md:text-lg">Light • Style • Story</p>
+          </div>
+
+          {/* Center: big image */}
+          <div className="relative">
+            <img
+              src={INTRO_LEFT_IMAGE_URL}
+              alt="Intro"
+              className="w-full h-auto object-contain shadow-sm"
+              style={{ maxHeight: "78vh" }}
+            />
+          </div>
+
+          {/* Right rail: call to action */}
+          <div className="flex flex-col items-end justify-between gap-6">
+            <div className="text-right">
+              <div className="text-[12px] tracking-[0.25em] opacity-60">
+                VISUAL AND HONEST STORIES
+              </div>
+              <h1 className="mt-2 text-[clamp(28px,5vw,56px)] leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase">
+                PRADHU PHOTOGRAPHY
+              </h1>
             </div>
-            <p
-              className={`mt-10 text-xs md:text-sm text-neutral-300 transition-opacity duration-500 ${
-                blink ? "opacity-100" : "opacity-20"
-              }`}
+            <button
+              onClick={onClose}
+              className="rounded-full border px-5 py-2 text-sm hover:bg-neutral-50"
             >
-              Tap / click / press{" "}
-              <kbd className="px-1.5 py-0.5 rounded border border-white/40">
-                Enter
-              </kbd>{" "}
-              to enter
-            </p>
+              Enter ↵
+            </button>
           </div>
         </div>
       </div>
@@ -416,332 +378,111 @@ function Hero() {
   );
 }
 
-/* ===================== Portfolio ===================== */
-/* ===================== Portfolio (Landing + Pages + Lightbox) ===================== */
-function useHash() {
-  const [hash, setHash] = useState(() => window.location.hash || "");
-  useEffect(() => {
-    const onHash = () => setHash(window.location.hash || "");
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
-}
-
-// Optional extended metadata per category (subtitle text for the page header)
-const GH_CATEGORIES_EXT = {
-  Events: {
-    blurb:
-      "Candid coverage of people and moments—clean color, honest expressions, and storytelling frames.",
-  },
-  Fashion: {
-    blurb:
-      "Editorial-leaning looks with modern skin tones and simple, confident direction.",
-  },
-};
-
-function Lightbox({ open, items, index, onClose, onPrev, onNext }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") onPrev();
-      if (e.key === "ArrowRight") onNext();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose, onPrev, onNext]);
-
-  if (!open || !items?.length) return null;
-  const it = items[index];
-
-  return (
-    <div
-      className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-      role="dialog"
-      aria-label="Lightbox"
-      onClick={onClose}
-    >
-      <button
-        aria-label="Close"
-        className="absolute top-4 right-4 text-white/90 hover:text-white text-2xl"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-      >
-        ×
-      </button>
-
-      <button
-        aria-label="Previous"
-        className="absolute left-4 top-1/2 -translate-y-1/2 px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
-        onClick={(e) => {
-          e.stopPropagation();
-          onPrev();
-        }}
-      >
-        ‹
-      </button>
-
-      <img
-        src={it.url}
-        alt={it.name}
-        className="max-h-[90vh] max-w-[90vw] object-contain"
-        onClick={(e) => e.stopPropagation()}
-      />
-
-      <button
-        aria-label="Next"
-        className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
-        onClick={(e) => {
-          e.stopPropagation();
-          onNext();
-        }}
-      >
-        ›
-      </button>
-
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-xs">
-        {it.name} · {index + 1} / {items.length}
-      </div>
-    </div>
-  );
-}
-
-function PortfolioLanding({ T, cats, states, openCat }) {
-  return (
-    <section className="py-2">
-      <header className="mb-6">
-        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
-          Portfolio
-        </h2>
-        <p className={`mt-2 ${T.muted}`}>
-          Browse by category. Click to view a focused page.
-        </p>
-      </header>
-
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {cats.map((c, i) => {
-          const st = states[i] || { images: [], loading: true, error: "" };
-          const cover = st.images?.[0]?.url || "";
-          const count = st.images?.length || 0;
-          return (
-            <article
-              key={c.label}
-              className={`group relative rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg} shadow-sm`}
-            >
-              <button
-                type="button"
-                onClick={() => openCat(c.label)}
-                className="text-left w-full"
-                aria-label={`Open ${c.label}`}
-              >
-                <div className="aspect-[16/10] w-full overflow-hidden">
-                  {cover ? (
-                    <img
-                      src={cover}
-                      alt={c.label}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-sm opacity-70">
-                      No cover yet
-                    </div>
-                  )}
-                </div>
-                <div className="p-4 flex items-baseline justify-between">
-                  <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{c.label}</h3>
-                  <span className={`text-xs ${T.muted2}`}>{count} photos</span>
-                </div>
-              </button>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function PortfolioPage({ T, cat, state, onBack }) {
-  const items = state.images || [];
-  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-  const [lbOpen, setLbOpen] = useState(false);
-  const [idx, setIdx] = useState(0);
-
-  const openAt = (i) => {
-    setIdx(i);
-    setLbOpen(true);
-  };
-  const close = () => setLbOpen(false);
-  const prev = () => setIdx((i) => (i - 1 + items.length) % items.length);
-  const next = () => setIdx((i) => (i + 1) % items.length);
-
-  return (
-    <section className="py-2">
-      {/* Breadcrumb + Title */}
-      <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
-        <div className="pt-3">
-          <button
-            className={`${T.linkSubtle} text-sm`}
-            onClick={onBack}
-            aria-label="Back to Portfolio"
-          >
-            Portfolio
-          </button>
-          <span className={`mx-2 ${T.muted2}`}>/</span>
-          <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
-        </div>
-        <h2 className={`mt-2 text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
-          {cat.label}
-        </h2>
-        {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
-      </div>
-
-      {/* Grid */}
-      {state.error ? (
-        <div className="text-red-500">{String(state.error)}</div>
-      ) : state.loading ? (
-        <div className={`${T.muted2}`}>Loading…</div>
-      ) : items.length ? (
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 [column-fill:_balance] [&>figure:not(:first-child)]:mt-6">
-          {items.map((it, i) => (
-            <figure
-              key={it.sha || i}
-              className={`group relative break-inside-avoid rounded-2xl overflow-hidden border ${T.cardBorder} ${T.panelBg}`}
-            >
-              <button
-                type="button"
-                onClick={() => openAt(i)}
-                className="w-full text-left"
-                aria-label={`Open ${it.name}`}
-              >
-                <img
-                  src={it.url}
-                  alt={`${cat.label} — ${it.name}`}
-                  className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                  loading="lazy"
-                />
-                <figcaption
-                  className={`absolute bottom-0 left-0 right-0 px-4 py-2 text-xs ${T.muted2} bg-gradient-to-t from-black/60 to-transparent text-white opacity-0 group-hover:opacity-100 transition`}
-                >
-                  {it.name}
-                </figcaption>
-              </button>
-            </figure>
-          ))}
-        </div>
-      ) : (
-        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
-      )}
-
-      <Lightbox
-        open={lbOpen}
-        items={items}
-        index={idx}
-        onClose={close}
-        onPrev={prev}
-        onNext={next}
-      />
-    </section>
-  );
-}
-
-function Portfolio({ T, showTitle = true }) {
-  // data states per category (same fetch as before)
-  const [states, setStates] = useState(() =>
-    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
-  );
-
-  // Hash router: #portfolio or #portfolio/Fashion
-  const [hash, setHash] = useHash();
-  const [view, setView] = useState("landing"); // "landing" | "page"
-  const [activeIdx, setActiveIdx] = useState(-1);
-
-  const openCat = (label) => {
-    const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-    if (idx < 0) return;
-    setActiveIdx(idx);
-    setView("page");
-    setHash(`#portfolio/${encodeURIComponent(label)}`);
-    // scroll to top of portfolio section for nicer UX
-    const el = document.getElementById("portfolio");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const goLanding = () => {
-    setView("landing");
-    setActiveIdx(-1);
-    setHash("#portfolio");
-  };
-
-  // hash → view sync (deep-link support)
-  useEffect(() => {
-    if (!hash.startsWith("#portfolio")) return;
-    const seg = hash.split("/");
-    if (seg.length >= 2 && seg[1]) {
-      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
-      const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) {
-        setActiveIdx(idx);
-        setView("page");
-        return;
-      }
+/* ===================== Instagram ===================== */
+function InstagramLightWidget({ T }) {
+  React.useEffect(() => {
+    const src = "https://cdn.lightwidget.com/widgets/lightwidget.js";
+    if (!document.querySelector(`script[src="${src}"]`)) {
+      const s = document.createElement("script");
+      s.src = src;
+      s.defer = true;
+      document.body.appendChild(s);
     }
-    setView("landing");
-    setActiveIdx(-1);
-  }, [hash]);
-
-  // fetch images per category
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const results = await Promise.all(
-        GH_CATEGORIES.map(async (cat) => {
-          try {
-            const list = await ghListFolder(
-              GH_OWNER,
-              GH_REPO,
-              cat.path,
-              GH_BRANCH
-            );
-            return { loading: false, error: "", images: list };
-          } catch (e) {
-            return {
-              loading: false,
-              error: e?.message || "Failed to load",
-              images: [],
-            };
-          }
-        })
-      );
-      if (!cancelled) setStates(results);
-    })();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  // Render landing or page
-  if (view === "page" && activeIdx >= 0) {
-    const cat = GH_CATEGORIES[activeIdx];
-    const st = states[activeIdx] || { loading: true, error: "", images: [] };
-    return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
-  }
-
   return (
-    <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />
+    <section id="instagram" className={`${CONTAINER} py-16`}>
+      <h2
+        className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+      >
+        Instagram
+      </h2>
+      <p className={T.muted}>@{IG_USERNAME}</p>
+
+      <div
+        className={`mt-6 rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg}`}
+      >
+        <iframe
+          src="//lightwidget.com/widgets/e8d473c1fec55f0cba4f7f5b5db137aa.html"
+          className="lightwidget-widget w-full"
+          style={{ border: 0, overflow: "hidden" }}
+          scrolling="no"
+          allowtransparency="true"
+          loading="lazy"
+        />
+      </div>
+
+      <div className="mt-3">
+        <a
+          className={T.link}
+          href={`https://www.instagram.com/${IG_USERNAME}/`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open profile
+        </a>
+      </div>
+    </section>
   );
 }
 
+/* ===================== FAQ ===================== */
+function FaqSection({ T, showTitle = true }) {
+  const items = [
+    {
+      q: "How do I receive photos?",
+      a: "Via a private, watermark-free online gallery with high-res downloads (usually a private Google Drive link).",
+    },
+    { q: "How to book?", a: "Send an enquiry below with your date, service, and location." },
+    { q: "Do you travel for shoots?", a: "Yes. Travel fee applies outside the base city." },
+    {
+      q: "Do you provide makeup/hair or a stylist?",
+      a: "I can recommend trusted HMUA/styling partners and coordinate as an add-on. Their fees are billed separately.",
+    },
+    {
+      q: "Can we shoot in a studio?",
+      a: "Yes. Studio rentals are available and billed at the venue’s rates. I’ll shortlist spaces based on your concept; for minimal headshot setups, I can set up on location.",
+    },
+    {
+      q: "Can you print albums or framed photos?",
+      a: "Absolutely. I offer curated print and album options through professional labs. Sizes, papers and pricing are available on request.",
+    },
+  ];
+
+  return (
+    <section className={`py-2`}>
+      {showTitle && (
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
+          FAQ
+        </h2>
+      )}
+      <div className="mt-6 grid md:grid-cols-2 gap-6">
+        {items.map((item) => (
+          <details
+            key={item.q}
+            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+          >
+            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
+              {item.q}
+            </summary>
+            <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 /* ===================== Services ===================== */
 function ServicesSection({ T, showTitle = true }) {
   return (
     <section className={`py-2`}>
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Services
         </h2>
       )}
@@ -845,7 +586,9 @@ function PricingSection({ T, showTitle = true }) {
   return (
     <section className={`py-2`}>
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Pricing (indicative)
         </h2>
       )}
@@ -891,104 +634,6 @@ function PricingSection({ T, showTitle = true }) {
   );
 }
 
-/* ===================== Instagram ===================== */
-// Drop this near your other components in App.jsx
-function InstagramLightWidget({ T }) {
-  // Load the LightWidget script once
-  React.useEffect(() => {
-    const src = "https://cdn.lightwidget.com/widgets/lightwidget.js";
-    if (!document.querySelector(`script[src="${src}"]`)) {
-      const s = document.createElement("script");
-      s.src = src; s.defer = true;
-      document.body.appendChild(s);
-    }
-  }, []);
-
-  return (
-    <section id="instagram" className={`${CONTAINER} py-16`}>
-      <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
-        Instagram
-      </h2>
-      <p className={T.muted}>@{IG_USERNAME}</p>
-
-      <div className={`mt-6 rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg}`}>
-        {/* Replace the src below with the one LightWidget gave you */}
-        <iframe
-          src="//lightwidget.com/widgets/e8d473c1fec55f0cba4f7f5b5db137aa.html"
-          className="lightwidget-widget w-full"
-          style={{ border: 0, overflow: "hidden" }}
-          scrolling="no"
-          allowtransparency="true"
-          loading="lazy"
-        />
-      </div>
-
-      <div className="mt-3">
-        <a
-          className={T.link}
-          href={`https://www.instagram.com/${IG_USERNAME}/`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open profile
-        </a>
-      </div>
-    </section>
-  );
-}
-
-
-/* ===================== FAQ ===================== */
-function FaqSection({ T, showTitle = true }) {
-  const items = [
-    {
-      q: "How do I receive photos?",
-      a: "Via a private, watermark-free online gallery with high-res downloads (usually a private Google Drive link).",
-    },
-    {
-      q: "How to book?",
-      a: "Send an enquiry below with your date, service, and location.",
-    },
-    {
-      q: "Do you travel for shoots?",
-      a: "Yes. Travel fee applies outside the base city.",
-    },
-    {
-      q: "Do you provide makeup/hair or a stylist?",
-      a: "I can recommend trusted HMUA/styling partners and coordinate as an add-on. Their fees are billed separately.",
-    },
-    {
-      q: "Can we shoot in a studio?",
-      a: "Yes. Studio rentals are available and billed at the venue’s rates. I’ll shortlist spaces based on your concept; for minimal headshot setups, I can set up on location.",
-    },
-    {
-      q: "Can you print albums or framed photos?",
-      a: "Absolutely. I offer curated print and album options through professional labs. Sizes, papers and pricing are available on request.",
-    },
-  ];
-
-  return (
-    <section className={`py-2`}>
-      {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>FAQ</h2>
-      )}
-      <div className="mt-6 grid md:grid-cols-2 gap-6">
-        {items.map((item) => (
-          <details
-            key={item.q}
-            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-          >
-            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
-              {item.q}
-            </summary>
-            <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
-          </details>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 /* ===================== Tiles (one line) ===================== */
 function SectionTiles({ openId, setOpenId, T }) {
   const tiles = [
@@ -1011,7 +656,10 @@ function SectionTiles({ openId, setOpenId, T }) {
             <button
               key={t.id}
               type="button"
-              onClick={() => setOpenId(t.id)}
+              onClick={() => {
+                setOpenId(t.id);
+                if (t.id === "portfolio") window.location.hash = "#portfolio";
+              }}
               className={`flex items-center gap-2 rounded-2xl border px-4 py-2 transition shadow-sm ${
                 active ? T.chipActive : T.chipInactive
               }`}
@@ -1113,7 +761,7 @@ function BookingSection({ T }) {
           {/* LEFT: About (has id=about for navbar scroll) */}
           <div id="about">
             <h2
-              className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
+              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
             >
               About PRADHU
             </h2>
@@ -1155,7 +803,7 @@ function BookingSection({ T }) {
           {/* RIGHT: Enquire / Book */}
           <div>
             <h2
-              className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
+              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
             >
               Enquire / Book
             </h2>
@@ -1403,6 +1051,261 @@ function ThemeSlider({ theme, setTheme }) {
   );
 }
 
+/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
+function useHash() {
+  const [hash, setHash] = useState(() => window.location.hash || "");
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash || "");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
+}
+
+// Optional extended metadata per category (subtitle text for the page header)
+const GH_CATEGORIES_EXT = {
+  Events: {
+    blurb:
+      "Candid coverage of people and moments—clean color, honest expressions, and storytelling frames.",
+  },
+  Fashion: {
+    blurb:
+      "Editorial-leaning looks with modern skin tones and simple, confident direction.",
+  },
+};
+
+function PortfolioLanding({ T, cats, states, openCat }) {
+  return (
+    <section className="py-2">
+      <header className="mb-8">
+        <h2
+          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
+          Portfolio
+        </h2>
+        <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
+      </header>
+
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {cats.map((c, i) => {
+          const st = states[i] || { images: [], loading: true, error: "" };
+          const cover = st.images?.[0]?.url || "";
+          return (
+            <article
+              key={c.label}
+              className={`relative rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg} shadow-sm`}
+            >
+              <button
+                type="button"
+                onClick={() => openCat(c.label)}
+                className="group block text-left w-full"
+                aria-label={`Open ${c.label}`}
+              >
+                <div className="aspect-[4/5] w-full bg-neutral-200/20 relative">
+                  {cover ? (
+                    <img
+                      src={cover}
+                      alt={c.label}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      loading="lazy"
+                    />
+                  ) : null}
+
+                  {/* Top-left big serif title like the reference */}
+                  <div className="absolute top-3 left-3 right-3">
+                    <div className="inline-block px-1.5 py-1">
+                      <h3
+                        className={`text-[clamp(24px,4vw,40px)] leading-none font-['Playfair_Display'] uppercase tracking-[0.1em] text-white drop-shadow`}
+                      >
+                        {c.label}
+                      </h3>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
+                        PORTFOLIO
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom credit line style */}
+                  <div className="absolute bottom-3 left-3 right-3 text-[10px] tracking-[0.25em] text-white/90">
+                    PRADHU • FINE ART PHOTOGRAPHER
+                  </div>
+                </div>
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function PortfolioPage({ T, cat, state, onBack }) {
+  const items = state.images || [];
+  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
+
+  // Track which image is centered for the progress indicator
+  const containerRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const nodes = Array.from(root.querySelectorAll("figure"));
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            const idx = Number(e.target.getAttribute("data-idx") || 0);
+            setActiveIndex(idx);
+          }
+        });
+      },
+      { root: null, threshold: 0.6 }
+    );
+    nodes.forEach((n) => obs.observe(n));
+    return () => obs.disconnect();
+  }, [state.loading]);
+
+  return (
+    <section className="py-2">
+      {/* Sticky breadcrumb + title */}
+      <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
+        <div className="pt-3">
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+            Portfolio
+          </button>
+          <span className={`mx-2 ${T.muted2}`}>/</span>
+          <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
+        </div>
+        <h2
+          className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
+          {cat.label}
+        </h2>
+        {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
+      </div>
+
+      {/* Right progress rail */}
+      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-32 w-px bg-neutral-400/30" />
+          <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
+            {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
+          </div>
+          <div className="h-32 w-px bg-neutral-400/30" />
+        </div>
+      </div>
+
+      {/* Centered tall images with air/whitespace */}
+      {state.error ? (
+        <div className="text-red-500">{String(state.error)}</div>
+      ) : state.loading ? (
+        <div className={`${T.muted2}`}>Loading…</div>
+      ) : items.length ? (
+        <div ref={containerRef} className="mx-auto max-w-[980px]">
+          {items.map((it, i) => (
+            <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
+              <img
+                src={it.url}
+                alt={`${cat.label} — ${it.name}`}
+                className="w-full h-auto object-contain"
+                loading="lazy"
+              />
+              <figcaption className={`mt-3 text-[11px] tracking-[0.25em] ${T.muted2}`}>
+                {it.name}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      ) : (
+        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
+      )}
+    </section>
+  );
+}
+
+function Portfolio({ T }) {
+  // states per category
+  const [states, setStates] = useState(() =>
+    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
+  );
+
+  // Hash router: #portfolio or #portfolio/Fashion
+  const [hash, setHash] = useHash();
+  const [view, setView] = useState("landing"); // "landing" | "page"
+  const [activeIdx, setActiveIdx] = useState(-1);
+
+  const openCat = (label) => {
+    const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
+    if (idx < 0) return;
+    setActiveIdx(idx);
+    setView("page");
+    setHash(`#portfolio/${encodeURIComponent(label)}`);
+    const el = document.getElementById("portfolio");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const goLanding = () => {
+    setView("landing");
+    setActiveIdx(-1);
+    setHash("#portfolio");
+  };
+
+  // hash → view sync (deep-link support)
+  useEffect(() => {
+    if (!hash.startsWith("#portfolio")) return;
+    const seg = hash.split("/");
+    if (seg.length >= 2 && seg[1]) {
+      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
+      const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
+      if (idx >= 0) {
+        setActiveIdx(idx);
+        setView("page");
+        return;
+      }
+    }
+    setView("landing");
+    setActiveIdx(-1);
+  }, [hash]);
+
+  // fetch images per category
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        GH_CATEGORIES.map(async (cat) => {
+          try {
+            const list = await ghListFolder(
+              GH_OWNER,
+              GH_REPO,
+              cat.path,
+              GH_BRANCH
+            );
+            return { loading: false, error: "", images: list };
+          } catch (e) {
+            return {
+              loading: false,
+              error: e?.message || "Failed to load",
+              images: [],
+            };
+          }
+        })
+      );
+      if (!cancelled) setStates(results);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (view === "page" && activeIdx >= 0) {
+    const cat = GH_CATEGORIES[activeIdx];
+    const st = states[activeIdx] || { loading: true, error: "", images: [] };
+    return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
+  }
+  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
+}
+
 /* ===================== Main App ===================== */
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1430,9 +1333,9 @@ export default function App() {
   const [openId, setOpenId] = useState("portfolio");
 
   const scrollToSectionFromNav = (id) => {
-    // If nav targets a tile section, select it and scroll to tile bar
     if (SECTION_IDS.includes(id)) {
       setOpenId(id);
+      if (id === "portfolio") window.location.hash = "#portfolio";
       const el = document.getElementById("tiles");
       if (el) el.scrollIntoView({ behavior: "smooth" });
     } else {
@@ -1456,7 +1359,8 @@ export default function App() {
   }, [theme]);
 
   return (
-    <main className={`min-h-screen ${T.pageBg} ${T.pageText}`}>
+    <main className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter']`}>
+      <HeadFonts />
       {showIntro && <IntroOverlay onClose={closeIntro} />}
 
       {/* NAVBAR */}
@@ -1469,7 +1373,7 @@ export default function App() {
           {/* Brand */}
           <div className="min-w-0">
             <p
-              className={`font-semibold uppercase tracking-tight leading-none ${T.navTextStrong}
+              className={`font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none ${T.navTextStrong}
                     text-[clamp(20px,2.4vw,40px)] whitespace-nowrap`}
             >
               {NAV_BRAND}
@@ -1549,7 +1453,7 @@ export default function App() {
       {/* SECTION CONTENT (only selected visible) */}
       <div id="sections-content" className={`${CONTAINER} py-12`}>
         <div id="portfolio" className={openId === "portfolio" ? "block" : "hidden"}>
-          <Portfolio T={T} showTitle={false} />
+          <Portfolio T={T} />
         </div>
 
         <div id="services" className={openId === "services" ? "block" : "hidden"}>
