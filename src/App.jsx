@@ -66,6 +66,8 @@ const NAV_ITEMS = [
   { label: "Contact", id: "booking", icon: "mail" },
 ];
 
+const ACCORDION_IDS = ["portfolio", "services", "pricing", "instagram", "faq"];
+
 // Wide container helper for big screens
 const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
 
@@ -461,7 +463,7 @@ function CategoryGrid({ T, label, images, loading, error }) {
   );
 }
 
-function Portfolio({ T }) {
+function Portfolio({ T, showTitle = true }) {
   const [active, setActive] = useState("All");
   const tags = useMemo(() => ["All", ...GH_CATEGORIES.map((c) => c.label)], []);
 
@@ -507,16 +509,36 @@ function Portfolio({ T }) {
   }, [active, states]);
 
   return (
-    <section id="portfolio" className={`${CONTAINER} py-16`}>
-      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <h2
-            className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
-          >
-            Portfolio
-          </h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
+    <section className={`py-2`}>
+      {showTitle ? (
+        <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h2
+              className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
+            >
+              Portfolio
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((t) => {
+              const isActive = active === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setActive(t)}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                    isActive ? T.chipActive : T.chipInactive
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+        </header>
+      ) : (
+        <div className="flex flex-wrap gap-2 mb-4">
           {tags.map((t) => {
             const isActive = active === t;
             return (
@@ -533,7 +555,7 @@ function Portfolio({ T }) {
             );
           })}
         </div>
-      </header>
+      )}
 
       {visible.map((v) => (
         <CategoryGrid
@@ -545,6 +567,298 @@ function Portfolio({ T }) {
           error={v.error}
         />
       ))}
+    </section>
+  );
+}
+
+/* ===================== Services ===================== */
+function ServicesSection({ T, showTitle = true }) {
+  return (
+    <section className={`py-2`}>
+      {showTitle && (
+        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+          Services
+        </h2>
+      )}
+      <p className={`mt-2 ${T.muted}`}>
+        Multi-genre coverage designed around your brief. I’ll suggest looks, lighting windows and locations so the day feels effortless.
+      </p>
+
+      <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Portraits & Headshots */}
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Portraits & Headshots</h3>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>60–90 min session · up to 2 outfits</li>
+            <li>Clean, natural retouching</li>
+            <li>Guidance on wardrobe, posing & locations</li>
+            <li>Deliverables: curated 25–40 edited images</li>
+          </ul>
+        </article>
+
+        {/* Fashion / Editorial */}
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Fashion / Editorial</h3>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>Moodboard & looks planning</li>
+            <li>On-set lighting & styling coordination</li>
+            <li>Clean, contemporary colour and skin tones</li>
+            <li>Half-day / full-day options</li>
+          </ul>
+        </article>
+
+        {/* Events & Candids */}
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Events & Candids</h3>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>Coverage by hours or session blocks</li>
+            <li>Emphasis on key moments & people</li>
+            <li>Balanced set of colour-graded selects</li>
+            <li>Teasers available as an add-on</li>
+          </ul>
+        </article>
+      </div>
+
+      {/* Add-ons */}
+      <div className={`mt-6 rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
+        <h3 className={`font-medium ${T.navTextStrong}`}>Add-ons</h3>
+        <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+          <li>HMUA / Styling coordination (billed at cost)</li>
+          <li>Studio rental (venue rates apply)</li>
+          <li>Assistant / extra lighting</li>
+          <li>Travel & stay outside base city (at actuals)</li>
+          <li>Rush teasers / same-day selects</li>
+          <li>Prints, albums and frames</li>
+        </ul>
+        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>Enquire for availability →</a>
+      </div>
+    </section>
+  );
+}
+
+/* ===================== Pricing (Indicative) ===================== */
+function PricingSection({ T, showTitle = true }) {
+  // NOTE: numbers are placeholders — edit to your real rates.
+  const tiers = [
+    {
+      name: "Portrait Session",
+      price: "from ₹4,500",
+      includes: [
+        "60–90 min · up to 2 outfits",
+        "6 lightly retouched hero shots",
+        "Curated 25–40 edited images",
+        "Location & styling guidance",
+      ],
+    },
+    {
+      name: "Headshots (Solo/Team)",
+      price: "from ₹3,000",
+      includes: [
+        "Efficient, minimal setup",
+        "Consistent lighting & framing",
+        "Light retouching for final selects",
+        "On-location option available",
+      ],
+    },
+    {
+      name: "Fashion / Editorial (Half-day)",
+      price: "from ₹12,000",
+      includes: [
+        "Pre-prod planning & moodboard",
+        "Lighting & look management",
+        "Editorial-leaning colour grade",
+        "Team coordination on request",
+      ],
+    },
+    {
+      name: "Event Coverage (2 hrs)",
+      price: "from ₹6,000",
+      includes: [
+        "Focused coverage of key moments",
+        "Colour-graded selects",
+        "Optional teasers within 48h",
+        "Extendable by hour",
+      ],
+    },
+  ];
+
+  return (
+    <section className={`py-2`}>
+      {showTitle && (
+        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+          Pricing (indicative)
+        </h2>
+      )}
+      <p className={`mt-2 ${T.muted}`}>
+        Final quote depends on scope, locations, team and timelines. Share your brief for a tailored estimate.
+      </p>
+
+      <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {tiers.map((t) => (
+          <article key={t.name} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+            <div className="flex items-baseline justify-between">
+              <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
+              <span className="text-sm opacity-80">{t.price}</span>
+            </div>
+            <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
+              {t.includes.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>Request a quote →</a>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-6 grid md:grid-cols-2 gap-6">
+        <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
+          <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
+          <p className={`mt-2 text-sm ${T.muted}`}>
+            Portraits: 5–7 days. Weddings/events: teaser in ~48h, full gallery in ~3–4 weeks.
+          </p>
+        </div>
+        <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
+          <h4 className={`font-medium ${T.navTextStrong}`}>Booking & Policy</h4>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>Advance to reserve the date (adjustable in final invoice).</li>
+            <li>One complimentary reschedule with 72h notice (subject to availability).</li>
+            <li>Outstation travel/stay billed at actuals.</li>
+            <li>Commercial usage/licensing quoted per brief.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ===================== Instagram ===================== */
+function InstagramSection({ T, showTitle = true }) {
+  return (
+    <section className={`py-2`}>
+      {showTitle && (
+        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>Instagram</h2>
+      )}
+      <p className={T.muted}>@{IG_USERNAME}</p>
+      <p className={`text-sm mt-2 ${T.muted2}`}>
+        Add an IG token/widget later for live thumbnails. For now,{" "}
+        <a
+          className={T.link}
+          href={`https://www.instagram.com/${IG_USERNAME}/`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          open profile
+        </a>.
+      </p>
+    </section>
+  );
+}
+
+/* ===================== FAQ ===================== */
+function FaqSection({ T, showTitle = true }) {
+  const items = [
+    {
+      q: "How do I receive photos?",
+      a: "Via a private, watermark-free online gallery with high-res downloads (usually a private Google Drive link).",
+    },
+    {
+      q: "How to book?",
+      a: "Send an enquiry below with your date, service, and location.",
+    },
+    {
+      q: "Do you travel for shoots?",
+      a: "Yes. Travel fee applies outside the base city.",
+    },
+    {
+      q: "Do you provide makeup/hair or a stylist?",
+      a: "I can recommend trusted HMUA/styling partners and coordinate as an add-on. Their fees are billed separately.",
+    },
+    {
+      q: "Can we shoot in a studio?",
+      a: "Yes. Studio rentals are available and billed at the venue’s rates. I’ll shortlist spaces based on your concept; for minimal headshot setups, I can set up on location.",
+    },
+    {
+      q: "Can you print albums or framed photos?",
+      a: "Absolutely. I offer curated print and album options through professional labs. Sizes, papers and pricing are available on request.",
+    },
+  ];
+
+  return (
+    <section className={`py-2`}>
+      {showTitle && (
+        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>FAQ</h2>
+      )}
+      <div className="mt-6 grid md:grid-cols-2 gap-6">
+        {items.map((item) => (
+          <details
+            key={item.q}
+            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+          >
+            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
+              {item.q}
+            </summary>
+            <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ===================== Accordion Section (single-open) ===================== */
+function AccordionSection({ id, title, icon, openId, setOpenId, T, children, subtitle = "" }) {
+  const open = openId === id;
+
+  return (
+    <section id={id} className={`${CONTAINER} py-3`}>
+      <button
+        type="button"
+        onClick={() => setOpenId(open ? null : id)}
+        aria-controls={`${id}-content`}
+        aria-expanded={open}
+        className={`w-full group relative flex items-center justify-between rounded-2xl border px-4 py-3 text-left shadow-sm transition ${T.panelBg} ${T.panelBorder}`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-xl border transition ${open ? "opacity-100" : "opacity-70"} ${T.panelBorder}`}
+            aria-hidden="true"
+          >
+            <Icon name={icon} className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <div className={`font-medium tracking-tight ${T.navTextStrong}`}>
+              {title}
+            </div>
+            {subtitle ? (
+              <div className={`text-xs ${T.muted2} truncate`}>{subtitle}</div>
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          className={`ml-4 rounded-full px-3 py-1 text-xs transition ${open ? "opacity-100" : "opacity-60"} ${open ? "bg-black/10" : "bg-transparent"}`}
+        >
+          {open ? "Open" : "Tap to open"}
+        </div>
+
+        <span
+          className={`absolute right-3 top-1/2 -translate-y-1/2 transition-transform ${open ? "rotate-180" : "rotate-0"}`}
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
+      </button>
+
+      <div
+        id={`${id}-content`}
+        className={`grid transition-all duration-300 ease-out ${open ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-80 mt-1"}`}
+      >
+        <div className="overflow-hidden">
+          {children}
+        </div>
+      </div>
     </section>
   );
 }
@@ -565,11 +879,11 @@ function BookingSection({ T }) {
 
   // ---- Preferred Date minimum: today + 2 days ----
   const minDateStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
-    const off = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - off * 60000);
-    return local.toISOString().slice(0, 10);
+       const d = new Date();
+       d.setDate(d.getDate() + 2);
+       const off = d.getTimezoneOffset();
+       const local = new Date(d.getTime() - off * 60000);
+       return local.toISOString().slice(0, 10);
   }, []);
   const fmtHuman = (yyyy_mm_dd) => {
     if (!yyyy_mm_dd) return "";
@@ -849,7 +1163,6 @@ function ThemeSlider({ theme, setTheme }) {
   const setLight = () => setTheme("light");
   const setDark = () => setTheme("dark");
 
-  // Keyboard support (Left = Light, Right = Dark)
   const onKeyDown = (e) => {
     if (e.key === "ArrowLeft") setLight();
     if (e.key === "ArrowRight") setDark();
@@ -875,7 +1188,7 @@ function ThemeSlider({ theme, setTheme }) {
         aria-hidden="true"
       />
 
-      {/* Buttons (labels/icons sit above the thumb) */}
+      {/* Buttons */}
       <div className="relative z-10 grid grid-cols-2 h-full">
         <button
           type="button"
@@ -929,162 +1242,6 @@ function ThemeSlider({ theme, setTheme }) {
   );
 }
 
-/* ===================== Services ===================== */
-function ServicesSection({ T }) {
-  return (
-    <section id="services" className={`${CONTAINER} py-16`}>
-      <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
-        Services
-      </h2>
-      <p className={`mt-2 ${T.muted}`}>
-        Multi-genre coverage designed around your brief. I’ll suggest looks, lighting windows and locations so the day feels effortless.
-      </p>
-
-      <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Portraits & Headshots */}
-        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Portraits & Headshots</h3>
-          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
-            <li>60–90 min session · up to 2 outfits</li>
-            <li>Clean, natural retouching</li>
-            <li>Guidance on wardrobe, posing & locations</li>
-            <li>Deliverables: curated 25–40 edited images</li>
-          </ul>
-        </article>
-
-        {/* Fashion / Editorial */}
-        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Fashion / Editorial</h3>
-          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
-            <li>Moodboard & looks planning</li>
-            <li>On-set lighting & styling coordination</li>
-            <li>Clean, contemporary colour and skin tones</li>
-            <li>Half-day / full-day options</li>
-          </ul>
-        </article>
-
-        {/* Events & Candids */}
-        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Events & Candids</h3>
-          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
-            <li>Coverage by hours or session blocks</li>
-            <li>Emphasis on key moments & people</li>
-            <li>Balanced set of colour-graded selects</li>
-            <li>Teasers available as an add-on</li>
-          </ul>
-        </article>
-      </div>
-
-      {/* Add-ons */}
-      <div className={`mt-6 rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
-        <h3 className={`font-medium ${T.navTextStrong}`}>Add-ons</h3>
-        <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
-          <li>HMUA / Styling coordination (billed at cost)</li>
-          <li>Studio rental (venue rates apply)</li>
-          <li>Assistant / extra lighting</li>
-          <li>Travel & stay outside base city (at actuals)</li>
-          <li>Rush teasers / same-day selects</li>
-          <li>Prints, albums and frames</li>
-        </ul>
-        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>Enquire for availability →</a>
-      </div>
-    </section>
-  );
-}
-
-/* ===================== Pricing (Indicative) ===================== */
-function PricingSection({ T }) {
-  // NOTE: numbers are placeholders — edit to your real rates.
-  const tiers = [
-    {
-      name: "Portrait Session",
-      price: "from ₹4,500", // TODO: update
-      includes: [
-        "60–90 min · up to 2 outfits",
-        "6 lightly retouched hero shots",
-        "Curated 25–40 edited images",
-        "Location & styling guidance",
-      ],
-    },
-    {
-      name: "Headshots (Solo/Team)",
-      price: "from ₹3,000", // TODO: update
-      includes: [
-        "Efficient, minimal setup",
-        "Consistent lighting & framing",
-        "Light retouching for final selects",
-        "On-location option available",
-      ],
-    },
-    {
-      name: "Fashion / Editorial (Half-day)",
-      price: "from ₹12,000", // TODO: update
-      includes: [
-        "Pre-prod planning & moodboard",
-        "Lighting & look management",
-        "Editorial-leaning colour grade",
-        "Team coordination on request",
-      ],
-    },
-    {
-      name: "Event Coverage (2 hrs)",
-      price: "from ₹6,000", // TODO: update
-      includes: [
-        "Focused coverage of key moments",
-        "Colour-graded selects",
-        "Optional teasers within 48h",
-        "Extendable by hour",
-      ],
-    },
-  ];
-
-  return (
-    <section id="pricing" className={`${CONTAINER} py-16`}>
-      <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
-        Pricing (indicative)
-      </h2>
-      <p className={`mt-2 ${T.muted}`}>
-        Final quote depends on scope, locations, team and timelines. Share your brief for a tailored estimate.
-      </p>
-
-      <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {tiers.map((t) => (
-          <article key={t.name} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-            <div className="flex items-baseline justify-between">
-              <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
-              <span className="text-sm opacity-80">{t.price}</span>
-            </div>
-            <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
-              {t.includes.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>Request a quote →</a>
-          </article>
-        ))}
-      </div>
-
-      <div className="mt-6 grid md:grid-cols-2 gap-6">
-        <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
-          <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
-          <p className={`mt-2 text-sm ${T.muted}`}>
-            Portraits: 5–7 days. Weddings/events: teaser in ~48h, full gallery in ~3–4 weeks.
-          </p>
-        </div>
-        <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
-          <h4 className={`font-medium ${T.navTextStrong}`}>Booking & Policy</h4>
-          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
-            <li>Advance to reserve the date (adjustable in final invoice).</li>
-            <li>One complimentary reschedule with 72h notice (subject to availability).</li>
-            <li>Outstation travel/stay billed at actuals.</li>
-            <li>Commercial usage/licensing quoted per brief.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ===================== Main App ===================== */
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1108,8 +1265,13 @@ export default function App() {
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
   });
 
+  // Which accordion section is open (null = all collapsed)
+  const [openId, setOpenId] = useState("portfolio");
+
   const scrollTo = (id) => {
     const el = document.getElementById(id);
+    // If a nav item targets an accordion section, open it before scrolling
+    if (ACCORDION_IDS.includes(id)) setOpenId(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
     setMenuOpen(false);
   };
@@ -1218,81 +1380,66 @@ export default function App() {
       {/* HERO */}
       <Hero />
 
-      {/* PORTFOLIO */}
-      <Portfolio T={T} />
+      {/* ACCORDION SECTIONS */}
+      <AccordionSection
+        id="portfolio"
+        title="Portfolio"
+        icon="grid"
+        openId={openId}
+        setOpenId={setOpenId}
+        T={T}
+        subtitle="Browse categories and recent work"
+      >
+        <Portfolio T={T} showTitle={false} />
+      </AccordionSection>
 
-      {/* SERVICES & PRICING */}
-          <ServicesSection T={T} />
-         <PricingSection T={T} />
+      <AccordionSection
+        id="services"
+        title="Services"
+        icon="briefcase"
+        openId={openId}
+        setOpenId={setOpenId}
+        T={T}
+        subtitle="Portraits, fashion/editorial, events and more"
+      >
+        <ServicesSection T={T} showTitle={false} />
+      </AccordionSection>
 
-      {/* INSTAGRAM */}
-      <section id="instagram" className={`${CONTAINER} py-16`}>
-        <h2
-          className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
-        >
-          Instagram
-        </h2>
-        <p className={T.muted}>@{IG_USERNAME}</p>
-        <p className={`text-sm mt-2 ${T.muted2}`}>
-          Add an IG token/widget later for live thumbnails. For now,{" "}
-          <a
-            className={T.link}
-            href={`https://www.instagram.com/${IG_USERNAME}/`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            open profile
-          </a>
-          .
-        </p>
-      </section>
+      <AccordionSection
+        id="pricing"
+        title="Pricing"
+        icon="tag"
+        openId={openId}
+        setOpenId={setOpenId}
+        T={T}
+        subtitle="Indicative rates — tailored per brief"
+      >
+        <PricingSection T={T} showTitle={false} />
+      </AccordionSection>
 
-      {/* FAQ */}
-      <section id="faq" className={`${CONTAINER} py-16`}>
-        <h2
-          className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
-        >
-          FAQ
-        </h2>
-        <div className="mt-6 grid md:grid-cols-2 gap-6">
-          {[
-            {
-              q: "How do I receive photos?",
-              a: "Via a private, watermark-free online gallery with high-res downloads (usually a private Google Drive link).",
-            },
-            {
-              q: "How to book?",
-              a: "Send an enquiry below with your date, service, and location.",
-            },
-            {
-              q: "Do you travel for shoots?",
-              a: "Yes. Travel fee applies outside the base city.",
-            },
-            {
-              q: "Do you provide makeup/hair or a stylist?",
-              a: "I can recommend trusted HMUA/styling partners and coordinate as an add-on. Their fees are billed separately.",
-            },
-            {
-              q: "Can we shoot in a studio?",
-              a: "Yes. Studio rentals are available and billed at the venue’s rates. I’ll shortlist spaces based on your concept; for minimal headshot setups, I can set up on location.",
-            },
-            {
-              q: "Can you print albums or framed photos?",
-              a: "Absolutely. I offer curated print and album options through professional labs. Sizes, papers and pricing are available on request.",
-            },
-          ].map((item) => (
-            <details
-              key={item.q}
-              className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-            >
-              <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
-                {item.q}
-              </summary>
-              <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
+      <AccordionSection
+        id="instagram"
+        title="Instagram"
+        icon="camera"
+        openId={openId}
+        setOpenId={setOpenId}
+        T={T}
+        subtitle={`@${IG_USERNAME}`}
+      >
+        <InstagramSection T={T} showTitle={false} />
+      </AccordionSection>
+
+      <AccordionSection
+        id="faq"
+        title="FAQ"
+        icon="help"
+        openId={openId}
+        setOpenId={setOpenId}
+        T={T}
+        subtitle="Common questions and policies"
+      >
+        <FaqSection T={T} showTitle={false} />
+      </AccordionSection>
 
       {/* CONTACT / ENQUIRY (with About on the left) */}
       <BookingSection T={T} />
