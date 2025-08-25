@@ -1468,44 +1468,52 @@ export default function App() {
       <BookingSection T={T} />
 
       {/* FOOTER */}
-      <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
-  <div className={`${CONTAINER} py-10 text-sm`}>
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-      <p className={T.muted}>
-        © {new Date().getFullYear()} PRADHU — All rights reserved.
-      </p>
-      <div className="flex items-center gap-4">
-        {/* Instagram icon link */}
-        <a
-          href={`https://www.instagram.com/pradhu_photography/`}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Instagram"
-          className="hover:opacity-80"
-        >
-          <Icon name="camera" className="h-5 w-5" />
-        </a>
+      <div className="flex items-center gap-6">
+  {/* Instagram */}
+  <a
+    href={`https://www.instagram.com/${IG_USERNAME}/`}
+    target="_blank"
+    rel="noreferrer"
+    aria-label="Instagram"
+    className="hover:opacity-80 transition"
+  >
+    <Icon name="camera" className="h-6 w-6" />
+  </a>
 
-        {WHATSAPP_NUMBER.includes("X") ? (
-          <span className={`${T.linkSubtle} opacity-70`}>WhatsApp</span>
-        ) : (
-          <a
-            className={T.link}
-            href={`https://wa.me/${WHATSAPP_NUMBER}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            WhatsApp
-          </a>
-        )}
+  {/* WhatsApp */}
+  {WHATSAPP_NUMBER.includes("X") ? (
+    <span className="opacity-60">
+      <Icon name="mail" className="h-6 w-6" /> {/* fallback icon since no number */}
+    </span>
+  ) : (
+    <a
+      href={`https://wa.me/${WHATSAPP_NUMBER}`}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="WhatsApp"
+      className="hover:opacity-80 transition"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-6 w-6"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12.001 2.002c-5.52 0-9.998 4.477-9.998 9.998 0 1.761.463 3.489 1.341 5.006L2 22l5.182-1.34c1.474.807 3.134 1.231 4.819 1.231 5.521 0 9.999-4.478 9.999-9.999s-4.478-9.998-9.999-9.998zm0 18.197a8.16 8.16 0 01-4.168-1.14l-.298-.177-3.074.797.822-2.994-.194-.307a8.168 8.168 0 01-1.245-4.377c0-4.508 3.667-8.175 8.176-8.175 2.186 0 4.245.852 5.793 2.4a8.14 8.14 0 012.383 5.775c0 4.509-3.668 8.177-8.175 8.177zm4.457-6.13c-.243-.121-1.436-.708-1.658-.79-.222-.082-.384-.121-.546.122-.162.242-.626.79-.768.952-.141.162-.283.182-.526.061-.243-.122-1.025-.377-1.952-1.2-.722-.642-1.209-1.434-1.35-1.677-.141-.243-.015-.374.107-.496.11-.11.243-.283.364-.424.122-.141.162-.243.243-.405.081-.162.04-.304-.02-.425-.061-.122-.546-1.314-.749-1.8-.197-.474-.398-.41-.546-.417l-.466-.008c-.162 0-.425.061-.647.304-.222.243-.849.83-.849 2.021s.87 2.347.991 2.509c.121.162 1.714 2.615 4.153 3.667.58.25 1.032.399 1.385.511.582.186 1.112.16 1.531.097.467-.07 1.436-.586 1.64-1.152.202-.566.202-1.051.141-1.152-.06-.101-.222-.162-.465-.283z" />
+      </svg>
+    </a>
+  )}
 
-        <a className={T.link} href={`mailto:${CONTACT_EMAIL}`}>
-          Email
-        </a>
-      </div>
-    </div>
-  </div>
-</footer>
+  {/* Email */}
+  <a
+    href={`mailto:${CONTACT_EMAIL}`}
+    aria-label="Email"
+    className="hover:opacity-80 transition"
+  >
+    <Icon name="mail" className="h-6 w-6" />
+  </a>
+</div>
+
 
     </main>
   );
