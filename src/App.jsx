@@ -731,7 +731,7 @@ function BookingSection({ T }) {
               that define your story—delivering images that feel personal, polished
               and purposeful.
             </p>
-            <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
+                        <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
               <li>
                 Genres: Fashion, High Fashion, Editorials, Portraits, Headshots,
                 Candids, Street, Studio
@@ -743,9 +743,57 @@ function BookingSection({ T }) {
               <li>{SERVICE_CITIES}</li>
             </ul>
 
+            {/* Icon tiles: Instagram / WhatsApp / Email */}
+            <div className="mt-5 flex items-center gap-3">
+              {/* Instagram */}
+              <a
+                href={`https://www.instagram.com/${IG_USERNAME}/`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                title="Instagram"
+                className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} transition hover:scale-[1.03] hover:shadow-sm`}
+              >
+                <Icon name="camera" className="h-5 w-5" />
+              </a>
+
+              {/* WhatsApp */}
+              {WHATSAPP_NUMBER.includes("X") ? (
+                <span
+                  className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} opacity-60`}
+                  title="WhatsApp unavailable"
+                  aria-hidden="true"
+                >
+                  <Icon name="whatsapp" className="h-5 w-5" />
+                </span>
+              ) : (
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="WhatsApp"
+                  title="WhatsApp"
+                  className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} transition hover:scale-[1.03] hover:shadow-sm`}
+                >
+                  <Icon name="whatsapp" className="h-5 w-5" />
+                </a>
+              )}
+
+              {/* Email */}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                aria-label="Email"
+                title="Email"
+                className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} transition hover:scale-[1.03] hover:shadow-sm`}
+              >
+                <Icon name="mail" className="h-5 w-5" />
+              </a>
+            </div>
+
             <div
               className={`mt-6 rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}
             >
+
               <img
                 src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop"
                 alt="Photographer at work"
@@ -1422,61 +1470,18 @@ export default function App() {
 
       {/* FOOTER */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
-        <div className={`${CONTAINER} py-10 text-sm`}>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <p className={T.muted}>
-              © {new Date().getFullYear()} PRADHU — All rights reserved.
-            </p>
+  <div className={`${CONTAINER} py-10 text-sm`}>
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <p className={T.muted}>
+        © {new Date().getFullYear()} PRADHU — All rights reserved.
+      </p>
+      <div className="opacity-70 text-xs">
+        Crafted with care.
+      </div>
+    </div>
+  </div>
+</footer>
 
-            {/* Icon row */}
-            <div className="flex items-center gap-4">
-              {/* Instagram */}
-              <a
-                href={`https://www.instagram.com/${IG_USERNAME}/`}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Instagram"
-                className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
-                title="Instagram"
-              >
-                <Icon name="camera" className="h-6 w-6" />
-              </a>
-
-              {/* WhatsApp */}
-              {WHATSAPP_NUMBER.includes("X") ? (
-                <span
-                  className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} opacity-60`}
-                  title="WhatsApp unavailable"
-                  aria-hidden="true"
-                >
-                  <Icon name="whatsapp" className="h-6 w-6" />
-                </span>
-              ) : (
-                <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="WhatsApp"
-                  className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
-                  title="WhatsApp"
-                >
-                  <Icon name="whatsapp" className="h-6 w-6" />
-                </a>
-              )}
-
-              {/* Email */}
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                aria-label="Email"
-                className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
-                title="Email"
-              >
-                <Icon name="mail" className="h-6 w-6" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }
