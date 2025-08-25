@@ -929,6 +929,162 @@ function ThemeSlider({ theme, setTheme }) {
   );
 }
 
+/* ===================== Services ===================== */
+function ServicesSection({ T }) {
+  return (
+    <section id="services" className={`${CONTAINER} py-16`}>
+      <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+        Services
+      </h2>
+      <p className={`mt-2 ${T.muted}`}>
+        Multi-genre coverage designed around your brief. I’ll suggest looks, lighting windows and locations so the day feels effortless.
+      </p>
+
+      <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Portraits & Headshots */}
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Portraits & Headshots</h3>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>60–90 min session · up to 2 outfits</li>
+            <li>Clean, natural retouching</li>
+            <li>Guidance on wardrobe, posing & locations</li>
+            <li>Deliverables: curated 25–40 edited images</li>
+          </ul>
+        </article>
+
+        {/* Fashion / Editorial */}
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Fashion / Editorial</h3>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>Moodboard & looks planning</li>
+            <li>On-set lighting & styling coordination</li>
+            <li>Clean, contemporary colour and skin tones</li>
+            <li>Half-day / full-day options</li>
+          </ul>
+        </article>
+
+        {/* Events & Candids */}
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Events & Candids</h3>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>Coverage by hours or session blocks</li>
+            <li>Emphasis on key moments & people</li>
+            <li>Balanced set of colour-graded selects</li>
+            <li>Teasers available as an add-on</li>
+          </ul>
+        </article>
+      </div>
+
+      {/* Add-ons */}
+      <div className={`mt-6 rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
+        <h3 className={`font-medium ${T.navTextStrong}`}>Add-ons</h3>
+        <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+          <li>HMUA / Styling coordination (billed at cost)</li>
+          <li>Studio rental (venue rates apply)</li>
+          <li>Assistant / extra lighting</li>
+          <li>Travel & stay outside base city (at actuals)</li>
+          <li>Rush teasers / same-day selects</li>
+          <li>Prints, albums and frames</li>
+        </ul>
+        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>Enquire for availability →</a>
+      </div>
+    </section>
+  );
+}
+
+/* ===================== Pricing (Indicative) ===================== */
+function PricingSection({ T }) {
+  // NOTE: numbers are placeholders — edit to your real rates.
+  const tiers = [
+    {
+      name: "Portrait Session",
+      price: "from ₹4,500", // TODO: update
+      includes: [
+        "60–90 min · up to 2 outfits",
+        "6 lightly retouched hero shots",
+        "Curated 25–40 edited images",
+        "Location & styling guidance",
+      ],
+    },
+    {
+      name: "Headshots (Solo/Team)",
+      price: "from ₹3,000", // TODO: update
+      includes: [
+        "Efficient, minimal setup",
+        "Consistent lighting & framing",
+        "Light retouching for final selects",
+        "On-location option available",
+      ],
+    },
+    {
+      name: "Fashion / Editorial (Half-day)",
+      price: "from ₹12,000", // TODO: update
+      includes: [
+        "Pre-prod planning & moodboard",
+        "Lighting & look management",
+        "Editorial-leaning colour grade",
+        "Team coordination on request",
+      ],
+    },
+    {
+      name: "Event Coverage (2 hrs)",
+      price: "from ₹6,000", // TODO: update
+      includes: [
+        "Focused coverage of key moments",
+        "Colour-graded selects",
+        "Optional teasers within 48h",
+        "Extendable by hour",
+      ],
+    },
+  ];
+
+  return (
+    <section id="pricing" className={`${CONTAINER} py-16`}>
+      <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+        Pricing (indicative)
+      </h2>
+      <p className={`mt-2 ${T.muted}`}>
+        Final quote depends on scope, locations, team and timelines. Share your brief for a tailored estimate.
+      </p>
+
+      <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {tiers.map((t) => (
+          <article key={t.name} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+            <div className="flex items-baseline justify-between">
+              <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
+              <span className="text-sm opacity-80">{t.price}</span>
+            </div>
+            <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
+              {t.includes.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>Request a quote →</a>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-6 grid md:grid-cols-2 gap-6">
+        <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
+          <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
+          <p className={`mt-2 text-sm ${T.muted}`}>
+            Portraits: 5–7 days. Weddings/events: teaser in ~48h, full gallery in ~3–4 weeks.
+          </p>
+        </div>
+        <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
+          <h4 className={`font-medium ${T.navTextStrong}`}>Booking & Policy</h4>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
+            <li>Advance to reserve the date (adjustable in final invoice).</li>
+            <li>One complimentary reschedule with 72h notice (subject to availability).</li>
+            <li>Outstation travel/stay billed at actuals.</li>
+            <li>Commercial usage/licensing quoted per brief.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ===================== Main App ===================== */
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1065,9 +1221,9 @@ export default function App() {
       {/* PORTFOLIO */}
       <Portfolio T={T} />
 
-      {/* Hidden sections for now */}
-      <section id="services" className="hidden" />
-      <section id="pricing" className="hidden" />
+      {/* SERVICES & PRICING */}
+          <ServicesSection T={T} />
+         <PricingSection T={T} />
 
       {/* INSTAGRAM */}
       <section id="instagram" className={`${CONTAINER} py-16`}>
