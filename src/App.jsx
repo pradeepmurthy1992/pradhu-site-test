@@ -627,12 +627,11 @@ function BookingSection({ T }) {
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
-              I’m a photographer specialising in fashion, portraits, candids and events.
-              Expect direction, calm energy, and images that feel like you.
+              As an aspiring photographer from Kanchipuram, I work across fashion, portraits, candids and events. I run a client-first process: I listen to your brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless. On set, I work with calm, unobtrusive direction to create space for genuine expression. My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
             </p>
             <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>Genres: Fashion, Portraits, Candids, Street, Landscape, Studio</li>
-              <li>Toolbox: softboxes (octa & strip), multiple flashes, Nikon system</li>
+              <li>Genres: Fashion,High Fashion, Editorials, Portraits, Headshots, Candids, Street, Studio</li>
+              <li>Kit: Nikon D7500, Softboxes (octa & strip), Multiple flashes , Light modifiers </li>
               <li>{SERVICE_CITIES}</li>
             </ul>
 
