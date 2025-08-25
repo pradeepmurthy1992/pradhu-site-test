@@ -1126,9 +1126,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                   </div>
 
                   {/* Bottom credit line style */}
-                  <div className="absolute bottom-3 left-3 right-3 text-[10px] tracking-[0.25em] text-white/90">
-                    PRADHU • FINE ART PHOTOGRAPHER
-                  </div>
+                  
                 </div>
               </button>
             </article>
@@ -1211,9 +1209,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 className="w-full h-auto object-contain"
                 loading="lazy"
               />
-              <figcaption className={`mt-3 text-[11px] tracking-[0.25em] ${T.muted2}`}>
-                {it.name}
-              </figcaption>
+              
             </figure>
           ))}
         </div>
