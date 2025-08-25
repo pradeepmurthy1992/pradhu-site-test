@@ -219,16 +219,16 @@ function Icon({ name, className = "h-4 w-4" }) {
           <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
         </svg>
       );
-        case "whatsapp":
-  return (
-    <svg {...p} fill="currentColor" stroke="none" viewBox="0 0 24 24">
-      <path d="M12.04 2C6.57 2 2.12 6.44 2.12 11.9c0 1.91.52 3.68 1.42 5.2L2 22l5.02-1.49a9.86 9.86 0 005.02 1.34c5.47 0 9.92-4.44 9.92-9.9C21.96 6.44 17.51 2 12.04 2zm0 17.74c-1.63 0-3.16-.45-4.47-1.23l-.32-.2-2.98.89.89-2.9-.21-.34a7.71 7.71 0 01-1.23-4.15c0-4.28 3.49-7.77 7.77-7.77s7.77 3.49 7.77 7.77-3.49 7.77-7.77 7.77zm4.08-6.1c-.22-.11-1.3-.64-1.5-.71-.2-.08-.34-.11-.48.11-.14.2-.56.71-.69.86-.13.14-.25.16-.46.05-.22-.11-.91-.34-1.73-1.06-.64-.57-1.07-1.27-1.19-1.48-.12-.22-.01-.33.1-.45.1-.1.22-.25.33-.38.11-.13.14-.22.22-.37.07-.15.03-.28-.02-.39-.05-.11-.48-1.15-.66-1.58-.17-.42-.35-.36-.48-.37l-.41-.01c-.14 0-.38.06-.58.27-.2.22-.76.76-.76 1.85 0 1.09.78 2.15.89 2.3.11.15 1.55 2.39 3.76 3.35.53.23.94.37 1.26.47.53.17 1.02.15 1.4.09.43-.06 1.31-.54 1.49-1.05.18-.52.18-.96.13-1.05-.05-.09-.2-.15-.41-.26z" />
-    </svg>
-  );
     case "moon":
       return (
         <svg {...p}>
           <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z" />
+        </svg>
+      );
+    case "whatsapp":
+      return (
+        <svg {...p} fill="currentColor" stroke="none" viewBox="0 0 24 24">
+          <path d="M12.04 2C6.57 2 2.12 6.44 2.12 11.9c0 1.91.52 3.68 1.42 5.2L2 22l5.02-1.49a9.86 9.86 0 005.02 1.34c5.47 0 9.92-4.44 9.92-9.9C21.96 6.44 17.51 2 12.04 2zm0 17.74c-1.63 0-3.16-.45-4.47-1.23l-.32-.2-2.98.89.89-2.9-.21-.34a7.71 7.71 0 01-1.23-4.15c0-4.28 3.49-7.77 7.77-7.77s7.77 3.49 7.77 7.77-3.49 7.77-7.77 7.77zm4.08-6.1c-.22-.11-1.3-.64-1.5-.71-.2-.08-.34-.11-.48.11-.14.2-.56.71-.69.86-.13.14-.25.16-.46.05-.22-.11-.91-.34-1.73-1.06-.64-.57-1.07-1.27-1.19-1.48-.12-.22-.01-.33.1-.45.1-.1.22-.25.33-.38.11-.13.14-.22.22-.37.07-.15.03-.28-.02-.39-.05-.11-.48-1.15-.66-1.58-.17-.42-.35-.36-.48-.37l-.41-.01c-.14 0-.38.06-.58.27-.2.22-.76.76-.76 1.85 0 1.09.78 2.15.89 2.3.11.15 1.55 2.39 3.76 3.35.53.23.94.37 1.26.47.53.17 1.02.15 1.4.09.43-.06 1.31-.54 1.49-1.05.18-.52.18-.96.13-1.05-.05-.09-.2-.15-.41-.26z" />
         </svg>
       );
     default:
@@ -378,54 +378,6 @@ function Hero() {
           </p>
           <p className="text-neutral-300 text-sm mt-1">{SERVICE_CITIES}</p>
         </div>
-      </div>
-    </section>
-  );
-}
-
-/* ===================== Instagram ===================== */
-function InstagramLightWidget({ T }) {
-  React.useEffect(() => {
-    const src = "https://cdn.lightwidget.com/widgets/lightwidget.js";
-    if (!document.querySelector(`script[src="${src}"]`)) {
-      const s = document.createElement("script");
-      s.src = src;
-      s.defer = true;
-      document.body.appendChild(s);
-    }
-  }, []);
-
-  return (
-    <section id="instagram" className={`${CONTAINER} py-16`}>
-      <h2
-        className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-      >
-        Instagram
-      </h2>
-      <p className={T.muted}>@{IG_USERNAME}</p>
-
-      <div
-        className={`mt-6 rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg}`}
-      >
-        <iframe
-          src="//lightwidget.com/widgets/e8d473c1fec55f0cba4f7f5b5db137aa.html"
-          className="lightwidget-widget w-full"
-          style={{ border: 0, overflow: "hidden" }}
-          scrolling="no"
-          allowtransparency="true"
-          loading="lazy"
-        />
-      </div>
-
-      <div className="mt-3">
-        <a
-          className={T.link}
-          href={`https://www.instagram.com/${IG_USERNAME}/`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open profile
-        </a>
       </div>
     </section>
   );
@@ -1115,7 +1067,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                     />
                   ) : null}
 
-                  {/* Top-left big serif title like the reference */}
+                  {/* Top-left big serif title */}
                   <div className="absolute top-3 left-3 right-3">
                     <div className="inline-block px-1.5 py-1">
                       <h3
@@ -1128,9 +1080,6 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       </div>
                     </div>
                   </div>
-
-                  {/* Bottom credit line style */}
-                  
                 </div>
               </button>
             </article>
@@ -1213,7 +1162,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 className="w-full h-auto object-contain"
                 loading="lazy"
               />
-              
             </figure>
           ))}
         </div>
@@ -1464,7 +1412,7 @@ export default function App() {
           <PricingSection T={T} showTitle={false} />
         </div>
 
-          <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
+        <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
           <FaqSection T={T} showTitle={false} />
         </div>
       </div>
@@ -1474,59 +1422,61 @@ export default function App() {
 
       {/* FOOTER */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
-  <div className={`${CONTAINER} py-10 text-sm`}>
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-      <p className={T.muted}>
-        © {new Date().getFullYear()} PRADHU — All rights reserved.
-      </p>
+        <div className={`${CONTAINER} py-10 text-sm`}>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <p className={T.muted}>
+              © {new Date().getFullYear()} PRADHU — All rights reserved.
+            </p>
 
-      {/* Icon row */}
-      <div className="flex items-center gap-4">
-        {/* Instagram */}
-        <a
-          href={`https://www.instagram.com/${IG_USERNAME}/`}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Instagram"
-          className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
-          title="Instagram"
-        >
-          <Icon name="camera" className="h-6 w-6" />
-        </a>
+            {/* Icon row */}
+            <div className="flex items-center gap-4">
+              {/* Instagram */}
+              <a
+                href={`https://www.instagram.com/${IG_USERNAME}/`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
+                title="Instagram"
+              >
+                <Icon name="camera" className="h-6 w-6" />
+              </a>
 
-        {/* WhatsApp */}
-        {WHATSAPP_NUMBER.includes("X") ? (
-          <span
-            className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} opacity-60`}
-            title="WhatsApp unavailable"
-            aria-hidden="true"
-          >
-            <Icon name="whatsapp" className="h-6 w-6" />
-          </span>
-        ) : (
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}`}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="WhatsApp"
-            className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
-            title="WhatsApp"
-          >
-            <Icon name="whatsapp" className="h-6 w-6" />
-          </a>
-        )}
+              {/* WhatsApp */}
+              {WHATSAPP_NUMBER.includes("X") ? (
+                <span
+                  className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} opacity-60`}
+                  title="WhatsApp unavailable"
+                  aria-hidden="true"
+                >
+                  <Icon name="whatsapp" className="h-6 w-6" />
+                </span>
+              ) : (
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="WhatsApp"
+                  className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
+                  title="WhatsApp"
+                >
+                  <Icon name="whatsapp" className="h-6 w-6" />
+                </a>
+              )}
 
-        {/* Email */}
-        <a
-          href={`mailto:${CONTACT_EMAIL}`}
-          aria-label="Email"
-          className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
-          title="Email"
-        >
-          <Icon name="mail" className="h-6 w-6" />
-        </a>
-      </div>
-    </div>
-  </div>
-</footer>
-
+              {/* Email */}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                aria-label="Email"
+                className={`inline-flex items-center justify-center h-10 w-10 rounded-full border ${T.navBorder} hover:opacity-90 hover:scale-[1.03] transition`}
+                title="Email"
+              >
+                <Icon name="mail" className="h-6 w-6" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
+}
