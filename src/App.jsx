@@ -237,6 +237,7 @@ function Icon({ name, className = "h-4 w-4" }) {
 }
 
 /* ===================== Intro Overlay (Editorial) ===================== */
+/* ===================== Intro Overlay (Editorial, Dark Theme) ===================== */
 function IntroOverlay({ onClose }) {
   useEffect(() => {
     const onKey = (e) => {
@@ -259,7 +260,7 @@ function IntroOverlay({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-white text-neutral-900"
+      className="fixed inset-0 bg-black text-white"
       style={{ zIndex: 9999 }}
       role="dialog"
       aria-label="Intro overlay"
@@ -269,10 +270,7 @@ function IntroOverlay({ onClose }) {
         <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
           {/* Left rail: small vertical text (desktop) */}
           <div className="hidden md:flex items-center justify-start">
-            <div className="rotate-[-90deg] origin-left translate-x-6 text-[11px] tracking-[0.3em] opacity-60">
-              PRADHU • HONEST VISUAL STORYTELLER
             </div>
-          </div>
 
           {/* Center: big image */}
           <div className="relative">
@@ -287,7 +285,7 @@ function IntroOverlay({ onClose }) {
           {/* Right rail: call to action */}
           <div className="flex flex-col items-end justify-between gap-6">
             <div className="text-right">
-              <div className="text-[12px] tracking-[0.25em] opacity-60">
+              <div className="text-[12px] tracking-[0.25em] opacity-70">
                 VISUAL AND HONEST STORIES
               </div>
               <h1 className="mt-2 text-[clamp(28px,5vw,56px)] leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase">
@@ -296,7 +294,7 @@ function IntroOverlay({ onClose }) {
             </div>
             <button
               onClick={onClose}
-              className="rounded-full border px-5 py-2 text-sm hover:bg-neutral-50"
+              className="rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition"
             >
               Enter ↵
             </button>
@@ -306,6 +304,7 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
+
 
 /* ===================== GitHub helpers ===================== */
 const GH_API = "https://api.github.com";
