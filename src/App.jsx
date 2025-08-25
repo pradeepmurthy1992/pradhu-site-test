@@ -640,7 +640,6 @@ function SectionTiles({ openId, setOpenId, T }) {
     { id: "portfolio", label: "Portfolio", icon: "grid" },
     { id: "services", label: "Services", icon: "briefcase" },
     { id: "pricing", label: "Pricing", icon: "tag" },
-    { id: "instagram", label: "Instagram", icon: "camera" },
     { id: "faq", label: "FAQ", icon: "help" },
   ];
 
@@ -1460,11 +1459,7 @@ export default function App() {
           <PricingSection T={T} showTitle={false} />
         </div>
 
-        <div id="instagram" className={openId === "instagram" ? "block" : "hidden"}>
-          <InstagramLightWidget T={T} />
-        </div>
-
-        <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
+          <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
           <FaqSection T={T} showTitle={false} />
         </div>
       </div>
@@ -1474,39 +1469,44 @@ export default function App() {
 
       {/* FOOTER */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
-        <div className={`${CONTAINER} py-10 text-sm`}>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <p className={T.muted}>
-              © {new Date().getFullYear()} PRADHU — All rights reserved.
-            </p>
-            <div className="flex items-center gap-3">
-              <a
-                className={T.link}
-                href={`https://www.instagram.com/${IG_USERNAME}/`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Instagram
-              </a>
-              {WHATSAPP_NUMBER.includes("X") ? (
-                <span className={`${T.linkSubtle} opacity-70`}>WhatsApp</span>
-              ) : (
-                <a
-                  className={T.link}
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  WhatsApp
-                </a>
-              )}
-              <a className={T.link} href={`mailto:${CONTACT_EMAIL}`}>
-                Email
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+  <div className={`${CONTAINER} py-10 text-sm`}>
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <p className={T.muted}>
+        © {new Date().getFullYear()} PRADHU — All rights reserved.
+      </p>
+      <div className="flex items-center gap-4">
+        {/* Instagram icon link */}
+        <a
+          href={`https://www.instagram.com/pradhu_photography/`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Instagram"
+          className="hover:opacity-80"
+        >
+          <Icon name="camera" className="h-5 w-5" />
+        </a>
+
+        {WHATSAPP_NUMBER.includes("X") ? (
+          <span className={`${T.linkSubtle} opacity-70`}>WhatsApp</span>
+        ) : (
+          <a
+            className={T.link}
+            href={`https://wa.me/${WHATSAPP_NUMBER}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            WhatsApp
+          </a>
+        )}
+
+        <a className={T.link} href={`mailto:${CONTACT_EMAIL}`}>
+          Email
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
     </main>
   );
 }
