@@ -719,27 +719,51 @@ function PricingSection({ T, showTitle = true }) {
 }
 
 /* ===================== Instagram ===================== */
-function InstagramSection({ T, showTitle = true }) {
+// Drop this near your other components in App.jsx
+function InstagramLightWidget({ T }) {
+  // Load the LightWidget script once
+  React.useEffect(() => {
+    const src = "https://cdn.lightwidget.com/widgets/lightwidget.js";
+    if (!document.querySelector(`script[src="${src}"]`)) {
+      const s = document.createElement("script");
+      s.src = src; s.defer = true;
+      document.body.appendChild(s);
+    }
+  }, []);
+
   return (
-    <section className={`py-2`}>
-      {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>Instagram</h2>
-      )}
+    <section id="instagram" className={`${CONTAINER} py-16`}>
+      <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+        Instagram
+      </h2>
       <p className={T.muted}>@{IG_USERNAME}</p>
-      <p className={`text-sm mt-2 ${T.muted2}`}>
-        Add an IG token/widget later for live thumbnails. For now,{" "}
+
+      <div className={`mt-6 rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg}`}>
+        {/* Replace the src below with the one LightWidget gave you */}
+        <iframe
+          src="//lightwidget.com/widgets/e8d473c1fec55f0cba4f7f5b5db137aa.html"
+          className="lightwidget-widget w-full"
+          style={{ border: 0, overflow: "hidden" }}
+          scrolling="no"
+          allowtransparency="true"
+          loading="lazy"
+        />
+      </div>
+
+      <div className="mt-3">
         <a
           className={T.link}
           href={`https://www.instagram.com/${IG_USERNAME}/`}
           target="_blank"
           rel="noreferrer"
         >
-          open profile
-        </a>.
-      </p>
+          Open profile
+        </a>
+      </div>
     </section>
   );
 }
+
 
 /* ===================== FAQ ===================== */
 function FaqSection({ T, showTitle = true }) {
@@ -1364,7 +1388,7 @@ export default function App() {
         </div>
 
         <div id="instagram" className={openId === "instagram" ? "block" : "hidden"}>
-          <InstagramSection T={T} showTitle={false} />
+          <InstagramSection T={T} />
         </div>
 
         <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
