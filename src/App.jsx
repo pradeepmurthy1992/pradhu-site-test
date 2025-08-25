@@ -35,7 +35,7 @@ const GH_CACHE_TTL_MS = 5 * 60 * 1000;
 // Brand / contact
 const CONTACT_EMAIL = "pradhuphotography@gmail.com";
 const SERVICE_CITIES =
-  "Pune · Mumbai · Chennai · Bengaluru · available pan-India";
+  "Base : Pune · Mumbai · Chennai · Bengaluru · Available pan-India";
 const IG_USERNAME = "pradhu_photography";
 
 // Enquiry (kept for future; not exposed in UI)
@@ -374,10 +374,8 @@ function Hero() {
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
             Fashion · Portraits · Candids · Portfolio · Professional headshots ·
-            Street
           </p>
-          <p className="text-neutral-300 text-sm mt-1">{SERVICE_CITIES}</p>
-        </div>
+          </div>
       </div>
     </section>
   );
@@ -722,7 +720,7 @@ function BookingSection({ T }) {
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
-              As an aspiring photographer from Kanchipuram, I work across fashion,
+              As an aspiring photographer from Kanchipuram(TN), I work across fashion,
               portraits, candids and events. I run a client-first process: I listen
               to your brief and offer tailored recommendations on looks, lighting,
               locations and timelines so the day feels effortless. On set, I work
@@ -1476,7 +1474,7 @@ export default function App() {
         © {new Date().getFullYear()} PRADHU — All rights reserved.
       </p>
       <div className="opacity-70 text-xs">
-        Crafted with care.
+        Crafting your best moments.
       </div>
     </div>
   </div>
