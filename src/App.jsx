@@ -1388,7 +1388,7 @@ export default function App() {
         </div>
 
         <div id="instagram" className={openId === "instagram" ? "block" : "hidden"}>
-          <InstagramSection T={T} />
+          <InstagramLightWidget T={T} />
         </div>
 
         <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
