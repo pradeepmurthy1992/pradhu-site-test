@@ -43,7 +43,7 @@ const SERVICE_CITIES =
   "Pune · Mumbai · Chennai · Bengaluru · available pan-India";
 const IG_USERNAME = "pradhu_photography";
 
-// Enquiry/payments
+// Enquiry/payments (kept for future; not exposed in UI)
 const WHATSAPP_NUMBER = "91XXXXXXXXXX"; // 9198xxxxxxx (no + / spaces)
 const UPI_ID = "yourvpa@upi";
 const RAZORPAY_LINK = "";
@@ -60,8 +60,7 @@ const NAV_ITEMS = [
   { label: "Portfolio", id: "portfolio", icon: "grid" },
   { label: "Services", id: "services", icon: "briefcase" },
   { label: "Pricing", id: "pricing", icon: "tag" },
-  { label: "About", id: "about", icon: "user" },
-  // Testimonials intentionally hidden for now
+  { label: "About", id: "about", icon: "user" }, // scrolls to the left pane in Enquire/Book
   { label: "Instagram", id: "instagram", icon: "camera" },
   { label: "FAQ", id: "faq", icon: "help" },
   { label: "Contact", id: "booking", icon: "mail" },
@@ -550,7 +549,7 @@ function Portfolio({ T }) {
   );
 }
 
-/* ===================== Booking (posts to Google Sheet) ===================== */
+/* ===================== Booking (About at left + Enquiry form) ===================== */
 function BookingSection({ T }) {
   const [form, setForm] = useState({
     name: "",
@@ -576,7 +575,9 @@ function BookingSection({ T }) {
     if (!yyyy_mm_dd) return "";
     const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-      day: "2-digit", month: "short", year: "numeric",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
   };
 
@@ -590,7 +591,8 @@ function BookingSection({ T }) {
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
-    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
+    if (form.date && form.date < minDateStr)
+      missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
     if (missing.length) {
       setNote(`Please fill: ${missing.join(", ")}`);
       return;
@@ -605,8 +607,13 @@ function BookingSection({ T }) {
         body: JSON.stringify({ ...form, source: "website" }),
       });
       setForm({
-        name: "", email: "", phone: "",
-        service: "Portraits", city: "Pune", date: "", message: "",
+        name: "",
+        email: "",
+        phone: "",
+        service: "Portraits",
+        city: "Pune",
+        date: "",
+        message: "",
       });
       setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
@@ -621,22 +628,39 @@ function BookingSection({ T }) {
     <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
       <div className={`${CONTAINER} py-16`}>
         <div className="grid md:grid-cols-2 gap-8 items-start">
-          {/* LEFT: About (kept here). Added id=about so the nav tab still works */}
+          {/* LEFT: About (has id=about for navbar scroll) */}
           <div id="about">
-            <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+            <h2
+              className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
+            >
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
-              As an aspiring photographer from Kanchipuram, I work across fashion, portraits, candids and events. I run a client-first process: I listen to your brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless. On set, I work with calm, unobtrusive direction to create space for genuine expression. My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
+              As an aspiring photographer from Kanchipuram, I work across fashion,
+              portraits, candids and events. I run a client-first process: I listen
+              to your brief and offer tailored recommendations on looks, lighting,
+              locations and timelines so the day feels effortless. On set, I work
+              with calm, unobtrusive direction to create space for genuine
+              expression. My aim is to capture the beauty, joy and decisive moments
+              that define your story—delivering images that feel personal, polished
+              and purposeful.
             </p>
             <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>Genres: Fashion,High Fashion, Editorials, Portraits, Headshots, Candids, Street, Studio</li>
-              <li>Kit: Nikon D7500, Softboxes (octa & strip), Multiple flashes , Light modifiers </li>
+              <li>
+                Genres: Fashion, High Fashion, Editorials, Portraits, Headshots,
+                Candids, Street, Studio
+              </li>
+              <li>
+                Kit: Nikon D7500, softboxes (octa & strip), multiple flashes, light
+                modifiers
+              </li>
               <li>{SERVICE_CITIES}</li>
             </ul>
 
             {/* Image: fit without cropping */}
-            <div className={`mt-6 rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}>
+            <div
+              className={`mt-6 rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}
+            >
               <img
                 src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop"
                 alt="Photographer at work"
@@ -647,9 +671,11 @@ function BookingSection({ T }) {
             </div>
           </div>
 
-          {/* RIGHT: Enquire / Book — heading on top of the form */}
+          {/* RIGHT: Enquire / Book — heading above the form */}
           <div>
-            <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+            <h2
+              className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
+            >
               Enquire / Book
             </h2>
             <p className={`mt-2 ${T.muted}`}>
@@ -661,9 +687,33 @@ function BookingSection({ T }) {
               className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
             >
               <div className="grid grid-cols-1 gap-4">
-                <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
-                <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
-                <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
+                <Input
+                  T={T}
+                  label="Name"
+                  name="name"
+                  value={form.name}
+                  onChange={onChange}
+                  required
+                />
+                <Input
+                  T={T}
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={onChange}
+                  required
+                />
+                <Input
+                  T={T}
+                  label="Phone"
+                  name="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={onChange}
+                  required
+                  placeholder="+91-XXXXXXXXXX"
+                />
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Preferred Date</label>
@@ -678,13 +728,17 @@ function BookingSection({ T }) {
                       let v = e.target.value;
                       if (v && v < minDateStr) {
                         v = minDateStr;
-                        setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
+                        setNote(
+                          `Earliest available date is ${fmtHuman(minDateStr)}.`
+                        );
                       }
                       setForm({ ...form, date: v });
                     }}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                   />
-                  <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    Earliest selectable: {fmtHuman(minDateStr)}
+                  </p>
                 </div>
 
                 <div>
@@ -708,8 +762,17 @@ function BookingSection({ T }) {
                       value={form.service}
                       onChange={onChange}
                     >
-                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                      {[
+                        "Portraits",
+                        "Fashion",
+                        "Candids",
+                        "Street",
+                        "Events",
+                        "Other",
+                      ].map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -749,7 +812,6 @@ function BookingSection({ T }) {
   );
 }
 
-
 /* ===================== Small Input ===================== */
 function Input({
   T,
@@ -779,6 +841,8 @@ function Input({
     </div>
   );
 }
+
+/* ===================== Theme Slider ===================== */
 function ThemeSlider({ theme, setTheme }) {
   const isDark = theme === "dark";
 
@@ -803,8 +867,11 @@ function ThemeSlider({ theme, setTheme }) {
 
       {/* Thumb */}
       <div
-        className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200
-        ${isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"}`}
+        className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
+          isDark
+            ? "translate-x-full bg-neutral-900"
+            : "translate-x-0 bg-white border border-neutral-300"
+        }`}
         aria-hidden="true"
       />
 
@@ -818,8 +885,19 @@ function ThemeSlider({ theme, setTheme }) {
           onClick={setLight}
           className="flex items-center justify-center gap-1.5 px-3 h-full"
         >
-          <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
-          <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>
+          <Icon
+            name="sun"
+            className={`h-4 w-4 ${
+              isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"
+            }`}
+          />
+          <span
+            className={`text-xs ${
+              isDark
+                ? "opacity-50 text-neutral-700"
+                : "opacity-100 text-neutral-900 font-medium"
+            }`}
+          >
             Light
           </span>
         </button>
@@ -832,8 +910,17 @@ function ThemeSlider({ theme, setTheme }) {
           onClick={setDark}
           className="flex items-center justify-center gap-1.5 px-3 h-full"
         >
-          <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
-          <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>
+          <Icon
+            name="moon"
+            className={`h-4 w-4 ${
+              isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"
+            }`}
+          />
+          <span
+            className={`text-xs ${
+              isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"
+            }`}
+          >
             Dark
           </span>
         </button>
@@ -889,91 +976,46 @@ export default function App() {
       {showIntro && <IntroOverlay onClose={closeIntro} />}
 
       {/* NAVBAR */}
-      {/* NAVBAR */}
-<header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
-  <nav className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}>
-    {/* Brand */}
-    <div className="min-w-0">
-      <p
-        className={`font-semibold uppercase tracking-tight leading-none ${T.navTextStrong}
+      <header
+        className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}
+      >
+        <nav
+          className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}
+        >
+          {/* Brand */}
+          <div className="min-w-0">
+            <p
+              className={`font-semibold uppercase tracking-tight leading-none ${T.navTextStrong}
                     text-[clamp(20px,2.4vw,40px)] whitespace-nowrap`}
-      >
-        {NAV_BRAND}
-      </p>
-    </div>
+            >
+              {NAV_BRAND}
+            </p>
+          </div>
 
-    {/* Desktop nav */}
-    <ul className="hidden lg:flex items-center gap-1 text-sm">
-      {NAV_ITEMS.map(({ label, id, icon }) => (
-        <li key={id}>
-          <button
-            className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg ${T.navText} focus:outline-none`}
-            onClick={() => scrollTo(id)}
-          >
-            <span
-              className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
-            />
-            <span className="relative z-10 flex items-center gap-2">
-              <Icon name={icon} className="h-4 w-4" />
-              <span>{label}</span>
-            </span>
-          </button>
-        </li>
-      ))}
-    </ul>
-
-    {/* Right controls */}
-    <div className="flex items-center gap-2">
-      <ThemeSlider theme={theme} setTheme={setTheme} />
-      {/* Mobile menu toggle */}
-      <button
-        className={`lg:hidden rounded-lg px-3 py-2 text-sm border ${T.btnOutline}`}
-        onClick={() => setMenuOpen((v) => !v)}
-        aria-expanded={menuOpen}
-        aria-controls="mobile-menu"
-      >
-        Menu
-      </button>
-    </div>
-  </nav>
-
-  {/* Mobile sheet (placed OUTSIDE <nav> to avoid mismatched closing tags) */}
-  {menuOpen && (
-    <div
-      id="mobile-menu"
-      className={`lg:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}
-    >
-      <div className={`${CONTAINER} px-2 py-3`}>
-        <ul className="grid gap-1">
-          {NAV_ITEMS.map(({ label, id, icon }) => (
-            <li key={id}>
-              <button
-                className={`relative group w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg ${T.navTextStrong}`}
-                onClick={() => {
-                  scrollTo(id);
-                }}
-              >
-                <span
-                  className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
-                />
-                <span className="relative z-10 flex items-center gap-2">
-                  <Icon name={icon} className="h-4 w-4" />
-                  <span>{label}</span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )}
-</header>
-
+          {/* Desktop nav */}
+          <ul className="hidden lg:flex items-center gap-1 text-sm">
+            {NAV_ITEMS.map(({ label, id, icon }) => (
+              <li key={id}>
+                <button
+                  className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg ${T.navText} focus:outline-none`}
+                  onClick={() => scrollTo(id)}
+                >
+                  <span
+                    className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
+                  />
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Icon name={icon} className="h-4 w-4" />
+                    <span>{label}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
 
           {/* Right controls */}
-          <ThemeSlider theme={theme} setTheme={setTheme} />
-
-            {/* Mobile menu toggle (visible < lg) */}
+          <div className="flex items-center gap-2">
+            <ThemeSlider theme={theme} setTheme={setTheme} />
+            {/* Mobile menu toggle */}
             <button
               className={`lg:hidden rounded-lg px-3 py-2 text-sm border ${T.btnOutline}`}
               onClick={() => setMenuOpen((v) => !v)}
@@ -983,14 +1025,16 @@ export default function App() {
               Menu
             </button>
           </div>
+        </nav>
 
-          {/* Mobile sheet (spans all columns) */}
-          {menuOpen && (
-            <div
-              id="mobile-menu"
-              className={`lg:hidden col-span-3 mt-3 border-t ${T.navBorder} ${T.sectionAltBg} w-full`}
-            >
-              <ul className="px-2 py-3 grid gap-1">
+        {/* Mobile sheet (outside <nav> to keep tags balanced) */}
+        {menuOpen && (
+          <div
+            id="mobile-menu"
+            className={`lg:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}
+          >
+            <div className={`${CONTAINER} px-2 py-3`}>
+              <ul className="grid gap-1">
                 {NAV_ITEMS.map(({ label, id, icon }) => (
                   <li key={id}>
                     <button
@@ -1011,8 +1055,8 @@ export default function App() {
                 ))}
               </ul>
             </div>
-          )}
-        </nav>
+          </div>
+        )}
       </header>
 
       {/* HERO */}
@@ -1025,7 +1069,6 @@ export default function App() {
       <section id="services" className="hidden" />
       <section id="pricing" className="hidden" />
 
-      
       {/* INSTAGRAM */}
       <section id="instagram" className={`${CONTAINER} py-16`}>
         <h2
@@ -1059,7 +1102,7 @@ export default function App() {
           {[
             {
               q: "How do I receive photos?",
-              a: "Via a private, watermark-free online gallery with high-res downloads, Usually private Google Drive link",
+              a: "Via a private, watermark-free online gallery with high-res downloads (usually a private Google Drive link).",
             },
             {
               q: "How to book?",
@@ -1067,21 +1110,20 @@ export default function App() {
             },
             {
               q: "Do you travel for shoots?",
-              a: "Yes. Travel fee applies outside base city",
+              a: "Yes. Travel fee applies outside the base city.",
             },
             {
-             q: "Do you provide makeup/hair or a stylist?",
-             a: "I can recommend trusted HMUA/styling partners and coordinate as an add-on. Their fees are billed separately."
+              q: "Do you provide makeup/hair or a stylist?",
+              a: "I can recommend trusted HMUA/styling partners and coordinate as an add-on. Their fees are billed separately.",
             },
             {
               q: "Can we shoot in a studio?",
-              a: "Yes. Studio rentals are available and billed at the venue’s rates. I’ll shortlist suitable spaces based on your concept, if it is minimal setup like Headshots - i can setup anywhere basis your wish with my available setup"
-             },
-             {
-                q: "Can you print albums or framed photos?",
-                a: "Absolutely. I offer curated print and album options through professional labs. Sizes, papers and pricing are add-on."
-              },
-            
+              a: "Yes. Studio rentals are available and billed at the venue’s rates. I’ll shortlist spaces based on your concept; for minimal headshot setups, I can set up on location.",
+            },
+            {
+              q: "Can you print albums or framed photos?",
+              a: "Absolutely. I offer curated print and album options through professional labs. Sizes, papers and pricing are available on request.",
+            },
           ].map((item) => (
             <details
               key={item.q}
@@ -1096,7 +1138,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* CONTACT / ENQUIRY */}
+      {/* CONTACT / ENQUIRY (with About on the left) */}
       <BookingSection T={T} />
 
       {/* FOOTER */}
