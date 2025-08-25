@@ -268,9 +268,8 @@ function IntroOverlay({ onClose }) {
     >
       <div className="h-full flex items-center justify-center p-6">
         <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
-          {/* Left rail: small vertical text (desktop) */}
-          <div className="hidden md:flex items-center justify-start">
-            </div>
+          {/* Left rail (empty for now, could add vertical text later) */}
+          <div className="hidden md:flex items-center justify-start" />
 
           {/* Center: big image */}
           <div className="relative">
@@ -285,16 +284,16 @@ function IntroOverlay({ onClose }) {
           {/* Right rail: call to action */}
           <div className="flex flex-col items-end justify-between gap-6">
             <div className="text-right">
-              <div className="text-[12px] tracking-[0.25em] opacity-70">
+              <div className="text-[12px] tracking-[0.25em] text-white/80">
                 VISUAL AND HONEST STORIES
               </div>
-              <h1 className="mt-2 text-[clamp(28px,5vw,56px)] leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase">
+              <h1 className="mt-2 text-[clamp(28px,5vw,56px)] leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase text-white">
                 PRADHU PHOTOGRAPHY
               </h1>
             </div>
             <button
               onClick={onClose}
-              className="rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition"
+              className="rounded-full border border-white/40 px-5 py-2 text-sm text-white hover:bg-white/10 transition"
             >
               Enter ↵
             </button>
