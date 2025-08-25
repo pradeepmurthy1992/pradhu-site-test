@@ -745,7 +745,7 @@ function BookingSection({ T }) {
             <div className="mt-5 flex items-center gap-3">
               {/* Instagram */}
               <a
-                href={`https://www.instagram.com/${IG_USERNAME}/`}
+                href={`https://www.instagram.com/pradhu_photography/`}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
@@ -779,7 +779,7 @@ function BookingSection({ T }) {
 
               {/* Email */}
               <a
-                href={`mailto:${CONTACT_EMAIL}`}
+                href={`mailto:pradhuphotography03@gmail.com`}
                 aria-label="Email"
                 title="Email"
                 className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} transition hover:scale-[1.03] hover:shadow-sm`}
