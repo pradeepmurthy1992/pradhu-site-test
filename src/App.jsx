@@ -779,6 +779,68 @@ function Input({
     </div>
   );
 }
+function ThemeSlider({ theme, setTheme }) {
+  const isDark = theme === "dark";
+
+  const setLight = () => setTheme("light");
+  const setDark = () => setTheme("dark");
+
+  // Keyboard support (Left = Light, Right = Dark)
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowLeft") setLight();
+    if (e.key === "ArrowRight") setDark();
+  };
+
+  return (
+    <div
+      className="relative h-9 w-[150px] select-none"
+      role="tablist"
+      aria-label="Theme"
+      onKeyDown={onKeyDown}
+    >
+      {/* Track */}
+      <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
+
+      {/* Thumb */}
+      <div
+        className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200
+        ${isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"}`}
+        aria-hidden="true"
+      />
+
+      {/* Buttons (labels/icons sit above the thumb) */}
+      <div className="relative z-10 grid grid-cols-2 h-full">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!isDark}
+          aria-pressed={!isDark}
+          onClick={setLight}
+          className="flex items-center justify-center gap-1.5 px-3 h-full"
+        >
+          <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
+          <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>
+            Light
+          </span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isDark}
+          aria-pressed={isDark}
+          onClick={setDark}
+          className="flex items-center justify-center gap-1.5 px-3 h-full"
+        >
+          <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
+          <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>
+            Dark
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /* ===================== Main App ===================== */
 export default function App() {
@@ -862,16 +924,8 @@ export default function App() {
           </ul>
 
           {/* Right controls */}
-          <div className="flex items-center gap-2">
-            <button
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm border ${T.btnOutline}`}
-              onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-              aria-label="Toggle theme"
-              title="Toggle theme"
-            >
-              <Icon name={theme === "dark" ? "sun" : "moon"} className="h-4 w-4" />
-              <span>{theme === "dark" ? "Light" : "Dark"}</span>
-            </button>
+          <ThemeSlider theme={theme} setTheme={setTheme} />
+
             {/* Mobile menu toggle (visible < lg) */}
             <button
               className={`lg:hidden rounded-lg px-3 py-2 text-sm border ${T.btnOutline}`}
