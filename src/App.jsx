@@ -65,6 +65,13 @@ const SECTION_IDS = ["portfolio", "services", "pricing", "instagram", "faq"];
 // Wide container helper
 const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
 
+// In SectionTiles parent (where you set openId), add:
+const openPortfolioLanding = () => {
+  // Ensure portfolio landing, not a category page
+  window.location.hash = "#portfolio";
+  setOpenId("portfolio");
+};
+
 /* ===================== THEME TOKENS ===================== */
 function useThemeTokens(theme) {
   const light = {
