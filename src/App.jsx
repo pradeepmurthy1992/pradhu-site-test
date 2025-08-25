@@ -564,7 +564,7 @@ function BookingSection({ T }) {
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState("");
 
-  // ---- Preferred Date minimum: today + 2 days, block typing/paste ----
+  // ---- Preferred Date minimum: today + 2 days ----
   const minDateStr = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 2);
@@ -572,7 +572,6 @@ function BookingSection({ T }) {
     const local = new Date(d.getTime() - off * 60000);
     return local.toISOString().slice(0, 10);
   }, []);
-
   const fmtHuman = (yyyy_mm_dd) => {
     if (!yyyy_mm_dd) return "";
     const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
@@ -582,7 +581,6 @@ function BookingSection({ T }) {
       year: "numeric",
     });
   };
-  // --------------------------------------------------------------------
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -590,7 +588,7 @@ function BookingSection({ T }) {
     e.preventDefault();
     setNote("");
 
-    // Front-end mandatory check
+    // Required checks
     const missing = [];
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
@@ -607,12 +605,8 @@ function BookingSection({ T }) {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          source: "website",
-        }),
+        body: JSON.stringify({ ...form, source: "website" }),
       });
-
       setForm({
         name: "",
         email: "",
@@ -625,153 +619,33 @@ function BookingSection({ T }) {
       setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
       console.error(err);
-      setNote(
-        "Couldn’t submit right now. Please try again or WhatsApp/email me."
-      );
+      setNote("Couldn’t submit right now. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const onWhatsApp = () => {
-    if (!WHATSAPP_NUMBER || WHATSAPP_NUMBER.includes("X")) {
-      alert("Set WHATSAPP_NUMBER at the top.");
-      return;
-    }
-    const bits = [];
-    if (form.name) bits.push(`Name: ${form.name}`);
-    if (form.service) bits.push(`Service: ${form.service}`);
-    if (form.city) bits.push(`City: ${form.city}`);
-    if (form.date) bits.push(`Date: ${form.date}`);
-    if (form.message) bits.push(`Notes: ${form.message}`);
-    const text = bits.length
-      ? `Hi PRADHU, I'd like to book a shoot.\n\n${bits.join(" • ")}`
-      : "Hi PRADHU, I'd like to book a shoot.";
-    window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`,
-      "_blank"
-    );
-  };
-
   return (
     <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
       <div className={`${CONTAINER} py-16`}>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h2
-              className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
-            >
-              Enquire / Book
-            </h2>
-            <p className={`mt-2 ${T.muted}`}>
-              Share details and I’ll reply with availability and a quote.
-            </p>
-            <ul className={`mt-4 text-sm space-y-1 ${T.muted}`}>
-              <li>
-                ✆ WhatsApp:{" "}
-                {WHATSAPP_NUMBER.includes("X") ? (
-                  <span className="opacity-70">
-                    Set WHATSAPP_NUMBER above to enable
-                  </span>
-                ) : (
-                  <a
-                    className={T.link}
-                    href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    +{WHATSAPP_NUMBER}
-                  </a>
-                )}
-              </li>
-              <li>
-                ✉ Email:{" "}
-                <a className={T.link} href={`mailto:${CONTACT_EMAIL}`}>
-                  {CONTACT_EMAIL}
-                </a>
-              </li>
-              <li>
-                ⌁ Instagram:{" "}
-                <a
-                  className={T.link}
-                  href={`https://www.instagram.com/${IG_USERNAME}/`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  @{IG_USERNAME}
-                </a>
-              </li>
-            </ul>
-            <div
-              className={`mt-6 rounded-2xl border p-4 ${T.panelBg} ${T.panelBorder}`}
-            >
-              <p className={`text-sm ${T.muted}`}>
-                Commercial clients: ask for the{" "}
-                <strong className={T.navTextStrong}>Rate Card</strong> & usage
-                licensing options.
-              </p>
-            </div>
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  if (RAZORPAY_LINK)
-                    window.open(RAZORPAY_LINK, "_blank", "noopener,noreferrer");
-                  else {
-                    if (!UPI_ID || UPI_ID === "yourvpa@upi") {
-                      alert("Set UPI_ID or RAZORPAY_LINK at the top.");
-                      return;
-                    }
-                    const pn = encodeURIComponent("PRADHU Photography");
-                    const tn = encodeURIComponent("Booking Advance");
-                    const amount = Number(BOOKING_ADVANCE_INR || 0).toFixed(2);
-                    window.location.href = `upi://pay?pa=${encodeURIComponent(
-                      UPI_ID
-                    )}&pn=${pn}&am=${amount}&cu=INR&tn=${tn}`;
-                  }
-                }}
-                className={`rounded-xl px-4 py-2 ${T.btnOutline}`}
-              >
-                Pay Booking Advance
-              </button>
-            </div>
-          </div>
+        {/* Centered, single-column form with heading on top */}
+        <div className="max-w-2xl mx-auto">
+          <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}>
+            Enquire / Book
+          </h2>
+          <p className={`mt-2 ${T.muted}`}>
+            Share details and I’ll reply with availability and a quote.
+          </p>
 
           <form
             onSubmit={onSubmit}
-            className={`rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+            className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
           >
             <div className="grid grid-cols-1 gap-4">
-              <Input
-                T={T}
-                label="Name"
-                name="name"
-                value={form.name}
-                onChange={onChange}
-                required
-              />
-              <Input
-                T={T}
-                label="Email"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={onChange}
-                required
-              />
-              {/* Phone is mandatory */}
-              <Input
-                T={T}
-                label="Phone"
-                name="phone"
-                type="tel"
-                value={form.phone}
-                onChange={onChange}
-                required
-                placeholder="+91-XXXXXXXXXX"
-              />
+              <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
+              <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
+              <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
 
-              {/* Preferred Date: enforce today + 2 days, block typing/paste */}
               <div>
                 <label className={`text-sm ${T.muted}`}>Preferred Date</label>
                 <input
@@ -791,9 +665,7 @@ function BookingSection({ T }) {
                   }}
                   className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                 />
-                <p className="text-xs opacity-70 mt-1">
-                  Earliest selectable: {fmtHuman(minDateStr)}
-                </p>
+                <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
               </div>
 
               <div>
@@ -817,13 +689,9 @@ function BookingSection({ T }) {
                     value={form.service}
                     onChange={onChange}
                   >
-                    {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map(
-                      (s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      )
-                    )}
+                    {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -851,13 +719,6 @@ function BookingSection({ T }) {
                 >
                   {submitting ? "Submitting…" : "Send Enquiry"}
                 </button>
-                <button
-                  type="button"
-                  onClick={onWhatsApp}
-                  className={`rounded-xl px-4 py-2 ${T.btnOutline}`}
-                >
-                  WhatsApp
-                </button>
                 {note && <span className="text-sm opacity-80">{note}</span>}
               </div>
             </div>
@@ -867,6 +728,7 @@ function BookingSection({ T }) {
     </section>
   );
 }
+
 
 /* ===================== Small Input ===================== */
 function Input({
