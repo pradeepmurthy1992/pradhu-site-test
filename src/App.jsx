@@ -2,15 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
    PRADHU — Dual Theme (Light / Dark) + Intro Overlay + Wide Layout
-   - Navbar brand ALL CAPS with fluid size (fits one line)
-   - Portfolio images fetched from GitHub repo folders
-   - Enquiry form posts to your Google Sheet via Apps Script Web App
-   - Preferred Date: cannot be earlier than today + 2 days
-   - Force-refresh photo cache with ?refresh=1
+   - Tile bar (single line) for Portfolio / Services / Pricing / Instagram / FAQ
+   - Only selected section is shown below the tiles; other tiles dimmed
+   - About + Enquire/Book remains always visible
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
-// Intro overlay
 const INTRO_ENABLED = true;
 const INTRO_BRAND = "PRADEEP";
 const INTRO_NAME = "Pradhu Photography";
@@ -18,12 +15,10 @@ const INTRO_AUTO_DISMISS_MS = 0;
 const INTRO_LEFT_IMAGE_URL =
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop";
 
-// Force-open controls
 const INTRO_REMEMBER = true;
 const INTRO_FORCE_QUERY = "intro"; // use ?intro=1
 const INTRO_FORCE_HASH = "#intro";
 
-// Hero background (use a direct image URL)
 const HERO_BG_URL =
   "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2400&q=80";
 
@@ -43,13 +38,13 @@ const SERVICE_CITIES =
   "Pune · Mumbai · Chennai · Bengaluru · available pan-India";
 const IG_USERNAME = "pradhu_photography";
 
-// Enquiry/payments (kept for future; not exposed in UI)
-const WHATSAPP_NUMBER = "91XXXXXXXXXX"; // 9198xxxxxxx (no + / spaces)
+// Enquiry (kept for future; not exposed in UI)
+const WHATSAPP_NUMBER = "91XXXXXXXXXX";
 const UPI_ID = "yourvpa@upi";
 const RAZORPAY_LINK = "";
 const BOOKING_ADVANCE_INR = 2000;
 
-// Google Sheets Web App endpoint (Apps Script deployment URL)
+// Google Sheets Web App endpoint
 const SHEET_WEB_APP =
   "https://script.google.com/macros/s/AKfycbypBhkuSpztHIBlYU3nsJJBsJI1SULQRIpGynZvEY6sDb2hDnr1PXN4IZ8342sy5-Dj/exec";
 
@@ -60,15 +55,14 @@ const NAV_ITEMS = [
   { label: "Portfolio", id: "portfolio", icon: "grid" },
   { label: "Services", id: "services", icon: "briefcase" },
   { label: "Pricing", id: "pricing", icon: "tag" },
-  { label: "About", id: "about", icon: "user" }, // scrolls to the left pane in Enquire/Book
+  { label: "About", id: "about", icon: "user" },
   { label: "Instagram", id: "instagram", icon: "camera" },
   { label: "FAQ", id: "faq", icon: "help" },
   { label: "Contact", id: "booking", icon: "mail" },
 ];
+const SECTION_IDS = ["portfolio", "services", "pricing", "instagram", "faq"];
 
-const ACCORDION_IDS = ["portfolio", "services", "pricing", "instagram", "faq"];
-
-// Wide container helper for big screens
+// Wide container helper
 const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
 
 /* ===================== THEME TOKENS ===================== */
@@ -350,10 +344,8 @@ async function ghListFolder(owner, repo, path, ref) {
   const tkey = key + ":ts";
   const now = Date.now();
 
-  // ---- Quick patch: force-refresh switch (?refresh=1) ----
   const nocache =
     new URLSearchParams(window.location.search).get("refresh") === "1";
-  // --------------------------------------------------------
 
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
@@ -388,7 +380,7 @@ async function ghListFolder(owner, repo, path, ref) {
   return imgs;
 }
 
-/* ===================== Hero (image with bottom-aligned text) ===================== */
+/* ===================== Hero ===================== */
 function Hero() {
   return (
     <section id="home" className="relative min-h-[68vh] md:min-h-[78vh]">
@@ -417,7 +409,7 @@ function Hero() {
   );
 }
 
-/* ===================== Portfolio (cards + chips) ===================== */
+/* ===================== Portfolio ===================== */
 function CategoryGrid({ T, label, images, loading, error }) {
   return (
     <div
@@ -585,7 +577,6 @@ function ServicesSection({ T, showTitle = true }) {
       </p>
 
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Portraits & Headshots */}
         <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
           <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Portraits & Headshots</h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
@@ -596,7 +587,6 @@ function ServicesSection({ T, showTitle = true }) {
           </ul>
         </article>
 
-        {/* Fashion / Editorial */}
         <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
           <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Fashion / Editorial</h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
@@ -607,7 +597,6 @@ function ServicesSection({ T, showTitle = true }) {
           </ul>
         </article>
 
-        {/* Events & Candids */}
         <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
           <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Events & Candids</h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
@@ -619,7 +608,6 @@ function ServicesSection({ T, showTitle = true }) {
         </article>
       </div>
 
-      {/* Add-ons */}
       <div className={`mt-6 rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
         <h3 className={`font-medium ${T.navTextStrong}`}>Add-ons</h3>
         <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
@@ -638,7 +626,6 @@ function ServicesSection({ T, showTitle = true }) {
 
 /* ===================== Pricing (Indicative) ===================== */
 function PricingSection({ T, showTitle = true }) {
-  // NOTE: numbers are placeholders — edit to your real rates.
   const tiers = [
     {
       name: "Portrait Session",
@@ -805,61 +792,46 @@ function FaqSection({ T, showTitle = true }) {
   );
 }
 
-/* ===================== Accordion Section (single-open) ===================== */
-function AccordionSection({ id, title, icon, openId, setOpenId, T, children, subtitle = "" }) {
-  const open = openId === id;
+/* ===================== Tiles (one line) ===================== */
+function SectionTiles({ openId, setOpenId, T }) {
+  const tiles = [
+    { id: "portfolio", label: "Portfolio", icon: "grid" },
+    { id: "services", label: "Services", icon: "briefcase" },
+    { id: "pricing", label: "Pricing", icon: "tag" },
+    { id: "instagram", label: "Instagram", icon: "camera" },
+    { id: "faq", label: "FAQ", icon: "help" },
+  ];
 
   return (
-    <section id={id} className={`${CONTAINER} py-3`}>
-      <button
-        type="button"
-        onClick={() => setOpenId(open ? null : id)}
-        aria-controls={`${id}-content`}
-        aria-expanded={open}
-        className={`w-full group relative flex items-center justify-between rounded-2xl border px-4 py-3 text-left shadow-sm transition ${T.panelBg} ${T.panelBorder}`}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-xl border transition ${open ? "opacity-100" : "opacity-70"} ${T.panelBorder}`}
-            aria-hidden="true"
-          >
-            <Icon name={icon} className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <div className={`font-medium tracking-tight ${T.navTextStrong}`}>
-              {title}
-            </div>
-            {subtitle ? (
-              <div className={`text-xs ${T.muted2} truncate`}>{subtitle}</div>
-            ) : null}
-          </div>
-        </div>
-
-        <div
-          className={`ml-4 rounded-full px-3 py-1 text-xs transition ${open ? "opacity-100" : "opacity-60"} ${open ? "bg-black/10" : "bg-transparent"}`}
-        >
-          {open ? "Open" : "Tap to open"}
-        </div>
-
-        <span
-          className={`absolute right-3 top-1/2 -translate-y-1/2 transition-transform ${open ? "rotate-180" : "rotate-0"}`}
-          aria-hidden="true"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </span>
-      </button>
-
+    <div id="tiles" className={`${CONTAINER} pt-10`}>
       <div
-        id={`${id}-content`}
-        className={`grid transition-all duration-300 ease-out ${open ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-80 mt-1"}`}
+        className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2"
+        style={{ scrollbarWidth: "none" }}
       >
-        <div className="overflow-hidden">
-          {children}
-        </div>
+        {tiles.map((t) => {
+          const active = openId === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setOpenId(t.id)}
+              className={`flex items-center gap-2 rounded-2xl border px-4 py-2 transition shadow-sm ${
+                active ? T.chipActive : T.chipInactive
+              }`}
+              aria-pressed={active}
+              aria-controls={`section-${t.id}`}
+              aria-expanded={active}
+            >
+              <Icon
+                name={t.icon}
+                className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`}
+              />
+              <span className="text-sm">{t.label}</span>
+            </button>
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -877,13 +849,12 @@ function BookingSection({ T }) {
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState("");
 
-  // ---- Preferred Date minimum: today + 2 days ----
   const minDateStr = useMemo(() => {
-       const d = new Date();
-       d.setDate(d.getDate() + 2);
-       const off = d.getTimezoneOffset();
-       const local = new Date(d.getTime() - off * 60000);
-       return local.toISOString().slice(0, 10);
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off * 60000);
+    return local.toISOString().slice(0, 10);
   }, []);
   const fmtHuman = (yyyy_mm_dd) => {
     if (!yyyy_mm_dd) return "";
@@ -971,7 +942,6 @@ function BookingSection({ T }) {
               <li>{SERVICE_CITIES}</li>
             </ul>
 
-            {/* Image: fit without cropping */}
             <div
               className={`mt-6 rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}
             >
@@ -985,7 +955,7 @@ function BookingSection({ T }) {
             </div>
           </div>
 
-          {/* RIGHT: Enquire / Book — heading above the form */}
+          {/* RIGHT: Enquire / Book */}
           <div>
             <h2
               className={`text-3xl md:text-4xl font-semibold tracking-tight ${T.navTextStrong}`}
@@ -1159,7 +1129,6 @@ function Input({
 /* ===================== Theme Slider ===================== */
 function ThemeSlider({ theme, setTheme }) {
   const isDark = theme === "dark";
-
   const setLight = () => setTheme("light");
   const setDark = () => setTheme("dark");
 
@@ -1175,10 +1144,7 @@ function ThemeSlider({ theme, setTheme }) {
       aria-label="Theme"
       onKeyDown={onKeyDown}
     >
-      {/* Track */}
       <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
-
-      {/* Thumb */}
       <div
         className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
           isDark
@@ -1187,8 +1153,6 @@ function ThemeSlider({ theme, setTheme }) {
         }`}
         aria-hidden="true"
       />
-
-      {/* Buttons */}
       <div className="relative z-10 grid grid-cols-2 h-full">
         <button
           type="button"
@@ -1265,14 +1229,19 @@ export default function App() {
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
   });
 
-  // Which accordion section is open (null = all collapsed)
+  // Selected tile / section
   const [openId, setOpenId] = useState("portfolio");
 
-  const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    // If a nav item targets an accordion section, open it before scrolling
-    if (ACCORDION_IDS.includes(id)) setOpenId(id);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+  const scrollToSectionFromNav = (id) => {
+    // If nav targets a tile section, select it and scroll to tile bar
+    if (SECTION_IDS.includes(id)) {
+      setOpenId(id);
+      const el = document.getElementById("tiles");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
     setMenuOpen(false);
   };
 
@@ -1316,7 +1285,7 @@ export default function App() {
               <li key={id}>
                 <button
                   className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg ${T.navText} focus:outline-none`}
-                  onClick={() => scrollTo(id)}
+                  onClick={() => scrollToSectionFromNav(id)}
                 >
                   <span
                     className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
@@ -1333,7 +1302,6 @@ export default function App() {
           {/* Right controls */}
           <div className="flex items-center gap-2">
             <ThemeSlider theme={theme} setTheme={setTheme} />
-            {/* Mobile menu toggle */}
             <button
               className={`lg:hidden rounded-lg px-3 py-2 text-sm border ${T.btnOutline}`}
               onClick={() => setMenuOpen((v) => !v)}
@@ -1345,7 +1313,7 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Mobile sheet (outside <nav> to keep tags balanced) */}
+        {/* Mobile sheet */}
         {menuOpen && (
           <div
             id="mobile-menu"
@@ -1357,9 +1325,7 @@ export default function App() {
                   <li key={id}>
                     <button
                       className={`relative group w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg ${T.navTextStrong}`}
-                      onClick={() => {
-                        scrollTo(id);
-                      }}
+                      onClick={() => scrollToSectionFromNav(id)}
                     >
                       <span
                         className={`pointer-events-none absolute inset-0 rounded-lg ${T.hoverOverlay} opacity-0 group-hover:opacity-100 transition`}
@@ -1380,66 +1346,31 @@ export default function App() {
       {/* HERO */}
       <Hero />
 
-      {/* ACCORDION SECTIONS */}
-      <AccordionSection
-        id="portfolio"
-        title="Portfolio"
-        icon="grid"
-        openId={openId}
-        setOpenId={setOpenId}
-        T={T}
-        subtitle="Browse categories and recent work"
-      >
-        <Portfolio T={T} showTitle={false} />
-      </AccordionSection>
+      {/* TILES (one line) */}
+      <SectionTiles openId={openId} setOpenId={setOpenId} T={T} />
 
-      <AccordionSection
-        id="services"
-        title="Services"
-        icon="briefcase"
-        openId={openId}
-        setOpenId={setOpenId}
-        T={T}
-        subtitle="Portraits, fashion/editorial, events and more"
-      >
-        <ServicesSection T={T} showTitle={false} />
-      </AccordionSection>
+      {/* SECTION CONTENT (only selected visible) */}
+      <div id="sections-content" className={`${CONTAINER} py-12`}>
+        <div id="portfolio" className={openId === "portfolio" ? "block" : "hidden"}>
+          <Portfolio T={T} showTitle={false} />
+        </div>
 
-      <AccordionSection
-        id="pricing"
-        title="Pricing"
-        icon="tag"
-        openId={openId}
-        setOpenId={setOpenId}
-        T={T}
-        subtitle="Indicative rates — tailored per brief"
-      >
-        <PricingSection T={T} showTitle={false} />
-      </AccordionSection>
+        <div id="services" className={openId === "services" ? "block" : "hidden"}>
+          <ServicesSection T={T} showTitle={false} />
+        </div>
 
-      <AccordionSection
-        id="instagram"
-        title="Instagram"
-        icon="camera"
-        openId={openId}
-        setOpenId={setOpenId}
-        T={T}
-        subtitle={`@${IG_USERNAME}`}
-      >
-        <InstagramSection T={T} showTitle={false} />
-      </AccordionSection>
+        <div id="pricing" className={openId === "pricing" ? "block" : "hidden"}>
+          <PricingSection T={T} showTitle={false} />
+        </div>
 
-      <AccordionSection
-        id="faq"
-        title="FAQ"
-        icon="help"
-        openId={openId}
-        setOpenId={setOpenId}
-        T={T}
-        subtitle="Common questions and policies"
-      >
-        <FaqSection T={T} showTitle={false} />
-      </AccordionSection>
+        <div id="instagram" className={openId === "instagram" ? "block" : "hidden"}>
+          <InstagramSection T={T} showTitle={false} />
+        </div>
+
+        <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
+          <FaqSection T={T} showTitle={false} />
+        </div>
+      </div>
 
       {/* CONTACT / ENQUIRY (with About on the left) */}
       <BookingSection T={T} />
