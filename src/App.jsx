@@ -958,20 +958,29 @@ export default function App() {
           {[
             {
               q: "How do I receive photos?",
-              a: "Via a private, watermark-free online gallery with high-res downloads.",
-            },
-            {
-              q: "Do you travel for shoots?",
-              a: "Yes. Travel fee applies outside base city; details in your quote.",
-            },
-            {
-              q: "What’s the turnaround?",
-              a: "Portraits: 5–7 days. Weddings: teaser in 48h, full gallery in 3–4 weeks.",
+              a: "Via a private, watermark-free online gallery with high-res downloads, Usually private Google Drive link",
             },
             {
               q: "How to book?",
-              a: "Send an enquiry below with your date, service, and location — or use WhatsApp.",
+              a: "Send an enquiry below with your date, service, and location.",
             },
+            {
+              q: "Do you travel for shoots?",
+              a: "Yes. Travel fee applies outside base city",
+            },
+            {
+             q: "Do you provide makeup/hair or a stylist?",
+             a: "I can recommend trusted HMUA/styling partners and coordinate as an add-on. Their fees are billed separately."
+            },
+            {
+              q: "Can we shoot in a studio?",
+              a: "Yes. Studio rentals are available and billed at the venue’s rates. I’ll shortlist suitable spaces based on your concept, if it is minimal setup like Headshots - i can setup anywhere basis your wish with my available setup"
+             },
+             {
+                q: "Can you print albums or framed photos?",
+                a: "Absolutely. I offer curated print and album options through professional labs. Sizes, papers and pricing are add-on."
+              },
+            
           ].map((item) => (
             <details
               key={item.q}
