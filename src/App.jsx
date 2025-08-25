@@ -896,8 +896,9 @@ function BookingSection({ T }) {
                       {[
                         "Portraits",
                         "Fashion",
+                        "Portfolio",
                         "Candids",
-                        "Street",
+                        "Headshot",
                         "Events",
                         "Other",
                       ].map((s) => (
