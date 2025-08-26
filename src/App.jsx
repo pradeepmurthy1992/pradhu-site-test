@@ -1390,7 +1390,12 @@ export default function App() {
   }, [theme]);
 
   return (
-    <main className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter']`}>
+    <main
+  className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${
+    theme === "light" ? "bg-dots-light" : "bg-dots-dark"
+  }`}
+>
+
       <HeadFonts />
       {showIntro && <IntroOverlay onClose={closeIntro} />}
 
