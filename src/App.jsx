@@ -282,21 +282,23 @@ function IntroOverlay({ onClose }) {
           </div>
 
           {/* Right rail: call to action */}
-          <div className="flex flex-col items-end justify-between gap-6">
-            <div className="text-right">
-              {/* Big name */}
-              <h1 className="text-[clamp(36px,6vw,72px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white">
-                PRADEEP MOORTHY
-              </h1>
-              {/* Sub-brand */}
-              <h2 className="mt-2 text-[clamp(24px,4vw,50px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white/90">
-                PRADHU PHOTOGRAPHY
-              </h2>
-              {/* Tagline */}
-              <div className="mt-3 text-sm md:text-base tracking-[0.2em] text-white/70">
-                Visual & Honest Stories
-              </div>
-            </div>
+          <div className="text-right">
+  {/* Big name */}
+  <h1 className="whitespace-nowrap text-[clamp(32px,6vw,72px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white">
+    PRADEEP MOORTHY
+  </h1>
+
+  {/* Sub-brand (70% of above) */}
+  <h2 className="mt-2 whitespace-nowrap text-[clamp(22px,4.2vw,50px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white/90">
+    PRADHU PHOTOGRAPHY
+  </h2>
+
+  {/* Tagline */}
+  <div className="mt-3 text-sm md:text-base tracking-[0.2em] text-white/70 whitespace-nowrap">
+    Visual & Honest Stories
+  </div>
+</div>
+
 
             <button
               onClick={onClose}
