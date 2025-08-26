@@ -15,7 +15,7 @@ const INTRO_AUTO_DISMISS_MS = 0;
 const INTRO_LEFT_IMAGE_URL =
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop";
 
-const INTRO_REMEMBER = false;
+const INTRO_REMEMBER = true;
 const INTRO_FORCE_QUERY = "intro"; // use ?intro=1
 const INTRO_FORCE_HASH = "#intro";
 
