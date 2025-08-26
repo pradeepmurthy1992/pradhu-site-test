@@ -245,49 +245,128 @@ function Icon({ name, className = "h-4 w-4" }) {
 /* ===================== Intro Overlay (Cinematic) ===================== */
 /* ===================== Intro Overlay (Cinematic) ===================== */
 function IntroOverlay({ onClose }) {
-  // sequence: image → brand → name → final (keeps same layout/interaction as now)
-  const PHASES = ["img", "brand", "name", "final"];
-  const [phase, setPhase] = useState("img");
+  // PHASES:
+  // 0: type name -> vanish
+  // 1: brand pulses + glitch -> vanish
+  // 2: image radial reveal + move in
+  // 3: staged titles + ripple hits + show Enter
+  const [phase, setPhase] = useState(0);
 
+  // typing state for PRADEEP MOORTHY
+  const NAME = "PRADEEP MOORTHY";
+  const BRAND = "PRADHU PHOTOGRAPHY";
+  const [typed, setTyped] = useState("");
+  const [glitchText, setGlitchText] = useState(BRAND);
+  const imgWrapRef = useRef(null);
+
+  // skip behavior
   useEffect(() => {
-    // skip on Enter / Wheel like before
-    const onKey = (e) => {
-      if (e.key === "Enter") onClose();
-    };
-    const onWheel = () => setPhase("final");
+    const onKey = (e) => e.key === "Enter" && setPhase(3);
+    const onWheel = () => setPhase(3);
     window.addEventListener("keydown", onKey);
     window.addEventListener("wheel", onWheel, { once: true });
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("wheel", onWheel);
     };
-  }, [onClose]);
+  }, []);
 
+  // PHASE 0 — typing NAME, then vanish
   useEffect(() => {
-    if (!INTRO_AUTO_DISMISS_MS) return; // keep existing behavior if you ever set it
-    const t = setTimeout(onClose, INTRO_AUTO_DISMISS_MS);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  // drive the cinematic phases
-  useEffect(() => {
-    if (phase === "final") return;
-    const nextIx = PHASES.indexOf(phase) + 1;
-    const next = PHASES[nextIx];
-    // timings: tune as you like (ms)
-    const DUR = {
-      img: 900,
-      brand: 900,
-      name: 900,
+    if (phase !== 0) return;
+    setTyped("");
+    let i = 0;
+    const step = () => {
+      setTyped(NAME.slice(0, i + 1));
+      i++;
+      if (i < NAME.length) {
+        setTimeout(step, 70); // typing speed
+      } else {
+        // hold then vanish
+        setTimeout(() => {
+          const box = document.getElementById("cin-name-box");
+          if (box) {
+            box.classList.add("cin-fade-out-scale");
+          }
+          setTimeout(() => setPhase(1), 450);
+        }, 400);
+      }
     };
-    const timer = setTimeout(() => setPhase(next || "final"), DUR[phase] || 0);
-    return () => clearTimeout(timer);
+    const t = setTimeout(step, 200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // helpers for visibility
-  const showImg = phase === "img" || phase === "brand" || phase === "name" || phase === "final";
-  const showBrand = phase === "brand" || phase === "name" || phase === "final";
-  const showName = phase === "name" || phase === "final";
+  // PHASE 1 — brand pulses + glitch, then vanish
+  useEffect(() => {
+    if (phase !== 1) return;
+    // quick zoom pulses happen via CSS class on the element
+    // create a short “glitch” cycle that swaps random letters
+    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let ticks = 0;
+    const base = BRAND;
+    const glitch = () => {
+      ticks++;
+      // small chance to randomize a few characters
+      const out = base
+        .split("")
+        .map((c) => {
+          if (c === " ") return " ";
+          return Math.random() < 0.15 ? CHARS[Math.floor(Math.random() * CHARS.length)] : c;
+        })
+        .join("");
+      setGlitchText(out);
+      if (ticks < 22) {
+        setTimeout(glitch, 45);
+      } else {
+        setGlitchText(BRAND);
+        // vanish
+        const box = document.getElementById("cin-brand-box");
+        if (box) box.classList.add("cin-fade-out-scale");
+        setTimeout(() => setPhase(2), 380);
+      }
+    };
+    // start a beat after mount so the pulse anim is visible
+    const t = setTimeout(glitch, 120);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // Helper to fire a ripple on the image wrapper
+  const fireRipple = () => {
+    const el = imgWrapRef.current;
+    if (!el) return;
+    el.classList.remove("cin-ripple");
+    // reflow to restart animation
+    void el.offsetWidth;
+    el.classList.add("cin-ripple");
+  };
+
+  // PHASE 2 — image radial reveal + move in, then phase 3
+  useEffect(() => {
+    if (phase !== 2) return;
+    const t = setTimeout(() => setPhase(3), 1200);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // In phase 3 we will bring in lines sequentially and trigger ripple per line
+  // We just use CSS classes + staggered timeouts for the three lines & button
+  useEffect(() => {
+    if (phase !== 3) return;
+    const l1 = setTimeout(() => fireRipple(), 350);  // on Name
+    const l2 = setTimeout(() => fireRipple(), 900);  // on Brand
+    const l3 = setTimeout(() => fireRipple(), 1400); // on tagline
+    return () => {
+      clearTimeout(l1);
+      clearTimeout(l2);
+      clearTimeout(l3);
+    };
+  }, [phase]);
+
+  // allow click to fast-forward or exit
+  const handleClick = () => {
+    if (phase < 3) setPhase(3);
+    else onClose();
+  };
 
   return (
     <div
@@ -295,79 +374,111 @@ function IntroOverlay({ onClose }) {
       style={{ zIndex: 9999 }}
       role="dialog"
       aria-label="Intro overlay"
-      onClick={(e) => {
-        // only close when clicking the Enter button or outside right column? keep click-to-advance to final
-        if (phase !== "final") setPhase("final");
-        else onClose();
-      }}
+      onClick={handleClick}
     >
-      <div className="h-full flex items-center justify-center p-6">
-        <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
-          {/* Left spacer (kept minimal like before) */}
-          <div className="hidden md:flex items-center justify-start" />
+      {/* CENTER STAGE FOR PHASE 0 & 1 */}
+      {(phase === 0 || phase === 1) && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          {phase === 0 ? (
+            <div
+              id="cin-name-box"
+              className="text-center"
+              style={{ willChange: "opacity, transform" }}
+            >
+              <div className="text-[clamp(26px,6vw,64px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
+                {typed}
+                <span className="inline-block w-[0.5ch] ml-[1px] align-baseline cin-caret" />
+              </div>
+            </div>
+          ) : (
+            <div
+              id="cin-brand-box"
+              className="text-center cin-pulse-zoom-twice"
+              style={{ willChange: "opacity, transform" }}
+            >
+              <div className="text-[clamp(22px,5vw,50px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
+                {glitchText}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-          {/* Center: big image (cinematic fade/scale) */}
-          <div className="relative">
+      {/* IMAGE + FINAL RIGHT RAIL (PHASE >= 2) */}
+      <div className="h-full flex items-center justify-center p-6 pointer-events-none">
+        <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
+          {/* Left spacer */}
+          <div className="hidden md:block" />
+
+          {/* Center image wrapper */}
+          <div
+            ref={imgWrapRef}
+            className={`relative rounded-sm overflow-hidden ${phase >= 2 ? "cin-image-holder" : ""} ${
+              phase === 2 ? "cin-radial-reveal cin-image-move-in" : ""
+            }`}
+            style={{ maxHeight: "78vh" }}
+          >
             <img
               src={INTRO_LEFT_IMAGE_URL}
-              alt="Intro"
-              className={`w-full h-auto object-contain shadow-sm max-h-[78vh] 
-                ${showImg ? "cin-fade-in cin-zoom-in" : "opacity-0"}`}
+              alt=""
+              className="w-full h-auto object-contain"
+              style={{ maxHeight: "78vh" }}
             />
-            {/* a soft vignette for cinematic feel */}
-            <div className="pointer-events-none absolute inset-0 cin-vignette" />
+            {/* ripple layer (animated by adding .cin-ripple to wrapper) */}
+            <div className="pointer-events-none absolute inset-0 cin-ripple-layer" />
           </div>
 
-          {/* Right rail: staged titles → final layout */}
+          {/* Right titles + CTA (only phase 3 visible) */}
           <div className="flex flex-col items-end justify-between gap-6">
             <div className="text-right select-none">
-              {/* Small kicker shows at brand stage onward */}
               <div
-                className={`text-[12px] tracking-[0.25em] ${
-                  showBrand ? "cin-fade-in-delayed opacity-80" : "opacity-0"
+                className={`text-[clamp(28px,5vw,56px)] uppercase tracking-[0.08em] font-['Playfair_Display'] whitespace-nowrap ${
+                  phase === 3 ? "cin-overshoot-in delay-[220ms]" : "opacity-0 translate-x-6"
                 }`}
-              >
-                VISUAL & HONEST STORIES
-              </div>
-
-              {/* Brand line 1: PRADEEP MOORTHY (fits single line) */}
-              <h1
-                className={`mt-2 leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase whitespace-nowrap
-                  text-[clamp(28px,5vw,56px)]
-                  ${showBrand ? "cin-slide-up" : "opacity-0 translate-y-2"}`}
-                style={{ letterSpacing: "0.08em" }}
+                style={{ willChange: "transform, opacity" }}
               >
                 PRADEEP MOORTHY
-              </h1>
+              </div>
 
-              {/* Brand line 2: scaled to ~70% of above — keep on one line */}
               <div
-                className={`mt-1 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em]
-                  text-[clamp(20px,3.5vw,39px)]
-                  ${showName ? "cin-slide-up-delay" : "opacity-0 translate-y-2"}`}
-                style={{ letterSpacing: "0.08em", opacity: 0.95 }}
+                className={`mt-1 text-[clamp(20px,3.5vw,39px)] uppercase tracking-[0.08em] font-['Playfair_Display'] whitespace-nowrap ${
+                  phase === 3 ? "cin-overshoot-in delay-[750ms]" : "opacity-0 translate-x-6"
+                }`}
+                style={{ willChange: "transform, opacity" }}
               >
                 PRADHU PHOTOGRAPHY
               </div>
+
+              <div
+                className={`mt-2 text-[12px] tracking-[0.25em] opacity-80 ${
+                  phase === 3 ? "cin-overshoot-in delay-[1150ms]" : "opacity-0 translate-x-6"
+                }`}
+                style={{ willChange: "transform, opacity" }}
+              >
+                VISUAL & HONEST STORIES
+              </div>
             </div>
 
-            {/* Final CTA appears only in final phase */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              className={`rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition
-                ${phase === "final" ? "cin-fade-in-delayed" : "opacity-0"}`}
-            >
-              Enter ↵
-            </button>
+            <div className="pointer-events-auto">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className={`rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition ${
+                  phase === 3 ? "cin-fade-in-delayed" : "opacity-0"
+                }`}
+              >
+                Enter ↵
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 
 
 
