@@ -1118,13 +1118,14 @@ function PortfolioPage({ T, cat, state, onBack }) {
         <div ref={containerRef} className="mx-auto max-w-[980px]">
           {items.map((it, i) => (
             <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
-              <img
-                src={it.url}
-                alt={`${cat.label}`}
-                className="w-full h-auto object-contain"
-                loading="lazy"
-              />
-            </figure>
+  <img
+    src={it.url}
+    alt={`${cat.label} — ${it.name}`}
+    className="max-h-[85vh] w-auto mx-auto object-contain"
+    loading="lazy"
+  />
+</figure>
+
           ))}
         </div>
       ) : (
