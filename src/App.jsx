@@ -705,7 +705,9 @@ function PricingSection({ T, showTitle = true }) {
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
           <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
           <p className={`mt-2 text-sm ${T.muted}`}>
-            Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks. 
+            <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks. </li>
+            <li>Entire shoot pics will be shared in 3 - 5 days </li>
+             <li>Editing timeline starts post the shortlisting of images</li>
           </p>
         </div>
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
@@ -714,8 +716,7 @@ function PricingSection({ T, showTitle = true }) {
             <li>Advance to reserve the date (adjustable in final invoice).</li>
             <li>One complimentary reschedule with 72h notice (subject to availability).</li>
             <li>Outstation travel/stay billed at actuals.</li>
-            <li>Entire shoot pics will be shared in a couple of days</li>
-             <li>Editing requests upto two revisions are accepted</li>
+            <li>Editing requests upto two revisions are accepted</li>
           </ul>
         </div>
       </div>
