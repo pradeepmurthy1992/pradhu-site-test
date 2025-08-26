@@ -771,64 +771,7 @@ function PricingSection({ T, showTitle = true }) {
   );
 }
 
-// ---- Micro parallax hook (for vertical scroll) ----
-function useMicroParallax(containerRef, opts = {}) {
-  const {
-    selector = "figure[data-idx] img",
-    strength = 14, // max px shift up/down (tweak 10–18)
-    thresholdPx = 1, // skip work offscreen
-  } = opts;
 
-  useEffect(() => {
-    const root = containerRef?.current;
-    if (!root) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const imgs = Array.from(root.querySelectorAll(selector));
-    if (!imgs.length) return;
-
-    let raf = 0;
-    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-
-    const update = () => {
-      raf = 0;
-      const vh = window.innerHeight || 1;
-      const mid = vh / 2;
-      for (const img of imgs) {
-        const r = img.getBoundingClientRect();
-        // quick reject when far offscreen
-        if (r.bottom < -thresholdPx || r.top > vh + thresholdPx) continue;
-
-        // distance of image center from viewport center (normalized)
-        const cy = r.top + r.height / 2;
-        const norm = (cy - mid) / vh; // ~ -0.5..0.5 usually
-        const shift = clamp(norm * strength * 2, -strength, strength);
-
-        img.style.transform = `translateY(${shift.toFixed(2)}px)`;
-      }
-    };
-
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
-    const onResize = onScroll;
-
-    // initial styles/classes
-    imgs.forEach((img) => img.classList.add("parallax-img"));
-
-    // kick and listen
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      if (raf) cancelAnimationFrame(raf);
-      imgs.forEach((img) => (img.style.transform = ""));
-    };
-  }, [containerRef, selector, strength, thresholdPx]);
-}
 
 
 /* ===================== Tiles (one line) ===================== */
