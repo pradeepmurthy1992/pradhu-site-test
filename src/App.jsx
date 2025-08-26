@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
-   PRADHU — Dual Theme (Light / Dark) + Editorial Intro + Portfolio Landing & Pages
-   - Portfolio landing: magazine-style tiles (cover image + big uppercase serif)
-   - Portfolio page: single centered tall images + right progress rail
-   - About + Enquire/Book remains always visible
+   PRADHU — Dual Theme (Light/Dark) + Cinematic Intro + Portfolio
+   - Portfolio landing: magazine-style tiles (cover image + serif)
+   - Portfolio page: centered tall images + right progress rail
+   - Services, Pricing, FAQ, Booking (About + Enquiry)
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -30,6 +30,16 @@ const GH_CATEGORIES = [
   { label: "Events", path: "Events" },
   { label: "Fashion", path: "Fashion" },
 ];
+const GH_CATEGORIES_EXT = {
+  Events: {
+    blurb:
+      "Candid coverage of people and moments—clean color, honest expressions, and storytelling frames.",
+  },
+  Fashion: {
+    blurb:
+      "Editorial-leaning looks with modern skin tones and simple, confident direction.",
+  },
+};
 const GH_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // Brand / contact
@@ -52,10 +62,6 @@ const SHEET_WEB_APP =
 const NAV_BRAND = "PRADHU PHOTOGRAPHY";
 const NAV_ITEMS = [
   { label: "Home", id: "home", icon: "home" },
-  // { label: "Portfolio", id: "portfolio", icon: "grid" },
-  //{ label: "Services", id: "services", icon: "briefcase" },
-  //{ label: "Pricing", id: "pricing", icon: "tag" },
-  //{ label: "About", id: "about", icon: "user" },
   { label: "Contact Me", id: "booking", icon: "mail" },
 ];
 const SECTION_IDS = ["portfolio", "services", "pricing", "faq"]; // tiles
@@ -79,7 +85,7 @@ function HeadFonts() {
 /* ===================== THEME TOKENS ===================== */
 function useThemeTokens(theme) {
   const light = {
-    pageBg: "bg-[#faf7f2]", // pastel beige background
+    pageBg: "bg-[#faf7f2]",
     pageText: "text-neutral-900",
     navBg: "bg-white/85",
     navBorder: "border-rose-200",
@@ -94,8 +100,7 @@ function useThemeTokens(theme) {
     muted: "text-neutral-600",
     muted2: "text-neutral-500",
     chipActive: "bg-rose-200 text-rose-900 border-rose-300",
-    chipInactive:
-      "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
+    chipInactive: "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
     btnOutline: "border-neutral-300 text-neutral-900 hover:bg-rose-50",
     inputBg: "bg-white",
     inputBorder: "border-neutral-300",
@@ -108,7 +113,7 @@ function useThemeTokens(theme) {
   };
 
   const dark = {
-    pageBg: "bg-[#1c1e26]", // deep muted navy
+    pageBg: "bg-[#1c1e26]",
     pageText: "text-neutral-100",
     navBg: "bg-[#1c1e26]/90",
     navBorder: "border-teal-700",
@@ -123,10 +128,8 @@ function useThemeTokens(theme) {
     muted: "text-neutral-300",
     muted2: "text-neutral-400",
     chipActive: "bg-teal-300 text-[#1c1e26] border-teal-400",
-    chipInactive:
-      "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
-    btnOutline:
-      "border-neutral-600 text-neutral-100 hover:bg-[#333640]",
+    chipInactive: "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
+    btnOutline: "border-neutral-600 text-neutral-100 hover:bg-[#333640]",
     inputBg: "bg-[#1c1e26]",
     inputBorder: "border-neutral-600",
     inputText: "text-neutral-100",
@@ -140,6 +143,16 @@ function useThemeTokens(theme) {
   return theme === "light" ? light : dark;
 }
 
+/* ===================== Small Helpers ===================== */
+function useHash() {
+  const [hash, setHash] = useState(() => window.location.hash || "");
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash || "");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
+}
 
 /* ===================== Icons ===================== */
 function Icon({ name, className = "h-4 w-4" }) {
@@ -227,7 +240,6 @@ function Icon({ name, className = "h-4 w-4" }) {
         </svg>
       );
     case "whatsapp":
-      // Simple WhatsApp-like bubble + phone glyph
       return (
         <svg {...p}>
           <path d="M20.5 11.5a8.5 8.5 0 11-4.2-7.4l.2.1" />
@@ -241,67 +253,48 @@ function Icon({ name, className = "h-4 w-4" }) {
   }
 }
 
-/* ===================== Intro Overlay (Editorial - Black) ===================== */
-/* ===================== Intro Overlay (Cinematic) ===================== */
-/* ===================== Intro Overlay (Cinematic, no imports/exports) ===================== */
-/* ===================== Intro Overlay (Cinematic v2) ===================== */
-/* ===================== Intro Overlay (final cinematic, image left + single-line titles) ===================== */
+/* ===================== Intro Overlay (final cinematic) ===================== */
 function IntroOverlay({ onClose }) {
-  // Phases:
-  // 1) typeName  -> type "PRADEEP MOORTHY" center, explode out
-  // 2) typeBrand -> type "PRADHU PHOTOGRAPHY" center, explode out (with pulse)
-  // 3) revealImg -> image radial reveal + move-in (left), then titles slide/ripple to final layout
-  // 4) titles    -> final layout (image left, single-line titles right) + Enter CTA
-  const PHASES = ["typeName", "typeBrand", "revealImg", "titles"];
+  // Phases: 1) typeName → 2) typeBrand → 3) revealImg → 4) titles
   const [phase, setPhase] = useState("typeName");
 
-  // typewriter buffers
+  // typewriter
   const NAME = "PRADEEP MOORTHY";
   const BRAND = "PRADHU PHOTOGRAPHY";
   const [typed, setTyped] = useState("");
-  const [step, setStep] = useState(0); // 0 typing, 1 typed pause, 2 exploding
+  const [step, setStep] = useState(0); // 0 typing, 1 pause, 2 explode
   const typingRef = useRef(null);
 
-  // ripple-on-click, but NOT exit (enter key or Enter button exits)
+  // ripple layer + img ref
   const imgRef = useRef(null);
   const rippleLayerRef = useRef(null);
 
-  // Handle Enter key to close; any click → ripple only
+  // Enter closes. Clicks make ripple/flash only.
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Enter") onClose();
-    };
+    const onKey = (e) => { if (e.key === "Enter") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Prevent default click from closing; instead make ripple (+ flash)
-  const onAnyClick = (e) => {
-    // Only make ripple on the big overlay; Enter button has its own handler
-    makeRipple(e.clientX, e.clientY, true);
-  };
+  const onAnyClick = (e) => makeRipple(e.clientX, e.clientY, true);
+  const onPressEnterButton = (e) => { e.stopPropagation(); onClose(); };
 
-  const onPressEnterButton = (e) => {
-    e.stopPropagation();
-    onClose();
-  };
-
-  // Utility: make a ripple anywhere on the overlay
   function makeRipple(x, y, withFlash = false) {
     const host = rippleLayerRef.current;
     if (!host) return;
+    const rect = host.getBoundingClientRect();
+
     const ripple = document.createElement("span");
     ripple.className = "cin-ripple circle";
-    ripple.style.left = `${x - host.getBoundingClientRect().left}px`;
-    ripple.style.top = `${y - host.getBoundingClientRect().top}px`;
+    ripple.style.left = `${x - rect.left}px`;
+    ripple.style.top = `${y - rect.top}px`;
     host.appendChild(ripple);
 
-    // optional flash
     if (withFlash) {
       const flash = document.createElement("span");
       flash.className = "cin-flash";
-      flash.style.left = `${x - host.getBoundingClientRect().left}px`;
-      flash.style.top = `${y - host.getBoundingClientRect().top}px`;
+      flash.style.left = `${x - rect.left}px`;
+      flash.style.top = `${y - rect.top}px`;
       host.appendChild(flash);
       setTimeout(() => flash.remove(), 360);
     }
@@ -309,86 +302,77 @@ function IntroOverlay({ onClose }) {
     setTimeout(() => ripple.remove(), 800);
   }
 
-  // Typing logic for NAME then BRAND
+  // Typing logic
   useEffect(() => {
-    let str = phase === "typeName" ? NAME : phase === "typeBrand" ? BRAND : "";
+    const str = phase === "typeName" ? NAME : phase === "typeBrand" ? BRAND : "";
     if (!str) return;
     setTyped("");
     setStep(0);
     clearInterval(typingRef.current);
 
-    // typing a bit slower for cinematic feel
-    const SPEED = 75; // ms per char
+    const SPEED = 75;
     let i = 0;
     typingRef.current = setInterval(() => {
       i++;
       setTyped(str.slice(0, i));
       if (i >= str.length) {
         clearInterval(typingRef.current);
-        setStep(1); // fully typed, pause -> then explode
+        setStep(1);
         setTimeout(() => {
-          setStep(2); // trigger explode class
-          // After explode, move to next phase
+          setStep(2); // explode
           setTimeout(() => {
             if (phase === "typeName") setPhase("typeBrand");
             else if (phase === "typeBrand") setPhase("revealImg");
           }, 520);
-        }, phase === "typeName" ? 600 : 700); // slightly longer pause for brand
+        }, phase === "typeName" ? 600 : 700);
       }
     }, SPEED);
 
     return () => clearInterval(typingRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // When image is revealed, let it finish then flip to titles
+  // after image reveal, move to titles
   useEffect(() => {
     if (phase !== "revealImg") return;
-    const t = setTimeout(() => setPhase("titles"), 1400); // allow mask + move-in to finish
+    const t = setTimeout(() => setPhase("titles"), 1400);
     return () => clearTimeout(t);
   }, [phase]);
 
-  // When each title hits (overshoot), fire a ripple at the image center for impact
-  const fireTitleImpactRipple = (delayMs = 0) => {
+  // impact ripples when titles overshoot
+  const impactRipple = (delayMs = 0) => {
     setTimeout(() => {
       const img = imgRef.current;
       const host = rippleLayerRef.current;
       if (!img || !host) return;
-      const rect = img.getBoundingClientRect();
-      const cx = rect.left + rect.width * 0.55; // a little right of center
-      const cy = rect.top + rect.height * 0.45;
+      const r = img.getBoundingClientRect();
+      const cx = r.left + r.width * 0.55;
+      const cy = r.top + r.height * 0.45;
       makeRipple(cx, cy, true);
     }, delayMs);
   };
-
   useEffect(() => {
     if (phase !== "titles") return;
-    // ripple when each line overshoots in
-    fireTitleImpactRipple(420);  // VISUAL & HONEST STORIES
-    fireTitleImpactRipple(900);  // PRADEEP MOORTHY
-    fireTitleImpactRipple(1250); // PRADHU PHOTOGRAPHY
+    impactRipple(420);  // VISUAL & HONEST STORIES
+    impactRipple(900);  // PRADEEP MOORTHY
+    impactRipple(1250); // PRADHU PHOTOGRAPHY
   }, [phase]);
 
-  // Center typing block (phases 1 & 2)
-  const renderTyping = (text) => {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="text-white text-center">
-          <div
-            className={[
-              "inline-flex items-center gap-1 font-['Playfair_Display'] uppercase tracking-[0.08em]",
-              "text-[clamp(26px,7vw,88px)] leading-none whitespace-nowrap",
-              step === 2 ? "cin-explode-out" : "",
-            ].join(" ")}
-          >
-            <span>{text}</span>
-            {/* caret only while typing */}
-            {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
-          </div>
+  const renderTyping = (text) => (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="text-white text-center">
+        <div
+          className={[
+            "inline-flex items-center gap-1 font-['Playfair_Display'] uppercase tracking-[0.08em]",
+            "text-[clamp(26px,7vw,88px)] leading-none whitespace-nowrap",
+            step === 2 ? "cin-explode-out" : "",
+          ].join(" ")}
+        >
+          <span>{text}</span>
+          {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   return (
     <div
@@ -398,23 +382,20 @@ function IntroOverlay({ onClose }) {
       aria-label="Intro overlay"
       onClick={onAnyClick}
     >
-      {/* ripple layer for clicks */}
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
 
-      {/* Phase 1 & 2: typing in the exact center */}
-      {phase === "typeName" && renderTyping(typed)}
-      {phase === "typeBrand" && renderTyping(typed)}
+      {(phase === "typeName") && renderTyping(typed)}
+      {(phase === "typeBrand") && renderTyping(typed)}
 
-      {/* Phase 3/4 layout: image left, titles right */}
+      {/* Layout for revealImg/titles */}
       <div
         className={[
           "h-full w-full grid items-center justify-center p-6",
           "md:grid-cols-[640px_1fr] gap-4",
-          // hidden until revealImg starts (so typing has clean black bg)
           phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100",
         ].join(" ")}
       >
-        {/* Left: image with reveal & move-in only in revealImg phase */}
+        {/* Left image */}
         <div className="relative cin-image-holder">
           <img
             ref={imgRef}
@@ -423,31 +404,23 @@ function IntroOverlay({ onClose }) {
             className={[
               "w-full h-auto object-contain max-h-[78vh]",
               phase === "revealImg" ? "cin-radial-reveal cin-image-move-in" : "",
-              // keep visible once revealed/titles
               phase === "titles" ? "opacity-100" : "",
             ].join(" ")}
           />
           <div className="pointer-events-none absolute inset-0 cin-vignette" />
         </div>
 
-        {/* Right: final stacked single-line titles */}
+        {/* Right titles */}
         <div
           className={[
             "flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
-          {/* VISUAL & HONEST STORIES */}
-          <div
-            className={[
-              "text-[12px] tracking-[0.25em] opacity-80",
-              phase === "titles" ? "cin-overshoot-in" : "",
-            ].join(" ")}
-          >
+          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>
             VISUAL & HONEST STORIES
           </div>
 
-          {/* PRADEEP MOORTHY (big) */}
           <h1
             className={[
               "mt-1 font-['Playfair_Display'] uppercase",
@@ -458,7 +431,6 @@ function IntroOverlay({ onClose }) {
             PRADEEP MOORTHY
           </h1>
 
-          {/* PRADHU PHOTOGRAPHY (smaller) */}
           <div
             className={[
               "mt-0.5 font-['Playfair_Display'] uppercase",
@@ -469,7 +441,6 @@ function IntroOverlay({ onClose }) {
             PRADHU PHOTOGRAPHY
           </div>
 
-          {/* CTA */}
           <button
             onClick={onPressEnterButton}
             className={[
@@ -486,7 +457,6 @@ function IntroOverlay({ onClose }) {
   );
 }
 
-
 /* ===================== GitHub helpers ===================== */
 const GH_API = "https://api.github.com";
 const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
@@ -497,9 +467,7 @@ async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
   const now = Date.now();
-
-  const nocache =
-    new URLSearchParams(window.location.search).get("refresh") === "1";
+  const nocache = new URLSearchParams(window.location.search).get("refresh") === "1";
 
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
@@ -509,14 +477,10 @@ async function ghListFolder(owner, repo, path, ref) {
     }
   } catch {}
 
-  const url = `${GH_API}/repos/${encodeURIComponent(
-    owner
-  )}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(
-    path
-  )}?ref=${encodeURIComponent(ref)}`;
-  const res = await fetch(url, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
+  const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
+    repo
+  )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
+  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (!res.ok) {
     if (res.status === 404) return [];
     const text = await res.text();
@@ -553,8 +517,7 @@ function Hero() {
             Freeze the moment. <span className="opacity-90">Tell the story.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
-            Fashion · Portraits · Candids · Portfolio · Professional headshots ·
-            Street
+            Fashion · Portraits · Candids · Portfolio · Professional headshots · Street
           </p>
           <p className="text-neutral-300 text-sm mt-1">{SERVICE_CITIES}</p>
         </div>
@@ -587,23 +550,16 @@ function FaqSection({ T, showTitle = true }) {
   ];
 
   return (
-    <section id="faq" className={`py-2`}>
+    <section id="faq" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           FAQ
         </h2>
       )}
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         {items.map((item) => (
-          <details
-            key={item.q}
-            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-          >
-            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
-              {item.q}
-            </summary>
+          <details key={item.q} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>{item.q}</summary>
             <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
           </details>
         ))}
@@ -615,11 +571,9 @@ function FaqSection({ T, showTitle = true }) {
 /* ===================== Services ===================== */
 function ServicesSection({ T, showTitle = true }) {
   return (
-    <section id="services" className={`py-2`}>
+    <section id="services" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Services
         </h2>
       )}
@@ -721,11 +675,9 @@ function PricingSection({ T, showTitle = true }) {
   ];
 
   return (
-    <section id="pricing" className={`py-2`}>
+    <section id="pricing" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Pricing (indicative)
         </h2>
       )}
@@ -741,9 +693,7 @@ function PricingSection({ T, showTitle = true }) {
               <span className="text-sm opacity-80">{t.price}</span>
             </div>
             <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
-              {t.includes.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
+              {t.includes.map((line) => <li key={line}>{line}</li>)}
             </ul>
             <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>Request a quote →</a>
           </article>
@@ -765,350 +715,6 @@ function PricingSection({ T, showTitle = true }) {
             <li>Outstation travel/stay billed at actuals.</li>
             <li>Commercial usage/licensing quoted per brief.</li>
           </ul>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-
-
-/* ===================== Tiles (one line) ===================== */
-function SectionTiles({ openId, setOpenId, T }) {
-  const tiles = [
-    { id: "portfolio", label: "Portfolio", icon: "grid" },
-    { id: "services", label: "Services", icon: "briefcase" },
-    { id: "pricing", label: "Pricing", icon: "tag" },
-    { id: "faq", label: "FAQ", icon: "help" },
-  ];
-
-  return (
-    <div id="tiles" className={`${CONTAINER} pt-10`}>
-      <div
-        className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {tiles.map((t) => {
-          const active = openId === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => {
-                setOpenId(t.id);
-                if (t.id === "portfolio") window.location.hash = "#portfolio";
-              }}
-              className={`flex items-center gap-2 rounded-2xl border px-4 py-2 transition shadow-sm ${
-                active ? T.chipActive : T.chipInactive
-              }`}
-              aria-pressed={active}
-              aria-controls={`section-${t.id}`}
-              aria-expanded={active}
-            >
-              <Icon
-                name={t.icon}
-                className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`}
-              />
-              <span className="text-sm">{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ===================== Booking (About at left + Enquiry form) ===================== */
-function BookingSection({ T }) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    service: "Portraits",
-    city: "Pune",
-    date: "",
-    message: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [note, setNote] = useState("");
-
-  const minDateStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
-    const off = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - off * 60000);
-    return local.toISOString().slice(0, 10);
-  }, []);
-  const fmtHuman = (yyyy_mm_dd) => {
-    if (!yyyy_mm_dd) return "";
-    const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setNote("");
-
-    const missing = [];
-    if (!form.name.trim()) missing.push("Name");
-    if (!form.email.trim()) missing.push("Email");
-    if (!form.phone.trim()) missing.push("Phone");
-    if (form.date && form.date < minDateStr)
-      missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
-    if (missing.length) {
-      setNote(`Please fill: ${missing.join(", ")}`);
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await fetch(SHEET_WEB_APP, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, source: "website" }),
-      });
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        service: "Portraits",
-        city: "Pune",
-        date: "",
-        message: "",
-      });
-      setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
-    } catch (err) {
-      console.error(err);
-      setNote("Couldn’t submit right now. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
-      <div className={`${CONTAINER} py-16`}>
-        <div className="grid md:grid-cols-2 gap-8 items-start">
-          {/* LEFT: About (has id=about for navbar scroll) */}
-          <div id="about">
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
-              About PRADHU
-            </h2>
-            <p className={`mt-3 ${T.muted}`}>
-              As an aspiring photographer from Kanchipuram, I work across fashion,
-              portraits, candids and events. I run a client-first process: I listen
-              to your brief and offer tailored recommendations on looks, lighting,
-              locations and timelines so the day feels effortless. On set, I work
-              with calm, unobtrusive direction to create space for genuine
-              expression. My aim is to capture the beauty, joy and decisive moments
-              that define your story—delivering images that feel personal, polished
-              and purposeful.
-            </p>
-            <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>
-                Genres: Fashion, High Fashion, Editorials, Portraits, Headshots,
-                Candids, Street, Studio
-              </li>
-              <li>
-                Kit: Nikon D7500, softboxes (octa & strip), multiple flashes, light
-                modifiers
-              </li>
-              <li>{SERVICE_CITIES}</li>
-            </ul>
-
-            {/* Social icon tiles */}
-            <div className="mt-5 flex items-center gap-3">
-              {/* Instagram */}
-              <a
-                href={`https://www.instagram.com/${IG_USERNAME}/`}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Instagram"
-                title="Instagram"
-                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-              >
-                <Icon name="camera" className="h-5 w-5" />
-              </a>
-
-              {/* WhatsApp */}
-              {WHATSAPP_NUMBER.includes("X") ? (
-                <span
-                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
-                  title="WhatsApp unavailable"
-                  aria-hidden="true"
-                >
-                  <Icon name="whatsapp" className="h-5 w-5" />
-                </span>
-              ) : (
-                <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="WhatsApp"
-                  title="WhatsApp"
-                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-                >
-                  <Icon name="whatsapp" className="h-5 w-5" />
-                </a>
-              )}
-
-              {/* Email */}
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                aria-label="Email"
-                title="Email"
-                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-              >
-                <Icon name="mail" className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
-
-          {/* RIGHT: Enquire / Book */}
-          <div>
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
-              Enquire / Book
-            </h2>
-            <p className={`mt-2 ${T.muted}`}>
-              Share details and I’ll reply with availability and a quote.
-            </p>
-
-            <form
-              onSubmit={onSubmit}
-              className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-            >
-              <div className="grid grid-cols-1 gap-4">
-                <Input
-                  T={T}
-                  label="Name"
-                  name="name"
-                  value={form.name}
-                  onChange={onChange}
-                  required
-                />
-                <Input
-                  T={T}
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={onChange}
-                  required
-                />
-                <Input
-                  T={T}
-                  label="Phone"
-                  name="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={onChange}
-                  required
-                  placeholder="+91-XXXXXXXXXX"
-                />
-
-                <div>
-                  <label className={`text-sm ${T.muted}`}>Preferred Date</label>
-                  <input
-                    name="date"
-                    type="date"
-                    min={minDateStr}
-                    value={form.date}
-                    onKeyDown={(e) => e.preventDefault()}
-                    onPaste={(e) => e.preventDefault()}
-                    onChange={(e) => {
-                      let v = e.target.value;
-                      if (v && v < minDateStr) {
-                        v = minDateStr;
-                        setNote(
-                          `Earliest available date is ${fmtHuman(minDateStr)}.`
-                        );
-                      }
-                      setForm({ ...form, date: v });
-                    }}
-                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
-                  />
-                  <p className="text-xs opacity-70 mt-1">
-                    Earliest selectable: {fmtHuman(minDateStr)}
-                  </p>
-                </div>
-
-                <div>
-                  <label className={`text-sm ${T.muted}`}>Message</label>
-                  <textarea
-                    name="message"
-                    value={form.message}
-                    onChange={onChange}
-                    rows={5}
-                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
-                    placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className={`text-sm ${T.muted}`}>Service</label>
-                    <select
-                      name="service"
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.service}
-                      onChange={onChange}
-                    >
-                      {[
-                        "Portraits",
-                        "Fashion",
-                        "Candids",
-                        "Street",
-                        "Events",
-                        "Other",
-                      ].map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={`text-sm ${T.muted}`}>City</label>
-                    <select
-                      name="city"
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.city}
-                      onChange={onChange}
-                    >
-                      <option>Pune</option>
-                      <option>Mumbai</option>
-                      <option>Chennai</option>
-                      <option>Bengaluru</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
-                  >
-                    {submitting ? "Submitting…" : "Send Enquiry"}
-                  </button>
-                  {note && <span className="text-sm opacity-80">{note}</span>}
-                </div>
-              </div>
-            </form>
-          </div>
         </div>
       </div>
     </section>
@@ -1146,13 +752,9 @@ function Input({
 }
 
 /* ===================== Portfolio (Landing + Pages + Hash) ===================== */
-// ---- Micro parallax hook (for vertical scroll) ----
+// Micro parallax (vertical)
 function useMicroParallax(containerRef, opts = {}) {
-  const {
-    selector = "figure[data-idx] img",
-    strength = 14, // max px shift
-    thresholdPx = 1,
-  } = opts;
+  const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } = opts;
 
   useEffect(() => {
     const root = containerRef?.current;
@@ -1172,22 +774,17 @@ function useMicroParallax(containerRef, opts = {}) {
       for (const img of imgs) {
         const r = img.getBoundingClientRect();
         if (r.bottom < -thresholdPx || r.top > vh + thresholdPx) continue;
-
         const cy = r.top + r.height / 2;
-        const norm = (cy - mid) / vh; // -0.5..0.5
+        const norm = (cy - mid) / vh;
         const shift = clamp(norm * strength * 2, -strength, strength);
-
         img.style.transform = `translateY(${shift.toFixed(2)}px)`;
       }
     };
 
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
     const onResize = onScroll;
 
     imgs.forEach((img) => img.classList.add("parallax-img"));
-
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
@@ -1201,14 +798,12 @@ function useMicroParallax(containerRef, opts = {}) {
   }, [containerRef, selector, strength, thresholdPx]);
 }
 
-// ---------- Portfolio Landing ----------
+// Landing
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
       <header className="mb-8">
-        <h2
-          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
         <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
@@ -1238,8 +833,6 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       loading="lazy"
                     />
                   ) : null}
-
-                  {/* Top-left big serif title */}
                   <div className="absolute top-3 left-3 right-3">
                     <div className="inline-block px-1.5 py-1">
                       <h3
@@ -1247,9 +840,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       >
                         {c.label}
                       </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
-                        PORTFOLIO
-                      </div>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
                     </div>
                   </div>
                 </div>
@@ -1262,15 +853,14 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-// ---------- Portfolio Page ----------
+// Page
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // active index observer
+  // observer for progress
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
@@ -1290,29 +880,22 @@ function PortfolioPage({ T, cat, state, onBack }) {
     return () => obs.disconnect();
   }, [state.loading]);
 
-  // 👉 micro parallax enabled
   useMicroParallax(containerRef, { strength: 14 });
 
   return (
     <section className="py-2" id="portfolio">
-      {/* Sticky breadcrumb + title */}
       <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
-            Portfolio
-          </button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2
-          className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           {cat.label}
         </h2>
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
 
-      {/* Right progress rail */}
       <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
         <div className="flex flex-col items-center gap-2">
           <div className="h-32 w-px bg-neutral-400/30" />
@@ -1323,7 +906,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
         </div>
       </div>
 
-      {/* Centered tall images */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
@@ -1348,14 +930,13 @@ function PortfolioPage({ T, cat, state, onBack }) {
   );
 }
 
-// ---------- Portfolio Wrapper ----------
+// Wrapper
 function Portfolio({ T }) {
   const [states, setStates] = useState(() =>
     GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
   );
-
   const [hash, setHash] = useHash();
-  const [view, setView] = useState("landing");
+  const [view, setView] = useState("landing"); // "landing" | "page"
   const [activeIdx, setActiveIdx] = useState(-1);
 
   const openCat = (label) => {
@@ -1367,29 +948,21 @@ function Portfolio({ T }) {
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  const goLanding = () => { setView("landing"); setActiveIdx(-1); setHash("#portfolio"); };
 
-  const goLanding = () => {
-    setView("landing");
-    setActiveIdx(-1);
-    setHash("#portfolio");
-  };
-
+  // hash → view
   useEffect(() => {
     if (!hash.startsWith("#portfolio")) return;
     const seg = hash.split("/");
     if (seg.length >= 2 && seg[1]) {
       const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
       const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) {
-        setActiveIdx(idx);
-        setView("page");
-        return;
-      }
+      if (idx >= 0) { setActiveIdx(idx); setView("page"); return; }
     }
-    setView("landing");
-    setActiveIdx(-1);
+    setView("landing"); setActiveIdx(-1);
   }, [hash]);
 
+  // fetch images
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1416,83 +989,209 @@ function Portfolio({ T }) {
   return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
 }
 
-/* ===================== Theme Slider ===================== */
-function ThemeSlider({ theme, setTheme }) {
-  const isDark = theme === "dark";
-  const setLight = () => setTheme("light");
-  const setDark = () => setTheme("dark");
+/* ===================== Tiles (one line) ===================== */
+function SectionTiles({ openId, setOpenId, T }) {
+  const tiles = [
+    { id: "portfolio", label: "Portfolio", icon: "grid" },
+    { id: "services", label: "Services", icon: "briefcase" },
+    { id: "pricing", label: "Pricing", icon: "tag" },
+    { id: "faq", label: "FAQ", icon: "help" },
+  ];
+  return (
+    <div id="tiles" className={`${CONTAINER} pt-10`}>
+      <div className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2" style={{ scrollbarWidth: "none" }}>
+        {tiles.map((t) => {
+          const active = openId === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => {
+                setOpenId(t.id);
+                if (t.id === "portfolio") window.location.hash = "#portfolio";
+              }}
+              className={`flex items-center gap-2 rounded-2xl border px-4 py-2 transition shadow-sm ${
+                active ? T.chipActive : T.chipInactive
+              }`}
+              aria-pressed={active}
+              aria-controls={`section-${t.id}`}
+              aria-expanded={active}
+            >
+              <Icon name={t.icon} className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`} />
+              <span className="text-sm">{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-  const onKeyDown = (e) => {
-    if (e.key === "ArrowLeft") setLight();
-    if (e.key === "ArrowRight") setDark();
+/* ===================== Booking (About + Enquiry) ===================== */
+function BookingSection({ T }) {
+  const [form, setForm] = useState({
+    name: "", email: "", phone: "",
+    service: "Portraits", city: "Pune", date: "", message: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [note, setNote] = useState("");
+
+  const minDateStr = useMemo(() => {
+    const d = new Date(); d.setDate(d.getDate() + 2);
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off * 60000);
+    return local.toISOString().slice(0, 10);
+  }, []);
+  const fmtHuman = (yyyy_mm_dd) => {
+    if (!yyyy_mm_dd) return "";
+    const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setNote("");
+    const missing = [];
+    if (!form.name.trim()) missing.push("Name");
+    if (!form.email.trim()) missing.push("Email");
+    if (!form.phone.trim()) missing.push("Phone");
+    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
+    if (missing.length) { setNote(`Please fill: ${missing.join(", ")}`); return; }
+
+    setSubmitting(true);
+    try {
+      await fetch(SHEET_WEB_APP, {
+        method: "POST", mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, source: "website" }),
+      });
+      setForm({ name: "", email: "", phone: "", service: "Portraits", city: "Pune", date: "", message: "" });
+      setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
+    } catch (err) {
+      console.error(err);
+      setNote("Couldn’t submit right now. Please try again.");
+    } finally { setSubmitting(false); }
   };
 
   return (
-    <div
-      className="relative h-9 w-[150px] select-none"
-      role="tablist"
-      aria-label="Theme"
-      onKeyDown={onKeyDown}
-    >
-      <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
-      <div
-        className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
-          isDark
-            ? "translate-x-full bg-neutral-900"
-            : "translate-x-0 bg-white border border-neutral-300"
-        }`}
-        aria-hidden="true"
-      />
-      <div className="relative z-10 grid grid-cols-2 h-full">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={!isDark}
-          aria-pressed={!isDark}
-          onClick={setLight}
-          className="flex items-center justify-center gap-1.5 px-3 h-full"
-        >
-          <Icon
-            name="sun"
-            className={`h-4 w-4 ${
-              isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"
-            }`}
-          />
-          <span
-            className={`text-xs ${
-              isDark
-                ? "opacity-50 text-neutral-700"
-                : "opacity-100 text-neutral-900 font-medium"
-            }`}
-          >
-            Light
-          </span>
-        </button>
+    <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
+      <div className={`${CONTAINER} py-16`}>
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          {/* LEFT: About */}
+          <div id="about">
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+              About PRADHU
+            </h2>
+            <p className={`mt-3 ${T.muted}`}>
+              As an aspiring photographer from Kanchipuram, I work across fashion, portraits, candids and events. I run a client-first process: I listen to your brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless. On set, I work with calm, unobtrusive direction to create space for genuine expression. My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
+            </p>
+            <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
+              <li>Genres: Fashion, High Fashion, Editorials, Portraits, Headshots, Candids, Street, Studio</li>
+              <li>Kit: Nikon D7500, softboxes (octa & strip), multiple flashes, light modifiers</li>
+              <li>{SERVICE_CITIES}</li>
+            </ul>
 
-        <button
-          type="button"
-          role="tab"
-          aria-selected={isDark}
-          aria-pressed={isDark}
-          onClick={setDark}
-          className="flex items-center justify-center gap-1.5 px-3 h-full"
-        >
-          <Icon
-            name="moon"
-            className={`h-4 w-4 ${
-              isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"
-            }`}
-          />
-          <span
-            className={`text-xs ${
-              isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"
-            }`}
-          >
-            Dark
-          </span>
-        </button>
+            <div className="mt-5 flex items-center gap-3">
+              <a href={`https://www.instagram.com/${IG_USERNAME}/`} target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram"
+                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+                <Icon name="camera" className="h-5 w-5" />
+              </a>
+
+              {WHATSAPP_NUMBER.includes("X") ? (
+                <span className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
+                      title="WhatsApp unavailable" aria-hidden="true">
+                  <Icon name="whatsapp" className="h-5 w-5" />
+                </span>
+              ) : (
+                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" title="WhatsApp"
+                   className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+                  <Icon name="whatsapp" className="h-5 w-5" />
+                </a>
+              )}
+
+              <a href={`mailto:${CONTACT_EMAIL}`} aria-label="Email" title="Email"
+                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+                <Icon name="mail" className="h-5 w-5" />
+              </a>
+            </div>
+          </div>
+
+          {/* RIGHT: Enquiry */}
+          <div>
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+              Enquire / Book
+            </h2>
+            <p className={`mt-2 ${T.muted}`}>Share details and I’ll reply with availability and a quote.</p>
+
+            <form onSubmit={onSubmit} className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+              <div className="grid grid-cols-1 gap-4">
+                <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
+                <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
+                <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
+
+                <div>
+                  <label className={`text-sm ${T.muted}`}>Preferred Date</label>
+                  <input
+                    name="date" type="date" min={minDateStr} value={form.date}
+                    onKeyDown={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}
+                    onChange={(e) => {
+                      let v = e.target.value;
+                      if (v && v < minDateStr) { v = minDateStr; setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`); }
+                      setForm({ ...form, date: v });
+                    }}
+                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+                  />
+                  <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
+                </div>
+
+                <div>
+                  <label className={`text-sm ${T.muted}`}>Message</label>
+                  <textarea
+                    name="message" value={form.message} onChange={onChange} rows={5}
+                    className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+                    placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={`text-sm ${T.muted}`}>Service</label>
+                    <select
+                      name="service" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.service} onChange={onChange}
+                    >
+                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={`text-sm ${T.muted}`}>City</label>
+                    <select
+                      name="city" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.city} onChange={onChange}
+                    >
+                      <option>Pune</option><option>Mumbai</option><option>Chennai</option>
+                      <option>Bengaluru</option><option>Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="submit" disabled={submitting}
+                          className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60">
+                    {submitting ? "Submitting…" : "Send Enquiry"}
+                  </button>
+                  {note && <span className="text-sm opacity-80">{note}</span>}
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1500,38 +1199,26 @@ function ThemeSlider({ theme, setTheme }) {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
-    try {
-      return sessionStorage.getItem("pradhu:theme") || "dark";
-    } catch {
-      return "dark";
-    }
+    try { return sessionStorage.getItem("pradhu:theme") || "dark"; } catch { return "dark"; }
   });
   const T = useThemeTokens(theme);
 
   const [showIntro, setShowIntro] = useState(() => {
     if (!INTRO_ENABLED) return false;
     const url = new URL(window.location.href);
-    const forced =
-      url.searchParams.get(INTRO_FORCE_QUERY) === "1" ||
-      url.hash === INTRO_FORCE_HASH;
+    const forced = url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
     if (forced) return true;
     if (!INTRO_REMEMBER) return true;
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
   });
 
-  // Selected tile / section
   const [openId, setOpenId] = useState("portfolio");
-
-  // Active navbar highlight
   const [activeNav, setActiveNav] = useState("home");
 
-  // Observe sections and update activeNav on scroll
+  // Active nav via IntersectionObserver
   useEffect(() => {
     const ids = ["home", "portfolio", "services", "pricing", "faq", "about", "booking"];
-    const els = ids
-      .map((id) => [id, document.getElementById(id)])
-      .filter(([, el]) => !!el);
-
+    const els = ids.map((id) => [id, document.getElementById(id)]).filter(([, el]) => !!el);
     if (els.length === 0) return;
 
     let current = activeNav;
@@ -1547,10 +1234,7 @@ export default function App() {
           const id = e.target.getAttribute("id");
           if (dist < best.dist) best = { id, dist };
         });
-        if (best.id && best.id !== current) {
-          current = best.id;
-          setActiveNav(best.id);
-        }
+        if (best.id && best.id !== current) { current = best.id; setActiveNav(best.id); }
       },
       { root: null, threshold: [0.35], rootMargin: "-10% 0px -50% 0px" }
     );
@@ -1561,9 +1245,7 @@ export default function App() {
   }, []);
 
   const scrollToSectionFromNav = (id) => {
-    setActiveNav(id); // immediate feedback
-
-    // If nav targets a tile section, select it and scroll to tile bar
+    setActiveNav(id);
     if (SECTION_IDS.includes(id)) {
       setOpenId(id);
       if (id === "portfolio") window.location.hash = "#portfolio";
@@ -1578,34 +1260,25 @@ export default function App() {
 
   const closeIntro = () => {
     setShowIntro(false);
-    try {
-      if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1");
-    } catch {}
+    try { if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1"); } catch {}
   };
 
   useEffect(() => {
-    try {
-      sessionStorage.setItem("pradhu:theme", theme);
-    } catch {}
+    try { sessionStorage.setItem("pradhu:theme", theme); } catch {}
   }, [theme]);
 
   return (
     <main
-  className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${
-    theme === "light" ? "bg-dots-light" : "bg-dots-dark"
-  }`}
->
-
+      className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${
+        theme === "light" ? "bg-dots-light" : "bg-dots-dark"
+      }`}
+    >
       <HeadFonts />
       {showIntro && <IntroOverlay onClose={closeIntro} />}
 
       {/* NAVBAR */}
-      <header
-        className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}
-      >
-        <nav
-          className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}
-        >
+      <header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
+        <nav className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}>
           {/* Brand */}
           <div className="min-w-0">
             <p
@@ -1628,10 +1301,7 @@ export default function App() {
                     activeNav === id ? T.chipActive : T.chipInactive
                   }`}
                 >
-                  <Icon
-                    name={icon}
-                    className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`}
-                  />
+                  <Icon name={icon} className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`} />
                   <span className="text-sm">{label}</span>
                 </button>
               </li>
@@ -1654,10 +1324,7 @@ export default function App() {
 
         {/* Mobile sheet */}
         {menuOpen && (
-          <div
-            id="mobile-menu"
-            className={`lg:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}
-          >
+          <div id="mobile-menu" className={`lg:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}>
             <div className={`${CONTAINER} px-2 py-3`}>
               <ul className="grid gap-1">
                 {NAV_ITEMS.map(({ label, id, icon }) => (
@@ -1669,10 +1336,7 @@ export default function App() {
                         activeNav === id ? T.chipActive : T.chipInactive
                       }`}
                     >
-                      <Icon
-                        name={icon}
-                        className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`}
-                      />
+                      <Icon name={icon} className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`} />
                       <span>{label}</span>
                     </button>
                   </li>
@@ -1686,41 +1350,67 @@ export default function App() {
       {/* HERO */}
       <Hero />
 
-      {/* TILES (one line) */}
+      {/* TILES */}
       <SectionTiles openId={openId} setOpenId={setOpenId} T={T} />
 
-      {/* SECTION CONTENT (only selected visible) */}
+      {/* SECTION CONTENT */}
       <div id="sections-content" className={`${CONTAINER} py-12`}>
         <div className={openId === "portfolio" ? "block" : "hidden"}>
           <Portfolio T={T} />
         </div>
-
         <div id="services" className={openId === "services" ? "block" : "hidden"}>
           <ServicesSection T={T} showTitle={false} />
         </div>
-
         <div id="pricing" className={openId === "pricing" ? "block" : "hidden"}>
           <PricingSection T={T} showTitle={false} />
         </div>
-
         <div id="faq" className={openId === "faq" ? "block" : "hidden"}>
           <FaqSection T={T} showTitle={false} />
         </div>
       </div>
 
-      {/* CONTACT / ENQUIRY (with About on the left, no image) */}
+      {/* CONTACT / ENQUIRY */}
       <BookingSection T={T} />
 
-      {/* FOOTER (minimal) */}
+      {/* FOOTER */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
         <div className={`${CONTAINER} py-10 text-sm`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <p className={T.muted}>
-              © {new Date().getFullYear()} PRADHU — All rights reserved.
-            </p>
+            <p className={T.muted}>© {new Date().getFullYear()} PRADHU — All rights reserved.</p>
           </div>
         </div>
       </footer>
     </main>
+  );
+}
+
+/* ===================== Theme Slider ===================== */
+function ThemeSlider({ theme, setTheme }) {
+  const isDark = theme === "dark";
+  const setLight = () => setTheme("light");
+  const setDark = () => setTheme("dark");
+  const onKeyDown = (e) => { if (e.key === "ArrowLeft") setLight(); if (e.key === "ArrowRight") setDark(); };
+  return (
+    <div className="relative h-9 w-[150px] select-none" role="tablist" aria-label="Theme" onKeyDown={onKeyDown}>
+      <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
+      <div
+        className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
+          isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"
+        }`}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 grid grid-cols-2 h-full">
+        <button type="button" role="tab" aria-selected={!isDark} aria-pressed={!isDark} onClick={setLight}
+                className="flex items-center justify-center gap-1.5 px-3 h-full">
+          <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
+          <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>Light</span>
+        </button>
+        <button type="button" role="tab" aria-selected={isDark} aria-pressed={isDark} onClick={setDark}
+                className="flex items-center justify-center gap-1.5 px-3 h-full">
+          <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
+          <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>Dark</span>
+        </button>
+      </div>
+    </div>
   );
 }
