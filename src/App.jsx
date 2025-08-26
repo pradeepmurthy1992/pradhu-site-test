@@ -45,7 +45,7 @@ const GH_CACHE_TTL_MS = 5 * 60 * 1000;
 // Brand / contact
 const CONTACT_EMAIL = "pradhuphotography@gmail.com";
 const SERVICE_CITIES =
-  "Pune · Mumbai · Chennai · Bengaluru · available pan-India";
+  "Base : Pune · Available [ Mumbai · Chennai · Bengaluru ]";
 const IG_USERNAME = "pradhu_photography";
 
 // Enquiry (kept for future; not exposed in UI)
@@ -517,10 +517,9 @@ function Hero() {
             Freeze the moment. <span className="opacity-90">Tell the story.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
-            Fashion · Portraits · Candids · Portfolio · Professional headshots · Street
+            Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
           </p>
-          <p className="text-neutral-300 text-sm mt-1">{SERVICE_CITIES}</p>
-        </div>
+         </div>
       </div>
     </section>
   );
