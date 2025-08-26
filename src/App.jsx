@@ -1215,7 +1215,7 @@ export default function App() {
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
   });
 
-  const [openId, setOpenId] = useState("portfolio");
+  const [openId, setOpenId] = useState("");
   const [activeNav, setActiveNav] = useState("home");
 
   // Active nav via IntersectionObserver
