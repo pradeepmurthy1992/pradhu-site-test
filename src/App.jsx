@@ -243,129 +243,171 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 /* ===================== Intro Overlay (Editorial - Black) ===================== */
 /* ===================== Intro Overlay (Cinematic) ===================== */
-import React, { useEffect, useRef, useState } from "react";
+/* ===================== Intro Overlay (Cinematic, no imports/exports) ===================== */
+function IntroOverlay({ onClose }) {
+  // phases: 0=typing NAME, 1=glitch BRAND, 2=image+titles stage
+  const [phase, setPhase] = React.useState(0);
 
-const INTRO_LEFT_IMAGE_URL =
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop";
+  // typing + glitch states
+  const [typed, setTyped] = React.useState("");
+  const [glitchText, setGlitchText] = React.useState("PRADHU PHOTOGRAPHY");
 
-/* helper: explode text spans */
-function ExplodeText({ text }) {
-  return (
-    <>
-      {text.split("").map((ch, i) => {
-        const dx = (Math.random() - 0.5) * 200;
-        const dy = (Math.random() - 0.5) * 120;
-        const rot = (Math.random() - 0.5) * 360;
-        return (
-          <span
-            key={i}
-            className="explode-out"
-            style={{ "--dx": dx, "--dy": dy, "--rot": rot }}
-          >
-            {ch}
-          </span>
-        );
-      })}
-    </>
-  );
-}
+  // explode flags
+  const [explodeName, setExplodeName] = React.useState(false);
+  const [explodeBrand, setExplodeBrand] = React.useState(false);
 
-export default function IntroOverlay({ onClose }) {
-  const [phase, setPhase] = useState(0);
-  const [typed, setTyped] = useState("");
-  const [glitchText, setGlitchText] = useState("PRADHU PHOTOGRAPHY");
-  const imgWrapRef = useRef(null);
+  const imgWrapRef = React.useRef(null);
 
   const NAME = "PRADEEP MOORTHY";
   const BRAND = "PRADHU PHOTOGRAPHY";
 
-  const TYPE_SPEED = 120;
-  const HOLD_TIME = 1000;
+  // timings (slowed down overall)
+  const TYPE_SPEED = 120;      // ms per char
+  const HOLD_TIME = 1400;      // pause after each title fully shown
+  const EXPLODE_TIME = 800;    // explode-out animation duration
+  const GLITCH_TICKS = 26;     // how many glitch frames
+  const GLITCH_STEP = 75;      // ms per glitch frame
 
-  // typing phase
-  useEffect(() => {
+  /* ---------- utilities ---------- */
+  function ExplodeText({ text }) {
+    return (
+      <>
+        {text.split("").map((ch, i) => {
+          const dx = (Math.random() - 0.5) * 220;
+          const dy = (Math.random() - 0.5) * 140;
+          const rot = (Math.random() - 0.5) * 360;
+          return (
+            <span
+              key={i}
+              className="explode-out"
+              style={{ "--dx": dx, "--dy": dy, "--rot": rot }}
+            >
+              {ch}
+            </span>
+          );
+        })}
+      </>
+    );
+  }
+
+  /* ---------- Phase 0: type NAME, then explode, then go to phase 1 ---------- */
+  React.useEffect(() => {
     if (phase !== 0) return;
+
     setTyped("");
+    setExplodeName(false);
+
     let i = 0;
-    const step = () => {
+    const typeOne = () => {
       setTyped(NAME.slice(0, i + 1));
       i++;
-      if (i < NAME.length) setTimeout(step, TYPE_SPEED);
-      else setTimeout(() => setPhase(1), HOLD_TIME);
+      if (i < NAME.length) {
+        setTimeout(typeOne, TYPE_SPEED);
+      } else {
+        // hold, then explode, then advance
+        setTimeout(() => {
+          setExplodeName(true);
+          setTimeout(() => setPhase(1), EXPLODE_TIME);
+        }, HOLD_TIME);
+      }
     };
-    step();
+    typeOne();
   }, [phase]);
 
-  // glitch phase
-  useEffect(() => {
+  /* ---------- Phase 1: glitch BRAND, then explode, then go to phase 2 ---------- */
+  React.useEffect(() => {
     if (phase !== 1) return;
+
+    setExplodeBrand(false);
     const base = BRAND;
     let ticks = 0;
     const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const glitch = () => {
+
+    const run = () => {
       ticks++;
       const out = base
         .split("")
         .map((c) =>
           c === " "
             ? " "
-            : Math.random() < 0.15
+            : Math.random() < 0.18
             ? CHARS[Math.floor(Math.random() * CHARS.length)]
             : c
         )
         .join("");
       setGlitchText(out);
-      if (ticks < 20) setTimeout(glitch, 70);
-      else setTimeout(() => setPhase(2), HOLD_TIME);
+
+      if (ticks < GLITCH_TICKS) {
+        setTimeout(run, GLITCH_STEP);
+      } else {
+        // stabilize to real brand, hold, explode, then advance
+        setGlitchText(base);
+        setTimeout(() => {
+          setExplodeBrand(true);
+          setTimeout(() => setPhase(2), EXPLODE_TIME);
+        }, HOLD_TIME);
+      }
     };
-    glitch();
+    run();
   }, [phase]);
 
-  // ripple click on image
+  /* ---------- Image ripple (click does NOT close) ---------- */
   const handleImageClick = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const holder = e.currentTarget;
+    const rect = holder.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     const ripple = document.createElement("span");
     ripple.className = "ripple";
-    ripple.style.left = `${x - 20}px`;
-    ripple.style.top = `${y - 20}px`;
-    ripple.style.width = ripple.style.height = "40px";
-
-    e.currentTarget.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
+    ripple.style.left = `${x - 16}px`;
+    ripple.style.top = `${y - 16}px`;
+    ripple.style.width = ripple.style.height = "32px";
+    holder.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 650);
   };
 
-  // exit only with Enter
-  useEffect(() => {
+  /* ---------- Exit only with Enter key ---------- */
+  React.useEffect(() => {
     const onKey = (e) => e.key === "Enter" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black text-white z-[9999]" role="dialog">
-      {/* Phase 0: typing NAME */}
+    <div className="fixed inset-0 bg-black text-white z-[9999]" role="dialog" aria-label="Intro overlay">
+      {/* Phase 0: typing NAME (center screen) */}
       {phase === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center text-[clamp(28px,6vw,64px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
-          {typed}
-          <span className="cin-caret ml-1 w-[2px]" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <div className="uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(28px,6vw,64px)]">
+              {!explodeName ? (
+                <>
+                  {typed}
+                  <span className="cin-caret ml-1 w-[2px] align-middle inline-block" />
+                </>
+              ) : (
+                <ExplodeText text={NAME} />
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Phase 1: glitch BRAND */}
+      {/* Phase 1: glitch BRAND (center screen) */}
       {phase === 1 && (
-        <div className="absolute inset-0 flex items-center justify-center text-[clamp(22px,5vw,50px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
-          {glitchText}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(22px,5vw,50px)]">
+            {!explodeBrand ? <>{glitchText}</> : <ExplodeText text={BRAND} />}
+          </div>
         </div>
       )}
 
-      {/* Phase 2: show image + titles */}
+      {/* Phase 2: image + final titles + Enter */}
       {phase >= 2 && (
         <div className="h-full flex items-center justify-center p-6">
           <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
-            <div />
+            <div className="hidden md:block" />
             <div
               ref={imgWrapRef}
               onClick={handleImageClick}
@@ -377,17 +419,19 @@ export default function IntroOverlay({ onClose }) {
                 alt="Intro"
                 className="w-full h-auto object-contain cin-radial-reveal cin-image-move-in"
               />
+              {/* soft vignette */}
+              <div className="pointer-events-none absolute inset-0 cin-vignette" />
             </div>
             <div className="flex flex-col items-end justify-between gap-6">
-              <div className="text-right">
-                <div className="cin-overshoot-in delay-[220ms]">
+              <div className="text-right select-none">
+                <div className="cin-overshoot-in delay-[220ms] uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(24px,5vw,56px)] whitespace-nowrap">
                   PRADEEP MOORTHY
                 </div>
-                <div className="cin-overshoot-in delay-[750ms]">
+                <div className="cin-overshoot-in delay-[750ms] uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(18px,3.5vw,39px)] whitespace-nowrap opacity-[0.95]">
                   PRADHU PHOTOGRAPHY
                 </div>
-                <div className="cin-overshoot-in delay-[1150ms] text-xs">
-                  VISUAL & HONEST STORIES
+                <div className="cin-overshoot-in delay-[1150ms] text-[12px] tracking-[0.25em] opacity-80">
+                  VISUAL &amp; HONEST STORIES
                 </div>
               </div>
               <button
@@ -403,6 +447,7 @@ export default function IntroOverlay({ onClose }) {
     </div>
   );
 }
+
 
 
 /* ===================== GitHub helpers ===================== */
