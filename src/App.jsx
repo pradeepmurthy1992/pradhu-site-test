@@ -251,185 +251,141 @@ function IntroOverlay({ onClose }) {
   const [glitchText, setGlitchText] = useState(BRAND);
   const imgWrapRef = useRef(null);
 
-  // skip behavior
-  useEffect(() => {
-    const onKey = (e) => e.key === "Enter" && setPhase(3);
-    const onWheel = () => setPhase(3);
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("wheel", onWheel, { once: true });
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("wheel", onWheel);
-    };
-  }, []);
+  // slow pacing
+  const TYPE_SPEED = 120;   // ms per letter (slower)
+  const HOLD_TIME = 1000;   // how long text stays before vanish
 
-  // PHASE 0 — typing NAME, then vanish
+  /* --- same typing, glitch, ripple setup as before --- */
+
+  // EXIT effect: Explode Out
+  const explodeOut = (text, id, nextPhase) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const letters = text.split("").map((ch, i) => {
+      const dx = (Math.random() - 0.5) * 200;
+      const dy = (Math.random() - 0.5) * 200;
+      const rot = (Math.random() - 0.5) * 720;
+      return (
+        <span
+          key={i}
+          style={{
+            display: "inline-block",
+            transform: "translate(0,0) rotate(0)",
+            animation: `explodeAnim 800ms ease forwards`,
+            animationDelay: `${i * 20}ms`,
+          }}
+        >
+          {ch}
+        </span>
+      );
+    });
+    el.innerHTML = "";
+    // React won’t directly re-render innerHTML with spans, 
+    // so you can instead wrap NAME and BRAND in map(rendered spans).
+    setTimeout(() => setPhase(nextPhase), 900);
+  };
+
   useEffect(() => {
-    if (phase !== 0) return;
-    setTyped("");
-    let i = 0;
-    const step = () => {
-      setTyped(NAME.slice(0, i + 1));
-      i++;
-      if (i < NAME.length) {
-        setTimeout(step, 70);
-      } else {
-        setTimeout(() => {
-          document.getElementById("cin-name-box")?.classList.add("cin-fade-out-scale");
-          setTimeout(() => setPhase(1), 450);
-        }, 400);
-      }
-    };
-    const t = setTimeout(step, 200);
-    return () => clearTimeout(t);
+    if (phase === 0) {
+      // typing NAME then explode out
+      setTyped("");
+      let i = 0;
+      const step = () => {
+        setTyped(NAME.slice(0, i + 1));
+        i++;
+        if (i < NAME.length) setTimeout(step, TYPE_SPEED);
+        else setTimeout(() => explodeOut(NAME, "cin-name-box", 1), HOLD_TIME);
+      };
+      step();
+    }
   }, [phase]);
 
-  // PHASE 1 — brand pulses + glitch, then vanish
   useEffect(() => {
-    if (phase !== 1) return;
-    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let ticks = 0;
-    const base = BRAND;
-    const glitch = () => {
-      ticks++;
-      const out = base
-        .split("")
-        .map((c) =>
-          c === " " ? " " : Math.random() < 0.15 ? CHARS[Math.floor(Math.random() * CHARS.length)] : c
-        )
-        .join("");
-      setGlitchText(out);
-      if (ticks < 22) {
-        setTimeout(glitch, 45);
-      } else {
-        setGlitchText(BRAND);
-        document.getElementById("cin-brand-box")?.classList.add("cin-fade-out-scale");
-        setTimeout(() => setPhase(2), 380);
-      }
-    };
-    const t = setTimeout(glitch, 120);
-    return () => clearTimeout(t);
+    if (phase === 1) {
+      // glitch BRAND then explode out
+      const base = BRAND;
+      let ticks = 0;
+      const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const glitch = () => {
+        ticks++;
+        const out = base
+          .split("")
+          .map((c) =>
+            c === " " ? " " : Math.random() < 0.15 ? CHARS[Math.floor(Math.random() * CHARS.length)] : c
+          )
+          .join("");
+        setGlitchText(out);
+        if (ticks < 20) setTimeout(glitch, 60);
+        else setTimeout(() => explodeOut(BRAND, "cin-brand-box", 2), HOLD_TIME);
+      };
+      glitch();
+    }
   }, [phase]);
 
-  // ripple trigger
-  const fireRipple = () => {
+  // Image click ripple
+  const triggerRipple = (e) => {
+    if (phase < 3) return; // ignore before final
     const el = imgWrapRef.current;
     if (!el) return;
-    el.classList.remove("cin-ripple");
-    void el.offsetWidth; // reflow
-    el.classList.add("cin-ripple");
+    const ripple = document.createElement("span");
+    ripple.className = "absolute rounded-full bg-white/30";
+    ripple.style.width = ripple.style.height = "40px";
+    ripple.style.left = `${e.nativeEvent.offsetX - 20}px`;
+    ripple.style.top = `${e.nativeEvent.offsetY - 20}px`;
+    ripple.style.animation = "rippleClick 600ms ease-out forwards";
+    el.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
   };
 
-  // PHASE 2 → show image then go to phase 3
+  // only Enter exits
   useEffect(() => {
-    if (phase !== 2) return;
-    const t = setTimeout(() => setPhase(3), 1200);
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  // PHASE 3 → ripple on each line
-  useEffect(() => {
-    if (phase !== 3) return;
-    const l1 = setTimeout(() => fireRipple(), 350);
-    const l2 = setTimeout(() => fireRipple(), 900);
-    const l3 = setTimeout(() => fireRipple(), 1400);
-    return () => {
-      clearTimeout(l1);
-      clearTimeout(l2);
-      clearTimeout(l3);
-    };
-  }, [phase]);
-
-  const handleClick = () => {
-    if (phase < 3) setPhase(3);
-    else onClose();
-  };
+    const onKey = (e) => e.key === "Enter" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 bg-black text-white"
-      style={{ zIndex: 9999 }}
-      role="dialog"
-      aria-label="Intro overlay"
-      onClick={handleClick}
-    >
-      {/* CENTER TEXT PHASES */}
-      {(phase === 0 || phase === 1) && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          {phase === 0 ? (
-            <div id="cin-name-box" className="text-center">
-              <div className="text-[clamp(26px,6vw,64px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
-                {typed}
-                <span className="inline-block w-[0.5ch] ml-[1px] align-baseline cin-caret" />
-              </div>
-            </div>
-          ) : (
-            <div id="cin-brand-box" className="text-center cin-pulse-zoom-twice">
-              <div className="text-[clamp(22px,5vw,50px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
-                {glitchText}
-              </div>
-            </div>
-          )}
+    <div className="fixed inset-0 bg-black text-white" style={{ zIndex: 9999 }} role="dialog">
+      {/* NAME Typing */}
+      {phase === 0 && (
+        <div id="cin-name-box" className="absolute inset-0 flex items-center justify-center text-[clamp(28px,6vw,64px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
+          {typed}
         </div>
       )}
 
-      {/* IMAGE + FINAL TITLES (phase >= 2) */}
+      {/* BRAND Glitch */}
+      {phase === 1 && (
+        <div id="cin-brand-box" className="absolute inset-0 flex items-center justify-center text-[clamp(22px,5vw,50px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
+          {glitchText}
+        </div>
+      )}
+
+      {/* IMAGE + FINAL TITLES */}
       {phase >= 2 && (
-        <div className="h-full flex items-center justify-center p-6 pointer-events-none">
+        <div className="h-full flex items-center justify-center p-6">
           <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
-            <div className="hidden md:block" />
+            <div />
             <div
               ref={imgWrapRef}
-              className={`relative rounded-sm overflow-hidden cin-image-holder ${
-                phase === 2 ? "cin-radial-reveal cin-image-move-in" : ""
-              }`}
+              onClick={triggerRipple}
+              className="relative overflow-hidden cin-image-holder"
               style={{ maxHeight: "78vh" }}
             >
-              <img
-                src={INTRO_LEFT_IMAGE_URL}
-                alt=""
-                className="w-full h-auto object-contain"
-                style={{ maxHeight: "78vh" }}
-              />
-              <div className="pointer-events-none absolute inset-0 cin-ripple-layer" />
+              <img src={INTRO_LEFT_IMAGE_URL} alt="" className="w-full h-auto object-contain" />
             </div>
             <div className="flex flex-col items-end justify-between gap-6">
-              <div className="text-right select-none">
-                <div
-                  className={`text-[clamp(28px,5vw,56px)] uppercase tracking-[0.08em] font-['Playfair_Display'] whitespace-nowrap ${
-                    phase === 3 ? "cin-overshoot-in delay-[220ms]" : "opacity-0 translate-x-6"
-                  }`}
-                >
-                  PRADEEP MOORTHY
-                </div>
-                <div
-                  className={`mt-1 text-[clamp(20px,3.5vw,39px)] uppercase tracking-[0.08em] font-['Playfair_Display'] whitespace-nowrap ${
-                    phase === 3 ? "cin-overshoot-in delay-[750ms]" : "opacity-0 translate-x-6"
-                  }`}
-                >
-                  PRADHU PHOTOGRAPHY
-                </div>
-                <div
-                  className={`mt-2 text-[12px] tracking-[0.25em] opacity-80 ${
-                    phase === 3 ? "cin-overshoot-in delay-[1500ms]" : "opacity-0 translate-x-6"
-                  }`}
-                >
-                  VISUAL & HONEST STORIES
-                </div>
+              {/* Titles */}
+              <div className="text-right">
+                <div className="cin-overshoot-in delay-[220ms]">PRADEEP MOORTHY</div>
+                <div className="cin-overshoot-in delay-[750ms]">PRADHU PHOTOGRAPHY</div>
+                <div className="cin-overshoot-in delay-[1500ms] text-xs">VISUAL & HONEST STORIES</div>
               </div>
-              <div className="pointer-events-auto">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClose();
-                  }}
-                  className={`rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition ${
-                    phase === 3 ? "cin-fade-in-delayed" : "opacity-0"
-                  }`}
-                >
-                  Enter ↵
-                </button>
-              </div>
+              <button
+                onClick={onClose}
+                className="rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition cin-fade-in-delayed"
+              >
+                Enter ↵
+              </button>
             </div>
           </div>
         </div>
@@ -437,6 +393,7 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
+
 
 
 
