@@ -409,7 +409,7 @@ function IntroOverlay({ onClose }) {
       <div
         className={[
           "h-full w-full grid items-center justify-center p-6",
-          "md:grid-cols-[640px_1fr] gap-8",
+          "md:grid-cols-[640px_1fr] gap-4",
           // hidden until revealImg starts (so typing has clean black bg)
           phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100",
         ].join(" ")}
@@ -433,7 +433,7 @@ function IntroOverlay({ onClose }) {
         {/* Right: final stacked single-line titles */}
         <div
           className={[
-            "flex flex-col items-end gap-6 text-right whitespace-nowrap select-none",
+            "flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
@@ -450,7 +450,7 @@ function IntroOverlay({ onClose }) {
           {/* PRADEEP MOORTHY (big) */}
           <h1
             className={[
-              "mt-2 font-['Playfair_Display'] uppercase",
+              "mt-1 font-['Playfair_Display'] uppercase",
               "text-[clamp(32px,6vw,72px)] leading-tight",
               phase === "titles" ? "cin-overshoot-in delay-[480ms]" : "",
             ].join(" ")}
@@ -461,7 +461,7 @@ function IntroOverlay({ onClose }) {
           {/* PRADHU PHOTOGRAPHY (smaller) */}
           <div
             className={[
-              "mt-1 font-['Playfair_Display'] uppercase",
+              "mt-0.5 font-['Playfair_Display'] uppercase",
               "text-[clamp(24px,4.5vw,50px)] leading-tight",
               phase === "titles" ? "cin-overshoot-in delay-[850ms]" : "",
             ].join(" ")}
