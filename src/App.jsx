@@ -991,16 +991,19 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 "
               >
                 <img
-                  src={it.url}
-                  alt={`${cat.label} — ${it.name}`}
-                  className="
-                    w-full
-                    h-[58vh] sm:h-[64vh] md:h-[68vh]
-                    object-cover
-                    rounded-2xl
-                  "
-                  loading="lazy"
-                />
+  src={it.url}
+  alt={`${cat.label} — ${it.name}`}
+  className={`
+    mx-auto
+    rounded-2xl
+    object-contain
+    max-h-[68vh]   /* cap portrait height */
+    w-auto         /* portrait keeps proportions */
+    h-[58vh] sm:h-[64vh] md:h-[68vh]  /* base landscape height */
+  `}
+  loading="lazy"
+/>
+
               </div>
             ))}
           </div>
