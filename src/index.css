@@ -1,12 +1,13 @@
-/* ---------- Tailwind ---------- */
+/* ---------- Tailwind setup ---------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ---------- Custom utilities ---------- */
 @layer utilities {
-  /* ====== Soft dots background (main page) ====== */
+  /* ====== Soft dots background (used on <main>) ====== */
   .bg-dots-light {
+    /* keep your pastel/light page color from JS tokens; this overlays dots */
     background-image: radial-gradient(rgba(20, 20, 20, 0.12) 1px, transparent 1px);
     background-size: 22px 22px;
     background-position: 0 0;
@@ -17,51 +18,60 @@
     background-position: 0 0;
   }
 
-  /* ====== Basic fades/zoom/slide ====== */
+  /* ====== Tiny base animation helpers ====== */
   .cin-fade-in { animation: cinFade 700ms ease-out forwards; }
-  .cin-fade-in-delayed { animation: cinFade 700ms ease-out 900ms forwards; } /* CTA */
+  .cin-fade-in-delayed { animation: cinFade 800ms ease-out 180ms forwards; }
+  .cin-slide-up { animation: cinSlideUp 700ms ease-out forwards; }
+  .cin-slide-up-delay { animation: cinSlideUp 700ms ease-out 140ms forwards; }
   .cin-zoom-in { animation: cinZoom 1000ms ease-out forwards; }
   .cin-vignette {
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%);
   }
-  @keyframes cinFade { from { opacity: 0; } to { opacity: 1; } }
+
+  @keyframes cinFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes cinSlideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   @keyframes cinZoom {
     from { transform: scale(1.035); opacity: 0; }
     50%  { opacity: 1; }
     to   { transform: scale(1); opacity: 1; }
   }
 
-  /* ====== Typing caret ====== */
-  .cin-caret { height: 1em; width: 1px; display: inline-block; background: currentColor; animation: cin-caret-blink 0.8s steps(1,end) infinite; }
-  @keyframes cin-caret-blink { 50% { opacity: 0; } }
+  /* ====== Caret blink (typing) ====== */
+  .cin-caret {
+    height: 1em;
+    background: currentColor;
+    animation: cin-caret-blink 0.8s steps(1, end) infinite;
+  }
+  @keyframes cin-caret-blink {
+    50% { opacity: 0; }
+  }
 
-  /* ====== “Pulse” zoom twice for brand typing line ====== */
+  /* ====== Vanish with tiny scale-in ====== */
+  .cin-fade-out-scale { animation: cin-fade-out-scale-kf 0.42s ease forwards; }
+  @keyframes cin-fade-out-scale-kf {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.92); }
+  }
+
+  /* ====== Brand quick double pulse ====== */
   .cin-pulse-zoom-twice {
     animation:
-      cin-pulse-zoom-kf 260ms ease-in-out 0ms 1,
-      cin-pulse-zoom-kf 260ms ease-in-out 320ms 1;
+      cin-pulse-zoom-kf 240ms ease-in-out 0ms 1,
+      cin-pulse-zoom-kf 240ms ease-in-out 320ms 1;
   }
   @keyframes cin-pulse-zoom-kf {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.035); filter: blur(0.2px); }
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.035); filter: blur(0.2px); }
     100% { transform: scale(1); filter: blur(0); }
   }
 
-  /* ====== Explode out: letters scatter & fade ====== */
-  .cin-explode-out {
-    display: inline-block;
-    position: relative;
-    animation: cin-explode-out-kf 820ms ease forwards;
-    will-change: transform, opacity;
-  }
-  @keyframes cin-explode-out-kf {
-    0%   { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
-    30%  { opacity: 1; }
-    60%  { opacity: 0.85; }
-    100% { opacity: 0; transform: scale(1.25) rotate(8deg) translate3d(0,-18px,0); filter: blur(1px); }
-  }
-
-  /* ====== Image radial reveal + move in ====== */
+  /* ====== Image radial reveal from center (mask) ====== */
   .cin-radial-reveal {
     -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 0%);
             mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 0%);
@@ -77,35 +87,107 @@
               mask-image: none;
     }
   }
+
+  /* ====== Image subtle movement into place ====== */
   .cin-image-move-in { animation: cin-img-move-in-kf 900ms ease-out forwards; }
   @keyframes cin-img-move-in-kf {
     0%   { transform: translateY(10px) scale(1.01); opacity: 0.85; }
     100% { transform: translateY(0) scale(1);      opacity: 1; }
   }
 
-  /* ====== Title overshoot (hit the image) ====== */
-  .cin-overshoot-in { animation: cin-overshoot-kf 820ms cubic-bezier(.2,.7,.2,1) forwards; }
+  /* ====== Overshoot-in (hit from right) for titles ====== */
+  .cin-overshoot-in { animation: cin-overshoot-kf 620ms cubic-bezier(.2,.7,.2,1) forwards; }
   @keyframes cin-overshoot-kf {
     0%   { opacity: 0; transform: translateX(64px); }
-    60%  { opacity: 1; transform: translateX(-12px); } /* “hit” */
+    60%  { opacity: 1; transform: translateX(-10px); } /* hit/overshoot */
     100% { opacity: 1; transform: translateX(0); }
   }
 
-  /* ====== BIGGER ripple (click + programmatic) ====== */
-  .cin-ripple-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-  .cin-ripple-el {
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    border-radius: 9999px;
-    background: rgba(255,255,255,0.18);
-    transform: translate(-50%, -50%) scale(0.2);
-    animation: cin-ripple-grow 750ms ease-out forwards;
-    mix-blend-mode: screen;
+  /* ====== Delays for staged lines ====== */
+  .delay-\[220ms\]  { animation-delay: 220ms !important; }
+  .delay-\[500ms\]  { animation-delay: 500ms !important; }
+  .delay-\[750ms\]  { animation-delay: 750ms !important; }
+  .delay-\[1150ms\] { animation-delay: 1150ms !important; }
+
+  /* ====== Explode Out (scatter letters) ====== */
+  @keyframes explodeOut {
+    to {
+      opacity: 0;
+      transform:
+        translate(calc(var(--dx, 0) * 1px), calc(var(--dy, 0) * 1px))
+        rotate(calc(var(--rot, 0) * 1deg))
+        scale(0.85);
+      filter: blur(0.8px);
+    }
   }
-  @keyframes cin-ripple-grow {
-    0%   { opacity: 0.95; transform: translate(-50%,-50%) scale(0.2); filter: blur(0px); }
-    60%  { opacity: 0.55; transform: translate(-50%,-50%) scale(18);  filter: blur(0.6px); }
-    100% { opacity: 0;    transform: translate(-50%,-50%) scale(22);  filter: blur(1px); }
+  .explode-out {
+    display: inline-block;
+    will-change: transform, opacity, filter;
+    animation: explodeOut 900ms ease forwards;
+  }
+
+  /* ====== Random Entry (jitter in) ====== */
+  @keyframes randomIn {
+    from {
+      opacity: 0;
+      transform:
+        translate(calc(var(--dx, 0) * 1px), calc(var(--dy, 0) * 1px))
+        rotate(calc(var(--rot, 0) * 1deg))
+        scale(1.5);
+      filter: blur(1px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: blur(0);
+    }
+  }
+  .random-in {
+    display: inline-block;
+    will-change: transform, opacity, filter;
+    animation: randomIn 850ms ease-out forwards;
+  }
+
+  /* ====== Ripple + Flash (global click + title hit) ====== */
+  @keyframes rippleFlash {
+    0%   { transform: scale(0); opacity: 0.95; box-shadow: 0 0 15px rgba(255,255,255,0.9); }
+    40%  { opacity: 0.75; box-shadow: 0 0 28px rgba(255,255,255,1); }
+    100% { transform: scale(5); opacity: 0; box-shadow: 0 0 0 rgba(255,255,255,0); }
+  }
+  .ripple-flash {
+    position: absolute;
+    border-radius: 9999px;
+    background: radial-gradient(circle, #ffffff 0%, rgba(255,255,255,0.25) 55%, rgba(255,255,255,0) 70%);
+    width: 56px;
+    height: 56px;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    animation: rippleFlash 900ms ease-out forwards;
+  }
+
+  /* (Legacy) center ripple if you trigger without coords */
+  .cin-ripple-layer { pointer-events: none; }
+  .cin-ripple { animation: cin-ripple-kf 650ms ease-out 1; }
+  @keyframes cin-ripple-kf {
+    0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.18), inset 0 0 0 0 rgba(255,255,255,0.12); }
+    60%  { box-shadow: 0 0 0 18px rgba(255,255,255,0), inset 0 0 0 10px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 22px rgba(255,255,255,0), inset 0 0 0 12px rgba(255,255,255,0); }
+  }
+
+  /* ====== Reduced motion: keep things accessible ====== */
+  @media (prefers-reduced-motion: reduce) {
+    .cin-fade-in,
+    .cin-fade-in-delayed,
+    .cin-slide-up,
+    .cin-slide-up-delay,
+    .cin-zoom-in,
+    .cin-radial-reveal,
+    .cin-image-move-in,
+    .cin-overshoot-in,
+    .explode-out,
+    .random-in {
+      animation: none !important;
+      transition: none !important;
+    }
   }
 }
