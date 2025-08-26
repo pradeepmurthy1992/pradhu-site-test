@@ -882,80 +882,38 @@ function PortfolioLanding({ T, cats, states, openCat }) {
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-
-  const trackRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const containerRef = useRef(null);
 
-  // --- helpers ---
-  const slideWidthPx = () => {
-    // keep a bit of peek on both sides
-    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    return Math.min(Math.floor(vw * 0.86), 1200); // ~86vw, capped to keep sane width
+  const goTo = (idx) => {
+    if (idx < 0 || idx >= items.length) return;
+    setActiveIndex(idx);
+    containerRef.current?.scrollTo({
+      left: idx * containerRef.current.clientWidth,
+      behavior: "smooth",
+    });
   };
-
-  const scrollToIndex = (idx, behavior = "smooth") => {
-    const el = trackRef.current;
-    if (!el) return;
-    const w = slideWidthPx();
-    const gap = 24; // the px gap we use below
-    el.scrollTo({ left: idx * (w + gap), behavior });
-  };
-
-  // set active slide while scrolling
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-
-    let raf = 0;
-    const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        const w = slideWidthPx();
-        const gap = 24;
-        // snap mid
-        const idx = Math.round(el.scrollLeft / (w + gap));
-        setActiveIndex(Math.max(0, Math.min(idx, items.length - 1)));
-        raf = 0;
-      });
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [items.length]);
-
-  // keep snap when window resizes
-  useEffect(() => {
-    const onResize = () => scrollToIndex(activeIndex, "auto");
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [activeIndex]);
-
-  // keyboard support (← →)
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "ArrowRight") scrollToIndex(Math.min(activeIndex + 1, items.length - 1));
-      if (e.key === "ArrowLeft") scrollToIndex(Math.max(activeIndex - 1, 0));
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, items.length]);
 
   return (
     <section className="py-2" id="portfolio">
-      {/* Header */}
+      {/* Sticky breadcrumb + title */}
       <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+            Portfolio
+          </button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2 className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           {cat.label}
         </h2>
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
 
-      {/* Right-side 1 / N counter */}
+      {/* Progress rail (right side numbers) */}
       <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
         <div className="flex flex-col items-center gap-2">
           <div className="h-32 w-px bg-neutral-400/30" />
@@ -967,68 +925,48 @@ function PortfolioPage({ T, cat, state, onBack }) {
       </div>
 
       {/* Horizontal carousel */}
-      {state.error ? (
-        <div className="text-red-500">{String(state.error)}</div>
-      ) : state.loading ? (
-        <div className={`${T.muted2}`}>Loading…</div>
-      ) : items.length ? (
-        <div className="relative">
+      <div
+        ref={containerRef}
+        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 px-6"
+        style={{ scrollSnapType: "x mandatory" }}
+        onScroll={(e) => {
+          const idx = Math.round(
+            e.target.scrollLeft / e.target.clientWidth
+          );
+          if (idx !== activeIndex) setActiveIndex(idx);
+        }}
+      >
+        {items.map((it, i) => (
           <div
-            ref={trackRef}
-            className="mx-auto w-full overflow-x-auto snap-x snap-mandatory scroll-smooth"
-            style={{ scrollbarWidth: "none" }} // hide Firefox scrollbar; optional
+            key={it.sha || i}
+            className="flex-shrink-0 w-[85%] sm:w-[70%] md:w-[60%] snap-center"
           >
-            <div
-              className="flex items-stretch"
-              style={{
-                gap: "24px",
-                padding: "0 24px 8px",
-              }}
-            >
-              {items.map((it, i) => (
-                <figure
-                  key={it.sha || i}
-                  className="snap-center shrink-0 rounded-2xl overflow-hidden border shadow-sm"
-                  style={{
-                    width: `${slideWidthPx()}px`,
-                  }}
-                >
-                  <img
-                    src={it.url}
-                    alt={`${cat.label} — ${it.name}`}
-                    className="w-full h-[70vh] md:h-[74vh] object-contain bg-black/10"
-                    loading="lazy"
-                  />
-                </figure>
-              ))}
-            </div>
+            <img
+              src={it.url}
+              alt={`${cat.label} — ${it.name}`}
+              className="w-full h-auto object-contain rounded-lg"
+              loading="lazy"
+            />
           </div>
+        ))}
+      </div>
 
-          {/* Bottom dots */}
-          {items.length > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              {items.map((_, i) => {
-                const active = i === activeIndex;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => scrollToIndex(i)}
-                    aria-label={`Go to slide ${i + 1}`}
-                    className={`h-2.5 rounded-full transition-all ${
-                      active ? "w-6" : "w-2.5 opacity-60"
-                    } ${themeDotClass(T)}`}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
-      )}
+      {/* Dots navigation */}
+      <div className="flex justify-center gap-2 mt-4">
+        {items.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className={`h-2.5 w-2.5 rounded-full transition ${
+              i === activeIndex ? "bg-neutral-800 dark:bg-white" : "bg-neutral-400/50"
+            }`}
+          />
+        ))}
+      </div>
     </section>
   );
 }
+
 
 // small helper for dot color to match theme
 function themeDotClass(T) {
