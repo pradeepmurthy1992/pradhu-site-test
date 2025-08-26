@@ -884,13 +884,11 @@ function PortfolioPage({ T, cat, state, onBack }) {
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Intersection → update active index
+  // observe which figure is centered
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
     const nodes = Array.from(root.querySelectorAll("figure"));
-    if (!nodes.length) return;
-
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
@@ -906,37 +904,24 @@ function PortfolioPage({ T, cat, state, onBack }) {
     return () => obs.disconnect();
   }, [state.loading]);
 
-  // Parallax
+  // tiny vertical parallax
   useMicroParallax(containerRef, { strength: 14 });
 
-  // Preload neighbours
-  useEffect(() => {
-    if (!items.length) return;
-    const prev = items[activeIndex - 1]?.url;
-    const next = items[activeIndex + 1]?.url;
-    if (prev) preloadImage(prev);
-    if (next) preloadImage(next);
-  }, [activeIndex, items]);
-
+  // helpers for arrow buttons
   const scrollToIdx = (idx) => {
     const el = containerRef.current?.querySelector(`figure[data-idx="${idx}"]`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   };
-
-  const goPrev = () => scrollToIdx(Math.max(activeIndex - 1, 0));
-  const goNext = () => scrollToIdx(Math.min(activeIndex + 1, items.length - 1));
-
-  useKeyNav(true, { goPrev, goNext, onExit: onBack });
+  const prev = () => scrollToIdx(Math.max(activeIndex - 1, 0));
+  const next = () => scrollToIdx(Math.min(activeIndex + 1, items.length - 1));
 
   return (
     <section className="py-2" id="portfolio">
       {/* Sticky breadcrumb + title */}
       <div className="mb-6 sticky top-[72px] z-[2] backdrop-blur border-b pb-3">
-        <div className="pt-3 flex items-center gap-2">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack} aria-label="Back to all portfolios">
-            ← Portfolio
-          </button>
-          <span className={`mx-1 ${T.muted2}`}>/</span>
+        <div className="pt-3">
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
+          <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
         <h2 className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
@@ -945,54 +930,68 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
 
-      {/* Progress rail (right) */}
-      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none z-[1]">
+      {/* Progress rail (nudged further right) */}
+      <div className="fixed right-6 lg:right-10 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none z-[1]">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-32 w-px bg-neutral-400/30" />
+          <div className="h-28 w-px bg-neutral-400/30" />
           <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
             {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
           </div>
-          <div className="h-32 w-px bg-neutral-400/30" />
+          <div className="h-28 w-px bg-neutral-400/30" />
         </div>
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Larger nav arrows; placed inside the content column and clear of the rail */}
       {items.length > 1 && (
         <>
           <button
             type="button"
-            onClick={goPrev}
-            className="fixed left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/60"
+            onClick={prev}
+            className="fixed left-4 md:left-6 top-1/2 -translate-y-1/2 z-20 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/45 text-white grid place-items-center backdrop-blur
+                       hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-white/60"
             aria-label="Previous image"
           >
-            ‹
+            {/* chevron */}
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
           </button>
+
           <button
             type="button"
-            onClick={goNext}
-            className="fixed right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/60"
+            onClick={next}
+            className="fixed right-[4.5rem] md:right-[5.5rem] top-1/2 -translate-y-1/2 z-20 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/45 text-white grid place-items-center backdrop-blur
+                       hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-white/60"
             aria-label="Next image"
           >
-            ›
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </button>
         </>
       )}
 
-      {/* Content */}
+      {/* Centered tall images (slightly smaller to “peek” next/prev) */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
         <div className={`${T.muted2}`}>Loading…</div>
       ) : items.length ? (
-        <div ref={containerRef} className="mx-auto max-w-[980px]">
+        <div
+          ref={containerRef}
+          className="mx-auto max-w-[960px] pr-[4.5rem] md:pr-[5.5rem]" // right padding so rail/arrows never sit on top of image
+        >
           {items.map((it, i) => (
-            <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
+            <figure
+              key={it.sha || i}
+              data-idx={i}
+              className="my-12 md:my-16 lg:my-20 scroll-mt-24"
+            >
               <img
                 src={it.url}
                 alt={`${cat.label} — ${it.name}`}
-                className="max-h-[85vh] w-auto mx-auto object-contain parallax-img"
+                className="max-h-[76vh] w-auto mx-auto object-contain rounded-xl shadow-sm parallax-img"
                 loading="lazy"
-                onLoad={(e) => e.currentTarget.classList.add("loaded")}
               />
             </figure>
           ))}
@@ -1003,6 +1002,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     </section>
   );
 }
+
 
 // ---------- Wrapper ----------
 function Portfolio({ T }) {
