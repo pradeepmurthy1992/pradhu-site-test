@@ -1096,17 +1096,7 @@ function BookingSection({ T }) {
               </a>
             </div>
 
-            <div
-              className={`mt-6 rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}
-            >
-              <img
-                src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop"
-                alt="Photographer at work"
-                className="w-full h-auto object-contain"
-                style={{ maxHeight: 420 }}
-                loading="lazy"
-              />
-            </div>
+            
           </div>
 
           {/* RIGHT: Enquire / Book */}
