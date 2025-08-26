@@ -243,6 +243,7 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 /* ===================== Intro Overlay (Editorial - Black) ===================== */
 /* ===================== Intro Overlay (Cinematic) ===================== */
+/* ===================== Intro Overlay (Cinematic) ===================== */
 function IntroOverlay({ onClose }) {
   // sequence: image → brand → name → final (keeps same layout/interaction as now)
   const PHASES = ["img", "brand", "name", "final"];
@@ -367,6 +368,7 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
+
 
 
 /* ===================== GitHub helpers ===================== */
