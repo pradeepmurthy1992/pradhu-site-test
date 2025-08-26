@@ -24,7 +24,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'            # built-in npm cache keyed by package-lock.json
+          # NOTE: removed `cache: 'npm'` because it needs a lockfile
+
+      # Optional: manual cache based on package.json if you still want some caching
+      - name: Cache npm dir
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Configure npm registry (mirror to avoid 429)
         run: |
@@ -34,14 +43,14 @@ jobs:
           npm config set fetch-retry-mintimeout 1000
           npm config set fetch-retry-maxtimeout 60000
 
-      - name: Install dependencies (with retry)
+      - name: Install dependencies (no lockfile)
         run: |
           n=0
           until [ $n -ge 3 ]
           do
-            npm ci --no-audit --no-fund && break
+            npm install --no-audit --no-fund && break
             n=$((n+1))
-            echo "npm ci failed… retry $n/3"
+            echo "npm install failed… retry $n/3"
             sleep 3
           done
 
