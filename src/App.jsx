@@ -754,6 +754,7 @@ function Input({
 }
 
 /* ===================== Portfolio (Landing + Pages + Hash) ===================== */
+/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
 // Micro parallax (vertical)
 function useMicroParallax(containerRef, opts = {}) {
   const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } = opts;
@@ -800,7 +801,28 @@ function useMicroParallax(containerRef, opts = {}) {
   }, [containerRef, selector, strength, thresholdPx]);
 }
 
-// Landing
+// ---------- helpers just for the Portfolio page ----------
+function useKeyNav(enabled, { goPrev, goNext, onExit }) {
+  useEffect(() => {
+    if (!enabled) return;
+    const onKey = (e) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+      else if (e.key === "Escape") { e.preventDefault(); onExit?.(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enabled, goPrev, goNext, onExit]);
+}
+
+function preloadImage(url) {
+  const img = new Image();
+  img.decoding = "async";
+  img.loading = "eager";
+  img.src = url;
+}
+
+// ---------- Landing ----------
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
@@ -834,15 +856,15 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                       loading="lazy"
                     />
-                  ) : null}
-                  <div className="absolute top-3 left-3 right-3">
-                    <div className="inline-block px-1.5 py-1">
-                      <h3
-                        className={`text-[clamp(24px,4vw,40px)] leading-none font-['Playfair_Display'] uppercase tracking-[0.1em] text-white drop-shadow`}
-                      >
-                        {c.label}
-                      </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
+                  ) : (
+                    <div className="absolute inset-0 animate-pulse" />
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
+                    <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.1em] text-lg drop-shadow">
+                      {c.label}
+                    </h3>
+                    <div className="text-[10px] tracking-[0.2em] text-white/90">
+                      {st.loading ? "Loading…" : `${st.images?.length || 0} photos`}
                     </div>
                   </div>
                 </div>
@@ -855,18 +877,20 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-// Page
+// ---------- Page ----------
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // observer for progress
+  // Intersection → update active index
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
     const nodes = Array.from(root.querySelectorAll("figure"));
+    if (!nodes.length) return;
+
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
@@ -882,105 +906,105 @@ function PortfolioPage({ T, cat, state, onBack }) {
     return () => obs.disconnect();
   }, [state.loading]);
 
+  // Parallax
   useMicroParallax(containerRef, { strength: 14 });
 
+  // Preload neighbours
+  useEffect(() => {
+    if (!items.length) return;
+    const prev = items[activeIndex - 1]?.url;
+    const next = items[activeIndex + 1]?.url;
+    if (prev) preloadImage(prev);
+    if (next) preloadImage(next);
+  }, [activeIndex, items]);
+
+  const scrollToIdx = (idx) => {
+    const el = containerRef.current?.querySelector(`figure[data-idx="${idx}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const goPrev = () => scrollToIdx(Math.max(activeIndex - 1, 0));
+  const goNext = () => scrollToIdx(Math.min(activeIndex + 1, items.length - 1));
+
+  useKeyNav(true, { goPrev, goNext, onExit: onBack });
+
   return (
-  <section className="py-2" id="portfolio">
-    {/* Sticky breadcrumb + title */}
-    <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
-      <div className="pt-3">
-        <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
-          Portfolio
-        </button>
-        <span className={`mx-2 ${T.muted2}`}>/</span>
-        <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
-      </div>
-      <h2
-        className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-      >
-        {cat.label}
-      </h2>
-      {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
-    </div>
-
-    {/* Progress rail (right) */}
-    <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
-      <div className="flex flex-col items-center gap-2">
-        <div className="h-32 w-px bg-neutral-400/30" />
-        <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
-          {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
+    <section className="py-2" id="portfolio">
+      {/* Sticky breadcrumb + title */}
+      <div className="mb-6 sticky top-[72px] z-[2] backdrop-blur border-b pb-3">
+        <div className="pt-3 flex items-center gap-2">
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack} aria-label="Back to all portfolios">
+            ← Portfolio
+          </button>
+          <span className={`mx-1 ${T.muted2}`}>/</span>
+          <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <div className="h-32 w-px bg-neutral-400/30" />
+        <h2 className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+          {cat.label}
+        </h2>
+        {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
-    </div>
 
-    {/* Navigation Arrows */}
-    {items.length > 1 && (
-      <>
-        {/* Prev */}
-        <button
-          type="button"
-          onClick={() => {
-            const prevIdx = Math.max(activeIndex - 1, 0);
-            const el = containerRef.current?.querySelector(
-              `figure[data-idx="${prevIdx}"]`
-            );
-            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-          }}
-          className="fixed left-3 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60"
-          aria-label="Previous image"
-        >
-          ‹
-        </button>
+      {/* Progress rail (right) */}
+      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none z-[1]">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-32 w-px bg-neutral-400/30" />
+          <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
+            {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
+          </div>
+          <div className="h-32 w-px bg-neutral-400/30" />
+        </div>
+      </div>
 
-        {/* Next */}
-        <button
-          type="button"
-          onClick={() => {
-            const nextIdx = Math.min(activeIndex + 1, items.length - 1);
-            const el = containerRef.current?.querySelector(
-              `figure[data-idx="${nextIdx}"]`
-            );
-            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-          }}
-          className="fixed right-3 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60"
-          aria-label="Next image"
-        >
-          ›
-        </button>
-      </>
-    )}
-
-    {/* Centered tall images */}
-    {state.error ? (
-      <div className="text-red-500">{String(state.error)}</div>
-    ) : state.loading ? (
-      <div className={`${T.muted2}`}>Loading…</div>
-    ) : items.length ? (
-      <div ref={containerRef} className="mx-auto max-w-[980px]">
-        {items.map((it, i) => (
-          <figure
-            key={it.sha || i}
-            data-idx={i}
-            className="my-10 sm:my-16 md:my-24"
+      {/* Navigation Arrows */}
+      {items.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={goPrev}
+            className="fixed left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/60"
+            aria-label="Previous image"
           >
-            <img
-              src={it.url}
-              alt={`${cat.label} — ${it.name}`}
-              className="max-h-[85vh] w-auto mx-auto object-contain parallax-img"
-              loading="lazy"
-            />
-          </figure>
-        ))}
-      </div>
-    ) : (
-      <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
-    )}
-  </section>
-);
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            className="fixed right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/60"
+            aria-label="Next image"
+          >
+            ›
+          </button>
+        </>
+      )}
 
+      {/* Content */}
+      {state.error ? (
+        <div className="text-red-500">{String(state.error)}</div>
+      ) : state.loading ? (
+        <div className={`${T.muted2}`}>Loading…</div>
+      ) : items.length ? (
+        <div ref={containerRef} className="mx-auto max-w-[980px]">
+          {items.map((it, i) => (
+            <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
+              <img
+                src={it.url}
+                alt={`${cat.label} — ${it.name}`}
+                className="max-h-[85vh] w-auto mx-auto object-contain parallax-img"
+                loading="lazy"
+                onLoad={(e) => e.currentTarget.classList.add("loaded")}
+              />
+            </figure>
+          ))}
+        </div>
+      ) : (
+        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
+      )}
+    </section>
+  );
+}
 
-// Wrapper
+// ---------- Wrapper ----------
 function Portfolio({ T }) {
   const [states, setStates] = useState(() =>
     GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
@@ -998,7 +1022,14 @@ function Portfolio({ T }) {
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const goLanding = () => { setView("landing"); setActiveIdx(-1); setHash("#portfolio"); };
+
+  const goLanding = () => {
+    setView("landing");
+    setActiveIdx(-1);
+    setHash("#portfolio");
+    const el = document.getElementById("tiles");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   // hash → view
   useEffect(() => {
@@ -1007,12 +1038,17 @@ function Portfolio({ T }) {
     if (seg.length >= 2 && seg[1]) {
       const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
       const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) { setActiveIdx(idx); setView("page"); return; }
+      if (idx >= 0) {
+        setActiveIdx(idx);
+        setView("page");
+        return;
+      }
     }
-    setView("landing"); setActiveIdx(-1);
+    setView("landing");
+    setActiveIdx(-1);
   }, [hash]);
 
-  // fetch images
+  // fetch images for all categories (cached per ghListFolder)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1038,6 +1074,7 @@ function Portfolio({ T }) {
   }
   return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
 }
+
 
 /* ===================== Tiles (one line) ===================== */
 function SectionTiles({ openId, setOpenId, T }) {
