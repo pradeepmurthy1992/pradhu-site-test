@@ -878,47 +878,72 @@ function PortfolioLanding({ T, cats, states, openCat }) {
 }
 
 // ---------- Page ----------
+// Page (horizontal carousel)
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-  const containerRef = useRef(null);
+
+  const trackRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // observe which figure is centered
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-    const nodes = Array.from(root.querySelectorAll("figure"));
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            const idx = Number(e.target.getAttribute("data-idx") || 0);
-            setActiveIndex(idx);
-          }
-        });
-      },
-      { root: null, threshold: 0.6 }
-    );
-    nodes.forEach((n) => obs.observe(n));
-    return () => obs.disconnect();
-  }, [state.loading]);
-
-  // tiny vertical parallax
-  useMicroParallax(containerRef, { strength: 14 });
-
-  // helpers for arrow buttons
-  const scrollToIdx = (idx) => {
-    const el = containerRef.current?.querySelector(`figure[data-idx="${idx}"]`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  // --- helpers ---
+  const slideWidthPx = () => {
+    // keep a bit of peek on both sides
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    return Math.min(Math.floor(vw * 0.86), 1200); // ~86vw, capped to keep sane width
   };
-  const prev = () => scrollToIdx(Math.max(activeIndex - 1, 0));
-  const next = () => scrollToIdx(Math.min(activeIndex + 1, items.length - 1));
+
+  const scrollToIndex = (idx, behavior = "smooth") => {
+    const el = trackRef.current;
+    if (!el) return;
+    const w = slideWidthPx();
+    const gap = 24; // the px gap we use below
+    el.scrollTo({ left: idx * (w + gap), behavior });
+  };
+
+  // set active slide while scrolling
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        const w = slideWidthPx();
+        const gap = 24;
+        // snap mid
+        const idx = Math.round(el.scrollLeft / (w + gap));
+        setActiveIndex(Math.max(0, Math.min(idx, items.length - 1)));
+        raf = 0;
+      });
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [items.length]);
+
+  // keep snap when window resizes
+  useEffect(() => {
+    const onResize = () => scrollToIndex(activeIndex, "auto");
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [activeIndex]);
+
+  // keyboard support (← →)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowRight") scrollToIndex(Math.min(activeIndex + 1, items.length - 1));
+      if (e.key === "ArrowLeft") scrollToIndex(Math.max(activeIndex - 1, 0));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeIndex, items.length]);
 
   return (
     <section className="py-2" id="portfolio">
-      {/* Sticky breadcrumb + title */}
-      <div className="mb-6 sticky top-[72px] z-[2] backdrop-blur border-b pb-3">
+      {/* Header */}
+      <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
         <div className="pt-3">
           <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
@@ -930,77 +955,88 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
 
-      {/* Progress rail (nudged further right) */}
-      <div className="fixed right-6 lg:right-10 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none z-[1]">
+      {/* Right-side 1 / N counter */}
+      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-28 w-px bg-neutral-400/30" />
+          <div className="h-32 w-px bg-neutral-400/30" />
           <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
             {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
           </div>
-          <div className="h-28 w-px bg-neutral-400/30" />
+          <div className="h-32 w-px bg-neutral-400/30" />
         </div>
       </div>
 
-      {/* Larger nav arrows; placed inside the content column and clear of the rail */}
-      {items.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={prev}
-            className="fixed left-4 md:left-6 top-1/2 -translate-y-1/2 z-20 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/45 text-white grid place-items-center backdrop-blur
-                       hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-white/60"
-            aria-label="Previous image"
-          >
-            {/* chevron */}
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-
-          <button
-            type="button"
-            onClick={next}
-            className="fixed right-[4.5rem] md:right-[5.5rem] top-1/2 -translate-y-1/2 z-20 h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/45 text-white grid place-items-center backdrop-blur
-                       hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-white/60"
-            aria-label="Next image"
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        </>
-      )}
-
-      {/* Centered tall images (slightly smaller to “peek” next/prev) */}
+      {/* Horizontal carousel */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
         <div className={`${T.muted2}`}>Loading…</div>
       ) : items.length ? (
-        <div
-          ref={containerRef}
-          className="mx-auto max-w-[960px] pr-[4.5rem] md:pr-[5.5rem]" // right padding so rail/arrows never sit on top of image
-        >
-          {items.map((it, i) => (
-            <figure
-              key={it.sha || i}
-              data-idx={i}
-              className="my-12 md:my-16 lg:my-20 scroll-mt-24"
+        <div className="relative">
+          <div
+            ref={trackRef}
+            className="mx-auto w-full overflow-x-auto snap-x snap-mandatory scroll-smooth"
+            style={{ scrollbarWidth: "none" }} // hide Firefox scrollbar; optional
+          >
+            <div
+              className="flex items-stretch"
+              style={{
+                gap: "24px",
+                padding: "0 24px 8px",
+              }}
             >
-              <img
-                src={it.url}
-                alt={`${cat.label} — ${it.name}`}
-                className="max-h-[76vh] w-auto mx-auto object-contain rounded-xl shadow-sm parallax-img"
-                loading="lazy"
-              />
-            </figure>
-          ))}
+              {items.map((it, i) => (
+                <figure
+                  key={it.sha || i}
+                  className="snap-center shrink-0 rounded-2xl overflow-hidden border shadow-sm"
+                  style={{
+                    width: `${slideWidthPx()}px`,
+                  }}
+                >
+                  <img
+                    src={it.url}
+                    alt={`${cat.label} — ${it.name}`}
+                    className="w-full h-[70vh] md:h-[74vh] object-contain bg-black/10"
+                    loading="lazy"
+                  />
+                </figure>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom dots */}
+          {items.length > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              {items.map((_, i) => {
+                const active = i === activeIndex;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => scrollToIndex(i)}
+                    aria-label={`Go to slide ${i + 1}`}
+                    className={`h-2.5 rounded-full transition-all ${
+                      active ? "w-6" : "w-2.5 opacity-60"
+                    } ${themeDotClass(T)}`}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
         <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
       )}
     </section>
   );
+}
+
+// small helper for dot color to match theme
+function themeDotClass(T) {
+  // use the same token families you already use
+  // dark theme → light dots; light theme → dark dots
+  return T.pageBg.includes("#1c1e26")
+    ? "bg-white/90 hover:opacity-80"
+    : "bg-neutral-900/80 hover:opacity-70";
 }
 
 
