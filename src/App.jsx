@@ -631,48 +631,49 @@ function ServicesSection({ T, showTitle = true }) {
 /* ===================== Pricing (Indicative) ===================== */
 function PricingSection({ T, showTitle = true }) {
   const tiers = [
-    {
-      name: "Portrait Session",
-      price: "from ₹4,500",
-      includes: [
-        "60–90 min · up to 2 outfits",
-        "6 lightly retouched hero shots",
-        "Curated 3 - 5 edited images per outfit",
-        "Location & styling guidance",
-      ],
-    },
-    {
-      name: "Headshots (Solo/Team)",
-      price: "from ₹5,000",
-      includes: [
-        "60–90 min · up to 2 outfits"
-        "Consistent lighting & framing",
-        "Curated 3 - 5 edited images per outfit",
-        "On-location option available",
-      ],
-    },
-    {
-      name: "Fashion / Editorial (Half-day)",
-      price: "from ₹10,000",
-      includes: [
-        "Pre-prod planning & moodboard",
-        "Lighting & look management",
-         "Curated 3 - 5 edited images per outfit",
-        "Team coordination on request",
-         "Hour based - no limits for outfit changes",
-      ],
-    },
-    {
-      name: "Event Coverage (2 hrs)",
-      price: "from ₹8,000",
-      includes: [
-        "Focused coverage of key moments",
-        "Colour-graded selects",
-        "Extendable by hour",
-       "Editing based on request - add on",
-      ],
-    },
-  ];
+  {
+    name: "Portrait Session",
+    price: "from ₹4,500",
+    includes: [
+      "60–90 min · up to 2 outfits",
+      "6 lightly retouched hero shots",
+      "Curated 3 - 5 edited images per outfit",
+      "Location & styling guidance",
+    ],
+  },
+  {
+    name: "Headshots (Solo/Team)",
+    price: "from ₹5,000",
+    includes: [
+      "60–90 min · up to 2 outfits",
+      "Consistent lighting & framing",
+      "Curated 3 - 5 edited images per outfit",
+      "On-location option available",
+    ],
+  },
+  {
+    name: "Fashion / Editorial (Half-day)",
+    price: "from ₹10,000",
+    includes: [
+      "Pre-prod planning & moodboard",
+      "Lighting & look management",
+      "Curated 3 - 5 edited images per outfit",
+      "Team coordination on request",
+      "Hour based - no limits for outfit changes",
+    ],
+  },
+  {
+    name: "Event Coverage (2 hrs)",
+    price: "from ₹8,000",
+    includes: [
+      "Focused coverage of key moments",
+      "Colour-graded selects",
+      "Extendable by hour",
+      "Editing based on request - add on",
+    ],
+  },
+];
+
 
   return (
     <section id="pricing" className="py-2">
