@@ -9,8 +9,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ===================== CONFIG ===================== */
 const INTRO_ENABLED = true;
-const INTRO_BRAND = "PRADEEP";
-const INTRO_NAME = "Pradhu Photography";
 const INTRO_AUTO_DISMISS_MS = 0;
 const INTRO_LEFT_IMAGE_URL =
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop";
@@ -35,14 +33,11 @@ const GH_CACHE_TTL_MS = 5 * 60 * 1000;
 // Brand / contact
 const CONTACT_EMAIL = "pradhuphotography@gmail.com";
 const SERVICE_CITIES =
-  "Base : Pune · Mumbai · Chennai · Bengaluru · Available pan-India";
+  "Pune · Mumbai · Chennai · Bengaluru · available pan-India";
 const IG_USERNAME = "pradhu_photography";
 
 // Enquiry (kept for future; not exposed in UI)
 const WHATSAPP_NUMBER = "91XXXXXXXXXX";
-const UPI_ID = "yourvpa@upi";
-const RAZORPAY_LINK = "";
-const BOOKING_ADVANCE_INR = 2000;
 
 // Google Sheets Web App endpoint
 const SHEET_WEB_APP =
@@ -227,8 +222,9 @@ function Icon({ name, className = "h-4 w-4" }) {
       );
     case "whatsapp":
       return (
-        <svg {...p} fill="currentColor" stroke="none" viewBox="0 0 24 24">
-          <path d="M12.04 2C6.57 2 2.12 6.44 2.12 11.9c0 1.91.52 3.68 1.42 5.2L2 22l5.02-1.49a9.86 9.86 0 005.02 1.34c5.47 0 9.92-4.44 9.92-9.9C21.96 6.44 17.51 2 12.04 2zm0 17.74c-1.63 0-3.16-.45-4.47-1.23l-.32-.2-2.98.89.89-2.9-.21-.34a7.71 7.71 0 01-1.23-4.15c0-4.28 3.49-7.77 7.77-7.77s7.77 3.49 7.77 7.77-3.49 7.77-7.77 7.77zm4.08-6.1c-.22-.11-1.3-.64-1.5-.71-.2-.08-.34-.11-.48.11-.14.2-.56.71-.69.86-.13.14-.25.16-.46.05-.22-.11-.91-.34-1.73-1.06-.64-.57-1.07-1.27-1.19-1.48-.12-.22-.01-.33.1-.45.1-.1.22-.25.33-.38.11-.13.14-.22.22-.37.07-.15.03-.28-.02-.39-.05-.11-.48-1.15-.66-1.58-.17-.42-.35-.36-.48-.37l-.41-.01c-.14 0-.38.06-.58.27-.2.22-.76.76-.76 1.85 0 1.09.78 2.15.89 2.3.11.15 1.55 2.39 3.76 3.35.53.23.94.37 1.26.47.53.17 1.02.15 1.4.09.43-.06 1.31-.54 1.49-1.05.18-.52.18-.96.13-1.05-.05-.09-.2-.15-.41-.26z" />
+        <svg {...p}>
+          <path d="M20.5 11.8a8.5 8.5 0 01-12.7 7.4L4 20.5l1.4-3.6A8.5 8.5 0 1120.5 11.8z" />
+          <path d="M8.5 8.5c.3-.7.8-.7 1.2-.7h.3c.2 0 .4.1.5.3.1.3.7 1.7.7 1.9 0 .3-.1.5-.3.7l-.5.5c-.1.1-.1.3 0 .5.2.4.7 1 1.6 1.6.9.6 1.6.7 2 .5.2-.1.3-.3.4-.4l.3-.4c.1-.1.3-.2.5-.1.3.1 1.6.8 1.9 1 .1.1.2.2.2.4 0 .2 0 .4-.1.6-.2.5-.9 1.3-1.6 1.5-.8.2-2 0-3.3-.6-1.2-.6-2.6-1.7-3.6-2.9-1-1.2-1.5-2.4-1.7-3.2-.2-.8 0-1.5.2-1.9z" />
         </svg>
       );
     default:
@@ -236,8 +232,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   }
 }
 
-/* ===================== Intro Overlay (Editorial) ===================== */
-/* ===================== Intro Overlay (Editorial, Dark Theme) ===================== */
+/* ===================== Intro Overlay (Editorial, black/white, single-line headings) ===================== */
 function IntroOverlay({ onClose }) {
   useEffect(() => {
     const onKey = (e) => {
@@ -281,28 +276,54 @@ function IntroOverlay({ onClose }) {
             />
           </div>
 
-          {/* Right rail: call to action */}
-          <div className="text-right">
-  {/* Big name */}
-  <h1 className="whitespace-nowrap text-[clamp(32px,6vw,72px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white">
-    PRADEEP MOORTHY
-  </h1>
+          {/* Right rail: titles and CTA */}
+          <div className="flex flex-col items-end justify-between gap-6">
+            <div className="text-right">
+              {/* Big name (nowrap + responsive clamp) */}
+              <h1
+                className="whitespace-nowrap leading-none"
+                style={{
+                  fontFamily: '"Playfair Display", serif',
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  fontSize: "clamp(36px,6vw,72px)",
+                  color: "#fff",
+                }}
+              >
+                PRADEEP MOORTHY
+              </h1>
 
-  {/* Sub-brand (70% of above) */}
-  <h2 className="mt-2 whitespace-nowrap text-[clamp(22px,4.2vw,50px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white/90">
-    PRADHU PHOTOGRAPHY
-  </h2>
+              {/* Sub-brand (≈70% size, nowrap) */}
+              <h2
+                className="mt-2 whitespace-nowrap leading-none"
+                style={{
+                  fontFamily: '"Playfair Display", serif',
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  fontSize: "clamp(24px,4.2vw,50px)",
+                  color: "rgba(255,255,255,0.92)",
+                }}
+              >
+                PRADHU PHOTOGRAPHY
+              </h2>
 
-  {/* Tagline */}
-  <div className="mt-3 text-sm md:text-base tracking-[0.2em] text-white/70 whitespace-nowrap">
-    Visual & Honest Stories
-  </div>
-</div>
-
+              {/* Tagline */}
+              <div
+                className="mt-3 whitespace-nowrap"
+                style={{
+                  fontSize: "clamp(12px,1.2vw,16px)",
+                  letterSpacing: "0.2em",
+                  color: "rgba(255,255,255,0.8)",
+                }}
+              >
+                Visual & Honest Stories
+              </div>
+            </div>
 
             <button
               onClick={onClose}
-              className="rounded-full border border-white/40 px-5 py-2 text-sm text-white hover:bg-white/10 transition"
+              className="rounded-full border px-5 py-2 text-sm transition"
+              style={{ borderColor: "rgba(255,255,255,0.4)", color: "#fff" }}
             >
               Enter ↵
             </button>
@@ -312,8 +333,6 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
-
-
 
 /* ===================== GitHub helpers ===================== */
 const GH_API = "https://api.github.com";
@@ -377,13 +396,15 @@ function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-[1] h-40 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 z-[2]">
         <div className={`${CONTAINER} pb-10 md:pb-14 text-white`}>
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-semibold">
             Freeze the moment. <span className="opacity-90">Tell the story.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
             Fashion · Portraits · Candids · Portfolio · Professional headshots ·
+            Street
           </p>
-          </div>
+          <p className="text-neutral-300 text-sm mt-1">{SERVICE_CITIES}</p>
+        </div>
       </div>
     </section>
   );
@@ -416,7 +437,12 @@ function FaqSection({ T, showTitle = true }) {
     <section className={`py-2`}>
       {showTitle && (
         <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+          className={`text-3xl md:text-4xl ${T.navTextStrong}`}
+          style={{
+            fontFamily: '"Playfair Display", serif',
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
         >
           FAQ
         </h2>
@@ -444,7 +470,12 @@ function ServicesSection({ T, showTitle = true }) {
     <section className={`py-2`}>
       {showTitle && (
         <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+          className={`text-3xl md:text-4xl ${T.navTextStrong}`}
+          style={{
+            fontFamily: '"Playfair Display", serif',
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
         >
           Services
         </h2>
@@ -550,7 +581,12 @@ function PricingSection({ T, showTitle = true }) {
     <section className={`py-2`}>
       {showTitle && (
         <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+          className={`text-3xl md:text-4xl ${T.navTextStrong}`}
+          style={{
+            fontFamily: '"Playfair Display", serif',
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
         >
           Pricing (indicative)
         </h2>
@@ -642,7 +678,267 @@ function SectionTiles({ openId, setOpenId, T }) {
   );
 }
 
-/* ===================== Booking (About at left + Enquiry form) ===================== */
+/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
+function useHash() {
+  const [hash, setHash] = useState(() => window.location.hash || "");
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash || "");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
+}
+
+const GH_CATEGORIES_EXT = {
+  Events: {
+    blurb:
+      "Candid coverage of people and moments—clean color, honest expressions, and storytelling frames.",
+  },
+  Fashion: {
+    blurb:
+      "Editorial-leaning looks with modern skin tones and simple, confident direction.",
+  },
+};
+
+function PortfolioLanding({ T, cats, states, openCat }) {
+  return (
+    <section className="py-2">
+      <header className="mb-8">
+        <h2
+          className={`text-4xl md:text-5xl ${T.navTextStrong}`}
+          style={{
+            fontFamily: '"Playfair Display", serif',
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
+          Portfolio
+        </h2>
+        <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
+      </header>
+
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {cats.map((c, i) => {
+          const st = states[i] || { images: [], loading: true, error: "" };
+          const cover = st.images?.[0]?.url || "";
+          return (
+            <article
+              key={c.label}
+              className={`relative rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg} shadow-sm`}
+            >
+              <button
+                type="button"
+                onClick={() => openCat(c.label)}
+                className="group block text-left w-full"
+                aria-label={`Open ${c.label}`}
+              >
+                <div className="aspect-[4/5] w-full bg-neutral-200/20 relative">
+                  {cover ? (
+                    <img
+                      src={cover}
+                      alt={c.label}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      loading="lazy"
+                    />
+                  ) : null}
+
+                  {/* Top-left big serif title */}
+                  <div className="absolute top-3 left-3 right-3">
+                    <div className="inline-block px-1.5 py-1">
+                      <h3
+                        className="leading-none text-white drop-shadow"
+                        style={{
+                          fontFamily: '"Playfair Display", serif',
+                          textTransform: "uppercase",
+                          letterSpacing: "0.1em",
+                          fontSize: "clamp(24px,4vw,40px)",
+                        }}
+                      >
+                        {c.label}
+                      </h3>
+                      <div
+                        className="mt-1 text-white/90"
+                        style={{ fontSize: 10, letterSpacing: "0.2em" }}
+                      >
+                        PORTFOLIO
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function PortfolioPage({ T, cat, state, onBack }) {
+  const items = state.images || [];
+  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
+
+  const containerRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const nodes = Array.from(root.querySelectorAll("figure"));
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            const idx = Number(e.target.getAttribute("data-idx") || 0);
+            setActiveIndex(idx);
+          }
+        });
+      },
+      { root: null, threshold: 0.6 }
+    );
+    nodes.forEach((n) => obs.observe(n));
+    return () => obs.disconnect();
+  }, [state.loading]);
+
+  return (
+    <section className="py-2">
+      {/* Sticky breadcrumb + title */}
+      <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
+        <div className="pt-3">
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+            Portfolio
+          </button>
+          <span className={`mx-2 ${T.muted2}`}>/</span>
+          <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
+        </div>
+        <h2
+          className={`mt-2 text-4xl md:text-5xl ${T.navTextStrong}`}
+          style={{
+            fontFamily: '"Playfair Display", serif',
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
+          {cat.label}
+        </h2>
+        {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
+      </div>
+
+      {/* Right progress rail */}
+      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-32 w-px bg-neutral-400/30" />
+          <div className={`${T.muted2}`} style={{ fontSize: 11, letterSpacing: "0.25em" }}>
+            {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
+          </div>
+          <div className="h-32 w-px bg-neutral-400/30" />
+        </div>
+      </div>
+
+      {/* Centered tall images */}
+      {state.error ? (
+        <div className="text-red-500">{String(state.error)}</div>
+      ) : state.loading ? (
+        <div className={`${T.muted2}`}>Loading…</div>
+      ) : items.length ? (
+        <div ref={containerRef} className="mx-auto max-w-[980px]">
+          {items.map((it, i) => (
+            <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
+              <img
+                src={it.url}
+                alt={`${cat.label}`}
+                className="w-full h-auto object-contain"
+                loading="lazy"
+              />
+            </figure>
+          ))}
+        </div>
+      ) : (
+        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
+      )}
+    </section>
+  );
+}
+
+function Portfolio({ T }) {
+  const [states, setStates] = useState(() =>
+    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
+  );
+
+  const [hash, setHash] = useHash();
+  const [view, setView] = useState("landing");
+  const [activeIdx, setActiveIdx] = useState(-1);
+
+  const openCat = (label) => {
+    const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
+    if (idx < 0) return;
+    setActiveIdx(idx);
+    setView("page");
+    setHash(`#portfolio/${encodeURIComponent(label)}`);
+    const el = document.getElementById("portfolio");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const goLanding = () => {
+    setView("landing");
+    setActiveIdx(-1);
+    setHash("#portfolio");
+  };
+
+  useEffect(() => {
+    if (!hash.startsWith("#portfolio")) return;
+    const seg = hash.split("/");
+    if (seg.length >= 2 && seg[1]) {
+      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
+      const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
+      if (idx >= 0) {
+        setActiveIdx(idx);
+        setView("page");
+        return;
+      }
+    }
+    setView("landing");
+    setActiveIdx(-1);
+  }, [hash]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        GH_CATEGORIES.map(async (cat) => {
+          try {
+            const list = await ghListFolder(
+              GH_OWNER,
+              GH_REPO,
+              cat.path,
+              GH_BRANCH
+            );
+            return { loading: false, error: "", images: list };
+          } catch (e) {
+            return {
+              loading: false,
+              error: e?.message || "Failed to load",
+              images: [],
+            };
+          }
+        })
+      );
+      if (!cancelled) setStates(results);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (view === "page" && activeIdx >= 0) {
+    const cat = GH_CATEGORIES[activeIdx];
+    const st = states[activeIdx] || { loading: true, error: "", images: [] };
+    return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
+  }
+  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
+}
+
+/* ===================== Booking (About at left + Enquiry form + Icon tiles) ===================== */
 function BookingSection({ T }) {
   const [form, setForm] = useState({
     name: "",
@@ -678,7 +974,6 @@ function BookingSection({ T }) {
   const onSubmit = async (e) => {
     e.preventDefault();
     setNote("");
-
     const missing = [];
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
@@ -720,15 +1015,20 @@ function BookingSection({ T }) {
     <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
       <div className={`${CONTAINER} py-16`}>
         <div className="grid md:grid-cols-2 gap-8 items-start">
-          {/* LEFT: About (has id=about for navbar scroll) */}
+          {/* LEFT: About */}
           <div id="about">
             <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+              className={`text-3xl md:text-4xl ${T.navTextStrong}`}
+              style={{
+                fontFamily: '"Playfair Display", serif',
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
             >
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
-              As an aspiring photographer from Kanchipuram(TN), I work across fashion,
+              As an aspiring photographer from Kanchipuram, I work across fashion,
               portraits, candids and events. I run a client-first process: I listen
               to your brief and offer tailored recommendations on looks, lighting,
               locations and timelines so the day feels effortless. On set, I work
@@ -737,7 +1037,7 @@ function BookingSection({ T }) {
               that define your story—delivering images that feel personal, polished
               and purposeful.
             </p>
-                        <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
+            <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
               <li>
                 Genres: Fashion, High Fashion, Editorials, Portraits, Headshots,
                 Candids, Street, Studio
@@ -749,16 +1049,16 @@ function BookingSection({ T }) {
               <li>{SERVICE_CITIES}</li>
             </ul>
 
-            {/* Icon tiles: Instagram / WhatsApp / Email */}
+            {/* Icon tiles row */}
             <div className="mt-5 flex items-center gap-3">
               {/* Instagram */}
               <a
-                href={`https://www.instagram.com/pradhu_photography/`}
+                href={`https://www.instagram.com/${IG_USERNAME}/`}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
                 title="Instagram"
-                className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} transition hover:scale-[1.03] hover:shadow-sm`}
+                className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border transition hover:scale-[1.03] hover:shadow-sm`}
               >
                 <Icon name="camera" className="h-5 w-5" />
               </a>
@@ -766,7 +1066,7 @@ function BookingSection({ T }) {
               {/* WhatsApp */}
               {WHATSAPP_NUMBER.includes("X") ? (
                 <span
-                  className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} opacity-60`}
+                  className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border opacity-60`}
                   title="WhatsApp unavailable"
                   aria-hidden="true"
                 >
@@ -779,7 +1079,7 @@ function BookingSection({ T }) {
                   rel="noreferrer"
                   aria-label="WhatsApp"
                   title="WhatsApp"
-                  className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} transition hover:scale-[1.03] hover:shadow-sm`}
+                  className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border transition hover:scale-[1.03] hover:shadow-sm`}
                 >
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </a>
@@ -787,10 +1087,10 @@ function BookingSection({ T }) {
 
               {/* Email */}
               <a
-                href={`mailto:pradhuphotography03@gmail.com`}
+                href={`mailto:${CONTACT_EMAIL}`}
                 aria-label="Email"
                 title="Email"
-                className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border ${T.navBorder} transition hover:scale-[1.03] hover:shadow-sm`}
+                className={`inline-flex items-center justify-center h-11 w-11 rounded-2xl border transition hover:scale-[1.03] hover:shadow-sm`}
               >
                 <Icon name="mail" className="h-5 w-5" />
               </a>
@@ -799,7 +1099,6 @@ function BookingSection({ T }) {
             <div
               className={`mt-6 rounded-2xl overflow-hidden border ${T.panelBorder} ${T.panelBg}`}
             >
-
               <img
                 src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop"
                 alt="Photographer at work"
@@ -813,7 +1112,12 @@ function BookingSection({ T }) {
           {/* RIGHT: Enquire / Book */}
           <div>
             <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+              className={`text-3xl md:text-4xl ${T.navTextStrong}`}
+              style={{
+                fontFamily: '"Playfair Display", serif',
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
             >
               Enquire / Book
             </h2>
@@ -904,9 +1208,8 @@ function BookingSection({ T }) {
                       {[
                         "Portraits",
                         "Fashion",
-                        "Portfolio",
                         "Candids",
-                        "Headshot",
+                        "Street",
                         "Events",
                         "Other",
                       ].map((s) => (
@@ -1062,253 +1365,6 @@ function ThemeSlider({ theme, setTheme }) {
   );
 }
 
-/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
-function useHash() {
-  const [hash, setHash] = useState(() => window.location.hash || "");
-  useEffect(() => {
-    const onHash = () => setHash(window.location.hash || "");
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
-}
-
-// Optional extended metadata per category (subtitle text for the page header)
-const GH_CATEGORIES_EXT = {
-  Events: {
-    blurb:
-      "Candid coverage of people and moments—clean color, honest expressions, and storytelling frames.",
-  },
-  Fashion: {
-    blurb:
-      "Editorial-leaning looks with modern skin tones and simple, confident direction.",
-  },
-};
-
-function PortfolioLanding({ T, cats, states, openCat }) {
-  return (
-    <section className="py-2">
-      <header className="mb-8">
-        <h2
-          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
-          Portfolio
-        </h2>
-        <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
-      </header>
-
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        {cats.map((c, i) => {
-          const st = states[i] || { images: [], loading: true, error: "" };
-          const cover = st.images?.[0]?.url || "";
-          return (
-            <article
-              key={c.label}
-              className={`relative rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg} shadow-sm`}
-            >
-              <button
-                type="button"
-                onClick={() => openCat(c.label)}
-                className="group block text-left w-full"
-                aria-label={`Open ${c.label}`}
-              >
-                <div className="aspect-[4/5] w-full bg-neutral-200/20 relative">
-                  {cover ? (
-                    <img
-                      src={cover}
-                      alt={c.label}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  ) : null}
-
-                  {/* Top-left big serif title */}
-                  <div className="absolute top-3 left-3 right-3">
-                    <div className="inline-block px-1.5 py-1">
-                      <h3
-                        className={`text-[clamp(24px,4vw,40px)] leading-none font-['Playfair_Display'] uppercase tracking-[0.1em] text-white drop-shadow`}
-                      >
-                        {c.label}
-                      </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
-                        PORTFOLIO
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function PortfolioPage({ T, cat, state, onBack }) {
-  const items = state.images || [];
-  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-
-  // Track which image is centered for the progress indicator
-  const containerRef = useRef(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-    const nodes = Array.from(root.querySelectorAll("figure"));
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            const idx = Number(e.target.getAttribute("data-idx") || 0);
-            setActiveIndex(idx);
-          }
-        });
-      },
-      { root: null, threshold: 0.6 }
-    );
-    nodes.forEach((n) => obs.observe(n));
-    return () => obs.disconnect();
-  }, [state.loading]);
-
-  return (
-    <section className="py-2">
-      {/* Sticky breadcrumb + title */}
-      <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
-        <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
-            Portfolio
-          </button>
-          <span className={`mx-2 ${T.muted2}`}>/</span>
-          <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
-        </div>
-        <h2
-          className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
-          {cat.label}
-        </h2>
-        {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
-      </div>
-
-      {/* Right progress rail */}
-      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-32 w-px bg-neutral-400/30" />
-          <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
-            {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
-          </div>
-          <div className="h-32 w-px bg-neutral-400/30" />
-        </div>
-      </div>
-
-      {/* Centered tall images with air/whitespace */}
-      {state.error ? (
-        <div className="text-red-500">{String(state.error)}</div>
-      ) : state.loading ? (
-        <div className={`${T.muted2}`}>Loading…</div>
-      ) : items.length ? (
-        <div ref={containerRef} className="mx-auto max-w-[980px]">
-          {items.map((it, i) => (
-            <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
-              <img
-                src={it.url}
-                alt={`${cat.label} — ${it.name}`}
-                className="w-full h-auto object-contain"
-                loading="lazy"
-              />
-            </figure>
-          ))}
-        </div>
-      ) : (
-        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
-      )}
-    </section>
-  );
-}
-
-function Portfolio({ T }) {
-  // states per category
-  const [states, setStates] = useState(() =>
-    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
-  );
-
-  // Hash router: #portfolio or #portfolio/Fashion
-  const [hash, setHash] = useHash();
-  const [view, setView] = useState("landing"); // "landing" | "page"
-  const [activeIdx, setActiveIdx] = useState(-1);
-
-  const openCat = (label) => {
-    const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-    if (idx < 0) return;
-    setActiveIdx(idx);
-    setView("page");
-    setHash(`#portfolio/${encodeURIComponent(label)}`);
-    const el = document.getElementById("portfolio");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const goLanding = () => {
-    setView("landing");
-    setActiveIdx(-1);
-    setHash("#portfolio");
-  };
-
-  // hash → view sync (deep-link support)
-  useEffect(() => {
-    if (!hash.startsWith("#portfolio")) return;
-    const seg = hash.split("/");
-    if (seg.length >= 2 && seg[1]) {
-      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
-      const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) {
-        setActiveIdx(idx);
-        setView("page");
-        return;
-      }
-    }
-    setView("landing");
-    setActiveIdx(-1);
-  }, [hash]);
-
-  // fetch images per category
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const results = await Promise.all(
-        GH_CATEGORIES.map(async (cat) => {
-          try {
-            const list = await ghListFolder(
-              GH_OWNER,
-              GH_REPO,
-              cat.path,
-              GH_BRANCH
-            );
-            return { loading: false, error: "", images: list };
-          } catch (e) {
-            return {
-              loading: false,
-              error: e?.message || "Failed to load",
-              images: [],
-            };
-          }
-        })
-      );
-      if (!cancelled) setStates(results);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (view === "page" && activeIdx >= 0) {
-    const cat = GH_CATEGORIES[activeIdx];
-    const st = states[activeIdx] || { loading: true, error: "", images: [] };
-    return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
-  }
-  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
-}
-
 /* ===================== Main App ===================== */
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1332,7 +1388,6 @@ export default function App() {
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
   });
 
-  // Selected tile / section
   const [openId, setOpenId] = useState("portfolio");
 
   const scrollToSectionFromNav = (id) => {
@@ -1376,8 +1431,9 @@ export default function App() {
           {/* Brand */}
           <div className="min-w-0">
             <p
-              className={`font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none ${T.navTextStrong}
+              className={`uppercase tracking-tight leading-none ${T.navTextStrong}
                     text-[clamp(20px,2.4vw,40px)] whitespace-nowrap`}
+              style={{ fontFamily: '"Playfair Display", serif', letterSpacing: "0.08em" }}
             >
               {NAV_BRAND}
             </p>
@@ -1453,7 +1509,7 @@ export default function App() {
       {/* TILES (one line) */}
       <SectionTiles openId={openId} setOpenId={setOpenId} T={T} />
 
-      {/* SECTION CONTENT (only selected visible) */}
+      {/* SECTION CONTENT */}
       <div id="sections-content" className={`${CONTAINER} py-12`}>
         <div id="portfolio" className={openId === "portfolio" ? "block" : "hidden"}>
           <Portfolio T={T} />
@@ -1472,23 +1528,20 @@ export default function App() {
         </div>
       </div>
 
-      {/* CONTACT / ENQUIRY (with About on the left) */}
+      {/* CONTACT / ENQUIRY */}
       <BookingSection T={T} />
 
-      {/* FOOTER */}
+      {/* FOOTER (icons removed; clean) */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
-  <div className={`${CONTAINER} py-10 text-sm`}>
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-      <p className={T.muted}>
-        © {new Date().getFullYear()} PRADHU — All rights reserved.
-      </p>
-      <div className="opacity-70 text-xs">
-        Crafting your best moments.
-      </div>
-    </div>
-  </div>
-</footer>
-
+        <div className={`${CONTAINER} py-10 text-sm`}>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <p className={T.muted}>
+              © {new Date().getFullYear()} PRADHU — All rights reserved.
+            </p>
+            <div className="opacity-70 text-xs">Crafted with care.</div>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
