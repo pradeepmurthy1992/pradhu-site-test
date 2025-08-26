@@ -242,12 +242,18 @@ function Icon({ name, className = "h-4 w-4" }) {
 }
 
 /* ===================== Intro Overlay (Editorial - Black) ===================== */
+/* ===================== Intro Overlay (Cinematic) ===================== */
 function IntroOverlay({ onClose }) {
+  // sequence: image → brand → name → final (keeps same layout/interaction as now)
+  const PHASES = ["img", "brand", "name", "final"];
+  const [phase, setPhase] = useState("img");
+
   useEffect(() => {
+    // skip on Enter / Wheel like before
     const onKey = (e) => {
       if (e.key === "Enter") onClose();
     };
-    const onWheel = () => onClose();
+    const onWheel = () => setPhase("final");
     window.addEventListener("keydown", onKey);
     window.addEventListener("wheel", onWheel, { once: true });
     return () => {
@@ -257,10 +263,30 @@ function IntroOverlay({ onClose }) {
   }, [onClose]);
 
   useEffect(() => {
-    if (!INTRO_AUTO_DISMISS_MS) return;
+    if (!INTRO_AUTO_DISMISS_MS) return; // keep existing behavior if you ever set it
     const t = setTimeout(onClose, INTRO_AUTO_DISMISS_MS);
     return () => clearTimeout(t);
   }, [onClose]);
+
+  // drive the cinematic phases
+  useEffect(() => {
+    if (phase === "final") return;
+    const nextIx = PHASES.indexOf(phase) + 1;
+    const next = PHASES[nextIx];
+    // timings: tune as you like (ms)
+    const DUR = {
+      img: 900,
+      brand: 900,
+      name: 900,
+    };
+    const timer = setTimeout(() => setPhase(next || "final"), DUR[phase] || 0);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  // helpers for visibility
+  const showImg = phase === "img" || phase === "brand" || phase === "name" || phase === "final";
+  const showBrand = phase === "brand" || phase === "name" || phase === "final";
+  const showName = phase === "name" || phase === "final";
 
   return (
     <div
@@ -268,42 +294,70 @@ function IntroOverlay({ onClose }) {
       style={{ zIndex: 9999 }}
       role="dialog"
       aria-label="Intro overlay"
-      onClick={onClose}
+      onClick={(e) => {
+        // only close when clicking the Enter button or outside right column? keep click-to-advance to final
+        if (phase !== "final") setPhase("final");
+        else onClose();
+      }}
     >
       <div className="h-full flex items-center justify-center p-6">
         <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
-          {/* Left rail intentionally empty for minimal look */}
+          {/* Left spacer (kept minimal like before) */}
           <div className="hidden md:flex items-center justify-start" />
-          {/* Center visual */}
+
+          {/* Center: big image (cinematic fade/scale) */}
           <div className="relative">
             <img
               src={INTRO_LEFT_IMAGE_URL}
               alt="Intro"
-              className="w-full h-auto object-contain shadow-sm"
-              style={{ maxHeight: "78vh" }}
+              className={`w-full h-auto object-contain shadow-sm max-h-[78vh] 
+                ${showImg ? "cin-fade-in cin-zoom-in" : "opacity-0"}`}
             />
+            {/* a soft vignette for cinematic feel */}
+            <div className="pointer-events-none absolute inset-0 cin-vignette" />
           </div>
-          {/* Right CTA */}
+
+          {/* Right rail: staged titles → final layout */}
           <div className="flex flex-col items-end justify-between gap-6">
-            <div className="text-right">
-              <div className="text-[12px] tracking-[0.25em] opacity-70">
-                VISUAL AND HONEST STORIES
+            <div className="text-right select-none">
+              {/* Small kicker shows at brand stage onward */}
+              <div
+                className={`text-[12px] tracking-[0.25em] ${
+                  showBrand ? "cin-fade-in-delayed opacity-80" : "opacity-0"
+                }`}
+              >
+                VISUAL & HONEST STORIES
               </div>
+
+              {/* Brand line 1: PRADEEP MOORTHY (fits single line) */}
               <h1
-                className="mt-2 leading-[0.95]"
-                style={{
-                  fontFamily: '"Playfair Display", serif',
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  fontSize: "clamp(28px,5vw,56px)",
-                }}
+                className={`mt-2 leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase whitespace-nowrap
+                  text-[clamp(28px,5vw,56px)]
+                  ${showBrand ? "cin-slide-up" : "opacity-0 translate-y-2"}`}
+                style={{ letterSpacing: "0.08em" }}
+              >
+                PRADEEP MOORTHY
+              </h1>
+
+              {/* Brand line 2: scaled to ~70% of above — keep on one line */}
+              <div
+                className={`mt-1 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em]
+                  text-[clamp(20px,3.5vw,39px)]
+                  ${showName ? "cin-slide-up-delay" : "opacity-0 translate-y-2"}`}
+                style={{ letterSpacing: "0.08em", opacity: 0.95 }}
               >
                 PRADHU PHOTOGRAPHY
-              </h1>
+              </div>
             </div>
+
+            {/* Final CTA appears only in final phase */}
             <button
-              onClick={onClose}
-              className="rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className={`rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition
+                ${phase === "final" ? "cin-fade-in-delayed" : "opacity-0"}`}
             >
               Enter ↵
             </button>
@@ -313,6 +367,7 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
+
 
 /* ===================== GitHub helpers ===================== */
 const GH_API = "https://api.github.com";
