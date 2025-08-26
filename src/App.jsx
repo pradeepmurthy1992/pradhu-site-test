@@ -937,18 +937,19 @@ function PortfolioPage({ T, cat, state, onBack }) {
         }}
       >
         {items.map((it, i) => (
-          <div
-            key={it.sha || i}
-            className="flex-shrink-0 w-[85%] sm:w-[70%] md:w-[60%] snap-center"
-          >
-            <img
-              src={it.url}
-              alt={`${cat.label} — ${it.name}`}
-              className="w-full h-auto object-contain rounded-lg"
-              loading="lazy"
-            />
-          </div>
-        ))}
+  <div
+    key={it.sha || i}
+    className="flex-shrink-0 w-[70%] sm:w-[55%] md:w-[50%] snap-center"
+  >
+    <img
+      src={it.url}
+      alt={`${cat.label} — ${it.name}`}
+      className="w-full h-[70vh] object-cover rounded-xl"
+      loading="lazy"
+    />
+  </div>
+))}
+
       </div>
 
       {/* Dots navigation */}
