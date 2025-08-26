@@ -885,52 +885,100 @@ function PortfolioPage({ T, cat, state, onBack }) {
   useMicroParallax(containerRef, { strength: 14 });
 
   return (
-    <section className="py-2" id="portfolio">
-      <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
-        <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
-          <span className={`mx-2 ${T.muted2}`}>/</span>
-          <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
-        </div>
-        <h2 className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
-          {cat.label}
-        </h2>
-        {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
+  <section className="py-2" id="portfolio">
+    {/* Sticky breadcrumb + title */}
+    <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
+      <div className="pt-3">
+        <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+          Portfolio
+        </button>
+        <span className={`mx-2 ${T.muted2}`}>/</span>
+        <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
       </div>
+      <h2
+        className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+      >
+        {cat.label}
+      </h2>
+      {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
+    </div>
 
-      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-32 w-px bg-neutral-400/30" />
-          <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
-            {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
-          </div>
-          <div className="h-32 w-px bg-neutral-400/30" />
+    {/* Progress rail (right) */}
+    <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-32 w-px bg-neutral-400/30" />
+        <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
+          {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
         </div>
+        <div className="h-32 w-px bg-neutral-400/30" />
       </div>
+    </div>
 
-      {state.error ? (
-        <div className="text-red-500">{String(state.error)}</div>
-      ) : state.loading ? (
-        <div className={`${T.muted2}`}>Loading…</div>
-      ) : items.length ? (
-        <div ref={containerRef} className="mx-auto max-w-[980px]">
-          {items.map((it, i) => (
-            <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
-              <img
-                src={it.url}
-                alt={`${cat.label} — ${it.name}`}
-                className="max-h-[85vh] w-auto mx-auto object-contain parallax-img"
-                loading="lazy"
-              />
-            </figure>
-          ))}
-        </div>
-      ) : (
-        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
-      )}
-    </section>
-  );
-}
+    {/* Navigation Arrows */}
+    {items.length > 1 && (
+      <>
+        {/* Prev */}
+        <button
+          type="button"
+          onClick={() => {
+            const prevIdx = Math.max(activeIndex - 1, 0);
+            const el = containerRef.current?.querySelector(
+              `figure[data-idx="${prevIdx}"]`
+            );
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+          className="fixed left-3 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60"
+          aria-label="Previous image"
+        >
+          ‹
+        </button>
+
+        {/* Next */}
+        <button
+          type="button"
+          onClick={() => {
+            const nextIdx = Math.min(activeIndex + 1, items.length - 1);
+            const el = containerRef.current?.querySelector(
+              `figure[data-idx="${nextIdx}"]`
+            );
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+          className="fixed right-3 top-1/2 -translate-y-1/2 z-10 bg-black/40 text-white p-3 rounded-full hover:bg-black/60"
+          aria-label="Next image"
+        >
+          ›
+        </button>
+      </>
+    )}
+
+    {/* Centered tall images */}
+    {state.error ? (
+      <div className="text-red-500">{String(state.error)}</div>
+    ) : state.loading ? (
+      <div className={`${T.muted2}`}>Loading…</div>
+    ) : items.length ? (
+      <div ref={containerRef} className="mx-auto max-w-[980px]">
+        {items.map((it, i) => (
+          <figure
+            key={it.sha || i}
+            data-idx={i}
+            className="my-10 sm:my-16 md:my-24"
+          >
+            <img
+              src={it.url}
+              alt={`${cat.label} — ${it.name}`}
+              className="max-h-[85vh] w-auto mx-auto object-contain parallax-img"
+              loading="lazy"
+            />
+          </figure>
+        ))}
+      </div>
+    ) : (
+      <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
+    )}
+  </section>
+);
+
 
 // Wrapper
 function Portfolio({ T }) {
