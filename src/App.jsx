@@ -268,7 +268,7 @@ function IntroOverlay({ onClose }) {
     >
       <div className="h-full flex items-center justify-center p-6">
         <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
-          {/* Left rail (empty for now, could add vertical text later) */}
+          {/* Left rail empty */}
           <div className="hidden md:flex items-center justify-start" />
 
           {/* Center: big image */}
@@ -284,13 +284,20 @@ function IntroOverlay({ onClose }) {
           {/* Right rail: call to action */}
           <div className="flex flex-col items-end justify-between gap-6">
             <div className="text-right">
-              <div className="text-[12px] tracking-[0.25em] text-white/80">
-                VISUAL AND HONEST STORIES
-              </div>
-              <h1 className="mt-2 text-[clamp(28px,5vw,56px)] leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase text-white">
-                PRADHU PHOTOGRAPHY
+              {/* Big name */}
+              <h1 className="text-[clamp(36px,6vw,72px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white">
+                PRADEEP MOORTHY
               </h1>
+              {/* Sub-brand */}
+              <h2 className="mt-2 text-[clamp(24px,4vw,50px)] font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none text-white/90">
+                PRADHU PHOTOGRAPHY
+              </h2>
+              {/* Tagline */}
+              <div className="mt-3 text-sm md:text-base tracking-[0.2em] text-white/70">
+                Visual & Honest Stories
+              </div>
             </div>
+
             <button
               onClick={onClose}
               className="rounded-full border border-white/40 px-5 py-2 text-sm text-white hover:bg-white/10 transition"
@@ -303,6 +310,7 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
+
 
 
 /* ===================== GitHub helpers ===================== */
