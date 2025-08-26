@@ -191,3 +191,14 @@
     }
   }
 }
+
+/* Micro-parallax helper */
+.parallax-img {
+  will-change: transform;
+  transition: transform 120ms ease-out;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .parallax-img { transition: none !important; transform: none !important; }
+}
