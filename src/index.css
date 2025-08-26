@@ -1,5 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @layer utilities {
-  /* cinematic base fades/slides */
   .cin-fade-in { animation: cinFade 700ms ease-out forwards; }
   .cin-fade-in-delayed { animation: cinFade 800ms ease-out 180ms forwards; }
   .cin-slide-up { animation: cinSlideUp 700ms ease-out forwards; }
