@@ -243,101 +243,101 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 /* ===================== Intro Overlay (Editorial - Black) ===================== */
 /* ===================== Intro Overlay (Cinematic) ===================== */
-function IntroOverlay({ onClose }) {
+import React, { useEffect, useRef, useState } from "react";
+
+const INTRO_LEFT_IMAGE_URL =
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop";
+
+/* helper: explode text spans */
+function ExplodeText({ text }) {
+  return (
+    <>
+      {text.split("").map((ch, i) => {
+        const dx = (Math.random() - 0.5) * 200;
+        const dy = (Math.random() - 0.5) * 120;
+        const rot = (Math.random() - 0.5) * 360;
+        return (
+          <span
+            key={i}
+            className="explode-out"
+            style={{ "--dx": dx, "--dy": dy, "--rot": rot }}
+          >
+            {ch}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+export default function IntroOverlay({ onClose }) {
   const [phase, setPhase] = useState(0);
-  const NAME = "PRADEEP MOORTHY";
-  const BRAND = "PRADHU PHOTOGRAPHY";
   const [typed, setTyped] = useState("");
-  const [glitchText, setGlitchText] = useState(BRAND);
+  const [glitchText, setGlitchText] = useState("PRADHU PHOTOGRAPHY");
   const imgWrapRef = useRef(null);
 
-  // slow pacing
-  const TYPE_SPEED = 120;   // ms per letter (slower)
-  const HOLD_TIME = 1000;   // how long text stays before vanish
+  const NAME = "PRADEEP MOORTHY";
+  const BRAND = "PRADHU PHOTOGRAPHY";
 
-  /* --- same typing, glitch, ripple setup as before --- */
+  const TYPE_SPEED = 120;
+  const HOLD_TIME = 1000;
 
-  // EXIT effect: Explode Out
-  const explodeOut = (text, id, nextPhase) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const letters = text.split("").map((ch, i) => {
-      const dx = (Math.random() - 0.5) * 200;
-      const dy = (Math.random() - 0.5) * 200;
-      const rot = (Math.random() - 0.5) * 720;
-      return (
-        <span
-          key={i}
-          style={{
-            display: "inline-block",
-            transform: "translate(0,0) rotate(0)",
-            animation: `explodeAnim 800ms ease forwards`,
-            animationDelay: `${i * 20}ms`,
-          }}
-        >
-          {ch}
-        </span>
-      );
-    });
-    el.innerHTML = "";
-    // React won’t directly re-render innerHTML with spans, 
-    // so you can instead wrap NAME and BRAND in map(rendered spans).
-    setTimeout(() => setPhase(nextPhase), 900);
-  };
-
+  // typing phase
   useEffect(() => {
-    if (phase === 0) {
-      // typing NAME then explode out
-      setTyped("");
-      let i = 0;
-      const step = () => {
-        setTyped(NAME.slice(0, i + 1));
-        i++;
-        if (i < NAME.length) setTimeout(step, TYPE_SPEED);
-        else setTimeout(() => explodeOut(NAME, "cin-name-box", 1), HOLD_TIME);
-      };
-      step();
-    }
+    if (phase !== 0) return;
+    setTyped("");
+    let i = 0;
+    const step = () => {
+      setTyped(NAME.slice(0, i + 1));
+      i++;
+      if (i < NAME.length) setTimeout(step, TYPE_SPEED);
+      else setTimeout(() => setPhase(1), HOLD_TIME);
+    };
+    step();
   }, [phase]);
 
+  // glitch phase
   useEffect(() => {
-    if (phase === 1) {
-      // glitch BRAND then explode out
-      const base = BRAND;
-      let ticks = 0;
-      const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      const glitch = () => {
-        ticks++;
-        const out = base
-          .split("")
-          .map((c) =>
-            c === " " ? " " : Math.random() < 0.15 ? CHARS[Math.floor(Math.random() * CHARS.length)] : c
-          )
-          .join("");
-        setGlitchText(out);
-        if (ticks < 20) setTimeout(glitch, 60);
-        else setTimeout(() => explodeOut(BRAND, "cin-brand-box", 2), HOLD_TIME);
-      };
-      glitch();
-    }
+    if (phase !== 1) return;
+    const base = BRAND;
+    let ticks = 0;
+    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const glitch = () => {
+      ticks++;
+      const out = base
+        .split("")
+        .map((c) =>
+          c === " "
+            ? " "
+            : Math.random() < 0.15
+            ? CHARS[Math.floor(Math.random() * CHARS.length)]
+            : c
+        )
+        .join("");
+      setGlitchText(out);
+      if (ticks < 20) setTimeout(glitch, 70);
+      else setTimeout(() => setPhase(2), HOLD_TIME);
+    };
+    glitch();
   }, [phase]);
 
-  // Image click ripple
-  const triggerRipple = (e) => {
-    if (phase < 3) return; // ignore before final
-    const el = imgWrapRef.current;
-    if (!el) return;
+  // ripple click on image
+  const handleImageClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
     const ripple = document.createElement("span");
-    ripple.className = "absolute rounded-full bg-white/30";
+    ripple.className = "ripple";
+    ripple.style.left = `${x - 20}px`;
+    ripple.style.top = `${y - 20}px`;
     ripple.style.width = ripple.style.height = "40px";
-    ripple.style.left = `${e.nativeEvent.offsetX - 20}px`;
-    ripple.style.top = `${e.nativeEvent.offsetY - 20}px`;
-    ripple.style.animation = "rippleClick 600ms ease-out forwards";
-    el.appendChild(ripple);
+
+    e.currentTarget.appendChild(ripple);
     setTimeout(() => ripple.remove(), 600);
   };
 
-  // only Enter exits
+  // exit only with Enter
   useEffect(() => {
     const onKey = (e) => e.key === "Enter" && onClose();
     window.addEventListener("keydown", onKey);
@@ -345,40 +345,50 @@ function IntroOverlay({ onClose }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black text-white" style={{ zIndex: 9999 }} role="dialog">
-      {/* NAME Typing */}
+    <div className="fixed inset-0 bg-black text-white z-[9999]" role="dialog">
+      {/* Phase 0: typing NAME */}
       {phase === 0 && (
-        <div id="cin-name-box" className="absolute inset-0 flex items-center justify-center text-[clamp(28px,6vw,64px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
+        <div className="absolute inset-0 flex items-center justify-center text-[clamp(28px,6vw,64px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
           {typed}
+          <span className="cin-caret ml-1 w-[2px]" />
         </div>
       )}
 
-      {/* BRAND Glitch */}
+      {/* Phase 1: glitch BRAND */}
       {phase === 1 && (
-        <div id="cin-brand-box" className="absolute inset-0 flex items-center justify-center text-[clamp(22px,5vw,50px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
+        <div className="absolute inset-0 flex items-center justify-center text-[clamp(22px,5vw,50px)] uppercase tracking-[0.08em] font-['Playfair_Display']">
           {glitchText}
         </div>
       )}
 
-      {/* IMAGE + FINAL TITLES */}
+      {/* Phase 2: show image + titles */}
       {phase >= 2 && (
         <div className="h-full flex items-center justify-center p-6">
           <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
             <div />
             <div
               ref={imgWrapRef}
-              onClick={triggerRipple}
+              onClick={handleImageClick}
               className="relative overflow-hidden cin-image-holder"
               style={{ maxHeight: "78vh" }}
             >
-              <img src={INTRO_LEFT_IMAGE_URL} alt="" className="w-full h-auto object-contain" />
+              <img
+                src={INTRO_LEFT_IMAGE_URL}
+                alt="Intro"
+                className="w-full h-auto object-contain cin-radial-reveal cin-image-move-in"
+              />
             </div>
             <div className="flex flex-col items-end justify-between gap-6">
-              {/* Titles */}
               <div className="text-right">
-                <div className="cin-overshoot-in delay-[220ms]">PRADEEP MOORTHY</div>
-                <div className="cin-overshoot-in delay-[750ms]">PRADHU PHOTOGRAPHY</div>
-                <div className="cin-overshoot-in delay-[1500ms] text-xs">VISUAL & HONEST STORIES</div>
+                <div className="cin-overshoot-in delay-[220ms]">
+                  PRADEEP MOORTHY
+                </div>
+                <div className="cin-overshoot-in delay-[750ms]">
+                  PRADHU PHOTOGRAPHY
+                </div>
+                <div className="cin-overshoot-in delay-[1150ms] text-xs">
+                  VISUAL & HONEST STORIES
+                </div>
               </div>
               <button
                 onClick={onClose}
@@ -393,8 +403,6 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
-
-
 
 
 /* ===================== GitHub helpers ===================== */
