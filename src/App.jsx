@@ -79,65 +79,67 @@ function HeadFonts() {
 /* ===================== THEME TOKENS ===================== */
 function useThemeTokens(theme) {
   const light = {
-    pageBg: "bg-white",
+    pageBg: "bg-[#faf7f2]", // pastel beige background
     pageText: "text-neutral-900",
     navBg: "bg-white/85",
-    navBorder: "border-neutral-200",
+    navBorder: "border-rose-200",
     navText: "text-neutral-700",
     navTextStrong: "text-neutral-900",
-    hoverOverlay: "bg-black/5",
-    sectionAltBg: "bg-neutral-50",
+    hoverOverlay: "bg-rose-100/50",
+    sectionAltBg: "bg-[#fdfaf7]",
     panelBg: "bg-white",
-    panelBorder: "border-neutral-200",
+    panelBorder: "border-rose-200",
     cardBg: "bg-white",
-    cardBorder: "border-neutral-200",
+    cardBorder: "border-rose-200",
     muted: "text-neutral-600",
     muted2: "text-neutral-500",
-    chipActive: "bg-neutral-900 text-white border-neutral-900",
+    chipActive: "bg-rose-200 text-rose-900 border-rose-300",
     chipInactive:
-      "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-50",
-    btnOutline: "border-neutral-300 text-neutral-900 hover:bg-neutral-50",
+      "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
+    btnOutline: "border-neutral-300 text-neutral-900 hover:bg-rose-50",
     inputBg: "bg-white",
     inputBorder: "border-neutral-300",
     inputText: "text-neutral-900",
     placeholder: "placeholder-neutral-400",
     footerBg: "bg-white",
-    footerBorder: "border-neutral-200",
-    link: "text-neutral-900 underline",
+    footerBorder: "border-rose-200",
+    link: "text-rose-900 underline",
     linkSubtle: "text-neutral-800 underline",
   };
 
   const dark = {
-    pageBg: "bg-neutral-950",
+    pageBg: "bg-[#1c1e26]", // deep muted navy
     pageText: "text-neutral-100",
-    navBg: "bg-neutral-950/85",
-    navBorder: "border-neutral-800",
+    navBg: "bg-[#1c1e26]/90",
+    navBorder: "border-teal-700",
     navText: "text-neutral-300",
     navTextStrong: "text-white",
-    hoverOverlay: "bg-white/10",
-    sectionAltBg: "bg-neutral-950",
-    panelBg: "bg-neutral-900",
-    panelBorder: "border-neutral-800",
-    cardBg: "bg-neutral-900",
-    cardBorder: "border-neutral-800",
+    hoverOverlay: "bg-teal-500/20",
+    sectionAltBg: "bg-[#22242c]",
+    panelBg: "bg-[#2a2d36]",
+    panelBorder: "border-[#3a3d46]",
+    cardBg: "bg-[#2a2d36]",
+    cardBorder: "border-[#3a3d46]",
     muted: "text-neutral-300",
     muted2: "text-neutral-400",
-    chipActive: "bg-white text-neutral-900 border-white",
+    chipActive: "bg-teal-300 text-[#1c1e26] border-teal-400",
     chipInactive:
-      "bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800",
-    btnOutline: "border-neutral-700 text-neutral-100 hover:bg-neutral-900",
-    inputBg: "bg-neutral-950",
-    inputBorder: "border-neutral-700",
+      "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
+    btnOutline:
+      "border-neutral-600 text-neutral-100 hover:bg-[#333640]",
+    inputBg: "bg-[#1c1e26]",
+    inputBorder: "border-neutral-600",
     inputText: "text-neutral-100",
     placeholder: "placeholder-neutral-500",
-    footerBg: "bg-neutral-950",
-    footerBorder: "border-neutral-800",
-    link: "text-neutral-100 underline",
-    linkSubtle: "text-neutral-100 underline",
+    footerBg: "bg-[#1c1e26]",
+    footerBorder: "border-teal-700",
+    link: "text-teal-300 underline",
+    linkSubtle: "text-teal-200 underline",
   };
 
   return theme === "light" ? light : dark;
 }
+
 
 /* ===================== Icons ===================== */
 function Icon({ name, className = "h-4 w-4" }) {
