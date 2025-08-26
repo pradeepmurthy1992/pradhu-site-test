@@ -1,10 +1,35 @@
 @layer utilities {
-  .bg-dots-light {
-    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-    background-size: 24px 24px;
+  /* cinematic base fades/slides */
+  .cin-fade-in {
+    animation: cinFade 700ms ease-out forwards;
   }
-  .bg-dots-dark {
-    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-    background-size: 24px 24px;
+  .cin-fade-in-delayed {
+    animation: cinFade 800ms ease-out 180ms forwards;
+  }
+  .cin-slide-up {
+    animation: cinSlideUp 700ms ease-out forwards;
+  }
+  .cin-slide-up-delay {
+    animation: cinSlideUp 700ms ease-out 140ms forwards;
+  }
+  .cin-zoom-in {
+    animation: cinZoom 1000ms ease-out forwards;
+  }
+  .cin-vignette {
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%);
+  }
+
+  @keyframes cinFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes cinSlideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes cinZoom {
+    from { transform: scale(1.035); opacity: 0; }
+    50%  { opacity: 1; }
+    to   { transform: scale(1); opacity: 1; }
   }
 }
