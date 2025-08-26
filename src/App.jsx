@@ -823,6 +823,9 @@ function preloadImage(url) {
 }
 
 // ---------- Landing ----------
+/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
+
+// Landing (tiles)
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
@@ -856,15 +859,15 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                       loading="lazy"
                     />
-                  ) : (
-                    <div className="absolute inset-0 animate-pulse" />
-                  )}
-                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
-                    <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.1em] text-lg drop-shadow">
-                      {c.label}
-                    </h3>
-                    <div className="text-[10px] tracking-[0.2em] text-white/90">
-                      {st.loading ? "Loading…" : `${st.images?.length || 0} photos`}
+                  ) : null}
+                  <div className="absolute top-3 left-3 right-3">
+                    <div className="inline-block px-1.5 py-1">
+                      <h3
+                        className={`text-[clamp(24px,4vw,40px)] leading-none font-['Playfair_Display'] uppercase tracking-[0.1em] text-white drop-shadow`}
+                      >
+                        {c.label}
+                      </h3>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
                     </div>
                   </div>
                 </div>
@@ -877,109 +880,154 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-// ---------- Page ----------
 // Page (horizontal carousel)
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-  const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Find nearest slide to center while scrolling/resizing
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const update = () => {
+      const slides = Array.from(root.querySelectorAll('[data-idx]'));
+      if (!slides.length) return;
+
+      const center = root.scrollLeft + root.clientWidth / 2;
+      let best = 0;
+      let bestDist = Infinity;
+
+      slides.forEach((el, i) => {
+        const mid = el.offsetLeft + el.offsetWidth / 2;
+        const d = Math.abs(mid - center);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      });
+
+      setActiveIndex(best);
+    };
+
+    update();
+    root.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      root.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  // Keyboard support
+  useEffect(() => {
+    const go = (dir) => {
+      const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
+      const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    };
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight') go(1);
+      if (e.key === 'ArrowLeft') go(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeIndex, items.length]);
 
   const goTo = (idx) => {
-    if (idx < 0 || idx >= items.length) return;
-    setActiveIndex(idx);
-    containerRef.current?.scrollTo({
-      left: idx * containerRef.current.clientWidth,
-      behavior: "smooth",
-    });
+    const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
   return (
     <section className="py-2" id="portfolio">
       {/* Sticky breadcrumb + title */}
-      <div className="mb-6 sticky top-[72px] z-[1] backdrop-blur border-b pb-3">
+      <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
-            Portfolio
-          </button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2
-          className={`mt-2 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           {cat.label}
         </h2>
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
 
-      {/* Progress rail (right side numbers) */}
-      <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-3 pointer-events-none">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-32 w-px bg-neutral-400/30" />
-          <div className={`${T.muted2} text-[11px] tracking-[0.25em]`}>
-            {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
-          </div>
-          <div className="h-32 w-px bg-neutral-400/30" />
-        </div>
+      {/* Right side counter */}
+      <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none">
+        {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
       {/* Horizontal carousel */}
-      <div
-        ref={containerRef}
-        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 px-6"
-        style={{ scrollSnapType: "x mandatory" }}
-        onScroll={(e) => {
-          const idx = Math.round(
-            e.target.scrollLeft / e.target.clientWidth
-          );
-          if (idx !== activeIndex) setActiveIndex(idx);
-        }}
-      >
-        {items.map((it, i) => (
-  <div
-    key={it.sha || i}
-    className="flex-shrink-0 w-[70%] sm:w-[55%] md:w-[50%] snap-center"
-  >
-    <img
-      src={it.url}
-      alt={`${cat.label} — ${it.name}`}
-      className="w-full h-[70vh] object-cover rounded-xl"
-      loading="lazy"
-    />
-  </div>
-))}
+      {state.error ? (
+        <div className="text-red-500">{String(state.error)}</div>
+      ) : state.loading ? (
+        <div className={`${T.muted2}`}>Loading…</div>
+      ) : items.length ? (
+        <>
+          <div
+            ref={containerRef}
+            className={`
+              mx-auto max-w-[1600px]
+              overflow-x-auto
+              snap-x snap-mandatory
+              flex gap-4 sm:gap-5 md:gap-6
+              px-2 sm:px-3 md:px-4
+              pb-6
+              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            `}
+          >
+            {items.map((it, i) => (
+              <div
+                key={it.sha || i}
+                data-idx={i}
+                className="
+                  flex-shrink-0
+                  w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%]
+                  snap-center
+                "
+              >
+                <img
+                  src={it.url}
+                  alt={`${cat.label} — ${it.name}`}
+                  className="
+                    w-full
+                    h-[58vh] sm:h-[64vh] md:h-[68vh]
+                    object-cover
+                    rounded-2xl
+                  "
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
 
-      </div>
-
-      {/* Dots navigation */}
-      <div className="flex justify-center gap-2 mt-4">
-        {items.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            className={`h-2.5 w-2.5 rounded-full transition ${
-              i === activeIndex ? "bg-neutral-800 dark:bg-white" : "bg-neutral-400/50"
-            }`}
-          />
-        ))}
-      </div>
+          {/* Dots */}
+          <div className="flex justify-center gap-2 mt-2">
+            {items.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                aria-label={`Go to image ${i + 1}`}
+                className={`
+                  h-2.5 w-2.5 rounded-full transition
+                  ${i === activeIndex ? "bg-white" : "bg-white/35 hover:bg-white/60"}
+                `}
+              />
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
+      )}
     </section>
   );
 }
 
-
-// small helper for dot color to match theme
-function themeDotClass(T) {
-  // use the same token families you already use
-  // dark theme → light dots; light theme → dark dots
-  return T.pageBg.includes("#1c1e26")
-    ? "bg-white/90 hover:opacity-80"
-    : "bg-neutral-900/80 hover:opacity-70";
-}
-
-
-// ---------- Wrapper ----------
+// Wrapper (hash-driven view switch)
 function Portfolio({ T }) {
   const [states, setStates] = useState(() =>
     GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
@@ -997,14 +1045,7 @@ function Portfolio({ T }) {
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-
-  const goLanding = () => {
-    setView("landing");
-    setActiveIdx(-1);
-    setHash("#portfolio");
-    const el = document.getElementById("tiles");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const goLanding = () => { setView("landing"); setActiveIdx(-1); setHash("#portfolio"); };
 
   // hash → view
   useEffect(() => {
@@ -1013,17 +1054,12 @@ function Portfolio({ T }) {
     if (seg.length >= 2 && seg[1]) {
       const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
       const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) {
-        setActiveIdx(idx);
-        setView("page");
-        return;
-      }
+      if (idx >= 0) { setActiveIdx(idx); setView("page"); return; }
     }
-    setView("landing");
-    setActiveIdx(-1);
+    setView("landing"); setActiveIdx(-1);
   }, [hash]);
 
-  // fetch images for all categories (cached per ghListFolder)
+  // fetch images
   useEffect(() => {
     let cancelled = false;
     (async () => {
