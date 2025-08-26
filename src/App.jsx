@@ -245,20 +245,20 @@ function Icon({ name, className = "h-4 w-4" }) {
 /* ===================== Intro Overlay (Cinematic) ===================== */
 /* ===================== Intro Overlay (Cinematic, no imports/exports) ===================== */
 /* ===================== Intro Overlay (Cinematic v2) ===================== */
+/* ===================== Intro Overlay (Cinematic — revert texts, fix image) ===================== */
 function IntroOverlay({ onClose }) {
-  // Phases: type → vanish → image reveal → titles enter → final
-  const PHASES = ["type1", "type2", "image", "titles", "final"];
+  // Phases: typing #1 → typing #2 → image reveal → titles → final
   const [phase, setPhase] = useState("type1");
 
-  // typing states
+  // typing buffers
   const [typed1, setTyped1] = useState("");
   const [typed2, setTyped2] = useState("");
 
-  // refs
+  // ripples
   const imgRef = useRef(null);
   const rippleLayerRef = useRef(null);
 
-  /* ---------- REQUIRED: only Enter key or the "Enter" button exits ---------- */
+  /* ---------- Exit: only Enter key or Enter button ---------- */
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Enter") onClose();
@@ -271,20 +271,21 @@ function IntroOverlay({ onClose }) {
   useEffect(() => {
     if (phase !== "type1") return;
     const text = "PRADEEP MOORTHY";
-    const step = 90; // slower
+    const step = 90;
     let i = 0;
     const t = setInterval(() => {
       i++;
       setTyped1(text.slice(0, i));
       if (i >= text.length) {
         clearInterval(t);
-        setTimeout(() => setPhase("type2"), 800); // hold, then go next
+        // brief hold before next typing
+        setTimeout(() => setPhase("type2"), 800);
       }
     }, step);
     return () => clearInterval(t);
   }, [phase]);
 
-  /* ---------- Typing #2: PRADHU PHOTOGRAPHY (with 2 quick pulses) ---------- */
+  /* ---------- Typing #2: PRADHU PHOTOGRAPHY (with tiny double pulse) ---------- */
   useEffect(() => {
     if (phase !== "type2") return;
     const text = "PRADHU PHOTOGRAPHY";
@@ -295,26 +296,21 @@ function IntroOverlay({ onClose }) {
       setTyped2(text.slice(0, i));
       if (i >= text.length) {
         clearInterval(t);
-        // explode out, then reveal image
+        // let explode-out finish, then reveal image
         setTimeout(() => setPhase("image"), 900);
       }
     }, step);
     return () => clearInterval(t);
   }, [phase]);
 
-  /* ---------- Ensure image actually shows during image/titles/final ---------- */
-  const showImage =
-    phase === "image" || phase === "titles" || phase === "final";
-
-  /* ---------- After image reveals, slide in titles + do image “hit” ripples ---------- */
+  /* ---------- Auto move from image reveal → titles ---------- */
   useEffect(() => {
     if (phase !== "image") return;
-    // move to titles a bit after the radial reveal
     const toTitles = setTimeout(() => setPhase("titles"), 1100);
     return () => clearTimeout(toTitles);
   }, [phase]);
 
-  // Helper: trigger a visible ripple at x/y inside rippleLayer
+  /* ---------- Ripple helpers ---------- */
   const triggerRipple = (x, y) => {
     const layer = rippleLayerRef.current;
     if (!layer) return;
@@ -326,45 +322,38 @@ function IntroOverlay({ onClose }) {
     dot.addEventListener("animationend", () => dot.remove(), { once: true });
   };
 
-  // Helper: trigger ripple at image center
   const rippleAtImageCenter = () => {
     const img = imgRef.current;
     const layer = rippleLayerRef.current;
     if (!img || !layer) return;
-    const rect = layer.getBoundingClientRect();
-    const ir = img.getBoundingClientRect();
-    const cx = (ir.left + ir.right) / 2 - rect.left;
-    const cy = (ir.top + ir.bottom) / 2 - rect.top;
+    const rectL = layer.getBoundingClientRect();
+    const rectI = img.getBoundingClientRect();
+    const cx = (rectI.left + rectI.right) / 2 - rectL.left;
+    const cy = (rectI.top + rectI.bottom) / 2 - rectL.top;
     triggerRipple(cx, cy);
   };
 
-  /* ---------- When titles “hit”, create a ripple on image ---------- */
+  // when titles slide in and “hit”, ripple the image
   useEffect(() => {
     if (phase !== "titles") return;
-    // two hits: brand then subbrand
-    const r1 = setTimeout(rippleAtImageCenter, 480);  // brand overshoot
-    const r2 = setTimeout(rippleAtImageCenter, 1050); // subbrand overshoot
+    const r1 = setTimeout(rippleAtImageCenter, 480);
+    const r2 = setTimeout(rippleAtImageCenter, 1050);
     return () => {
       clearTimeout(r1);
       clearTimeout(r2);
     };
   }, [phase]);
 
-  /* ---------- Click handling ----------
-     - Clicking anywhere on the overlay DOES NOT close.
-     - Clicking on the image area makes a ripple at click spot.
+  /* ---------- Clicks ----------
+     - Overlay clicks do nothing (no accidental close)
+     - Clicking the image makes a ripple where you clicked
   */
-  const onOverlayClick = (e) => {
-    // do nothing (prevent accidental close)
-  };
-
+  const onOverlayClick = () => {};
   const onImageClick = (e) => {
     const layer = rippleLayerRef.current;
     if (!layer) return;
     const rect = layer.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    triggerRipple(x, y);
+    triggerRipple(e.clientX - rect.left, e.clientY - rect.top);
   };
 
   const onPressEnterButton = (e) => {
@@ -372,7 +361,19 @@ function IntroOverlay({ onClose }) {
     onClose();
   };
 
-  /* ---------- Render ---------- */
+  /* ---------- Image visibility logic (FIXED):
+       - Always render the <img> so layout is stable
+       - Start fully transparent
+       - On "image": apply radial reveal + move-in + force opacity 1
+       - On "titles/final": stay opaque
+  ---------- */
+  const imgPhaseClass =
+    phase === "image"
+      ? "opacity-100 cin-radial-reveal cin-image-move-in"
+      : phase === "titles" || phase === "final"
+      ? "opacity-100"
+      : "opacity-0";
+
   return (
     <div
       className="fixed inset-0 bg-black text-white"
@@ -386,51 +387,36 @@ function IntroOverlay({ onClose }) {
           {/* Left spacer */}
           <div className="hidden md:block" />
 
-          {/* Center: image (initially hidden; reveals in phase "image") */}
-          <div
-            className="relative cin-image-holder select-none"
-            style={{ visibility: showImage ? "visible" : "hidden" }}
-            onClick={onImageClick}
-          >
+          {/* Center: image (now correctly revealed; not visible until phase "image") */}
+          <div className="relative cin-image-holder select-none" onClick={onImageClick}>
             <img
               ref={imgRef}
               src={INTRO_LEFT_IMAGE_URL}
               alt="Intro"
-              className={`w-full h-auto object-contain max-h-[78vh]
-                ${phase === "image" ? "cin-radial-reveal cin-image-move-in" : ""}
-                ${phase === "titles" || phase === "final" ? "opacity-100" : "opacity-0"}`}
+              className={`w-full h-auto object-contain max-h-[78vh] transition-opacity duration-300 ${imgPhaseClass}`}
             />
-            {/* Vignette */}
             <div className="pointer-events-none absolute inset-0 cin-vignette" />
-            {/* Ripple layer (for programmatic + click ripples) */}
-            <div
-              ref={rippleLayerRef}
-              className="cin-ripple-layer absolute inset-0 overflow-hidden"
-            />
+            <div ref={rippleLayerRef} className="cin-ripple-layer absolute inset-0 overflow-hidden" />
           </div>
 
-          {/* Right: titles/cta + the typing scenes */}
+          {/* Right rail: text scenes */}
           <div className="flex flex-col items-end justify-between gap-6">
             <div className="text-right select-none">
-              {/* TYPING STAGE (centered in right column) */}
+              {/* TYPING PHASES (centered in the right column) */}
               {(phase === "type1" || phase === "type2") && (
                 <div className="min-h-[120px] flex flex-col items-end justify-center">
-                  {/* Line 1 typing */}
                   <div
-                    className={`font-['Playfair_Display'] uppercase tracking-[0.08em] whitespace-nowrap
-                                text-[clamp(28px,5vw,56px)]`}
+                    className="font-['Playfair_Display'] uppercase tracking-[0.08em] whitespace-nowrap text-[clamp(28px,5vw,56px)]"
                     style={{ letterSpacing: "0.08em" }}
                   >
                     <span className="align-middle">{typed1}</span>
                     {phase === "type1" && <span className="cin-caret align-middle ml-[3px] w-[1px]" />}
                   </div>
 
-                  {/* Line 2 typing with double pulse */}
                   <div
-                    className={`mt-2 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em]
-                                text-[clamp(20px,3.5vw,39px)] ${
-                                  phase === "type2" && typed2 ? "cin-pulse-zoom-twice" : ""
-                                }`}
+                    className={`mt-2 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em] text-[clamp(20px,3.5vw,39px)] ${
+                      phase === "type2" && typed2 ? "cin-pulse-zoom-twice" : ""
+                    }`}
                     style={{ letterSpacing: "0.08em", opacity: 0.95 }}
                   >
                     <span className="align-middle">{typed2}</span>
@@ -438,32 +424,28 @@ function IntroOverlay({ onClose }) {
                       <span className="cin-caret align-middle ml-[3px] w-[1px]" />
                     )}
                   </div>
-
-                  {/* Explode outs (overlap briefly at the end of type1/type2) */}
-                  {phase === "type1" && typed1 && (
-                    <span className="sr-only">.</span>
-                  )}
                 </div>
               )}
 
-              {/* TITLES STAGE (final layout entry with overshoot & “hits”) */}
+              {/* TITLES (overshoot + “hit” → ripple) */}
               {(phase === "titles" || phase === "final") && (
                 <>
-                  <div className="text-[12px] tracking-[0.25em] opacity-80 cin-fade-in" style={{ animationDuration: "900ms", animationDelay: "120ms" }}>
+                  <div
+                    className="text-[12px] tracking-[0.25em] opacity-80 cin-fade-in"
+                    style={{ animationDuration: "900ms", animationDelay: "120ms" }}
+                  >
                     VISUAL & HONEST STORIES
                   </div>
 
                   <h1
-                    className={`mt-2 leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase whitespace-nowrap
-                                text-[clamp(28px,5vw,56px)] cin-overshoot-in`}
+                    className="mt-2 leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase whitespace-nowrap text-[clamp(28px,5vw,56px)] cin-overshoot-in"
                     style={{ letterSpacing: "0.08em", animationDuration: "820ms" }}
                   >
                     PRADEEP MOORTHY
                   </h1>
 
                   <div
-                    className={`mt-1 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em]
-                                text-[clamp(20px,3.5vw,39px)] cin-overshoot-in delay-[520ms]`}
+                    className="mt-1 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em] text-[clamp(20px,3.5vw,39px)] cin-overshoot-in delay-[520ms]"
                     style={{ letterSpacing: "0.08em", opacity: 0.95, animationDuration: "820ms" }}
                   >
                     PRADHU PHOTOGRAPHY
@@ -472,7 +454,6 @@ function IntroOverlay({ onClose }) {
               )}
             </div>
 
-            {/* CTA – only in final & titles */}
             {(phase === "titles" || phase === "final") && (
               <button
                 onClick={onPressEnterButton}
@@ -486,7 +467,7 @@ function IntroOverlay({ onClose }) {
         </div>
       </div>
 
-      {/* Explode-out overlays for the two typing lines (centered in the whole screen, timed to vanish) */}
+      {/* EXPLODE-OUT overlays (vanish in the middle) */}
       {phase === "type1" && typed1 && (
         <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
           <div className="cin-explode-out text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[min(9vw,64px)]">
@@ -494,7 +475,6 @@ function IntroOverlay({ onClose }) {
           </div>
         </div>
       )}
-
       {phase === "type2" && typed2 && (
         <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
           <div className="cin-explode-out text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[min(7vw,48px)]">
@@ -505,8 +485,6 @@ function IntroOverlay({ onClose }) {
     </div>
   );
 }
-
-
 
 
 /* ===================== GitHub helpers ===================== */
