@@ -244,209 +244,268 @@ function Icon({ name, className = "h-4 w-4" }) {
 /* ===================== Intro Overlay (Editorial - Black) ===================== */
 /* ===================== Intro Overlay (Cinematic) ===================== */
 /* ===================== Intro Overlay (Cinematic, no imports/exports) ===================== */
+/* ===================== Intro Overlay (Cinematic v2) ===================== */
 function IntroOverlay({ onClose }) {
-  // phases: 0=typing NAME, 1=glitch BRAND, 2=image+titles stage
-  const [phase, setPhase] = React.useState(0);
+  // Phases: type → vanish → image reveal → titles enter → final
+  const PHASES = ["type1", "type2", "image", "titles", "final"];
+  const [phase, setPhase] = useState("type1");
 
-  // typing + glitch states
-  const [typed, setTyped] = React.useState("");
-  const [glitchText, setGlitchText] = React.useState("PRADHU PHOTOGRAPHY");
+  // typing states
+  const [typed1, setTyped1] = useState("");
+  const [typed2, setTyped2] = useState("");
 
-  // explode flags
-  const [explodeName, setExplodeName] = React.useState(false);
-  const [explodeBrand, setExplodeBrand] = React.useState(false);
+  // refs
+  const imgRef = useRef(null);
+  const rippleLayerRef = useRef(null);
 
-  const imgWrapRef = React.useRef(null);
-
-  const NAME = "PRADEEP MOORTHY";
-  const BRAND = "PRADHU PHOTOGRAPHY";
-
-  // timings (slowed down overall)
-  const TYPE_SPEED = 120;      // ms per char
-  const HOLD_TIME = 1400;      // pause after each title fully shown
-  const EXPLODE_TIME = 800;    // explode-out animation duration
-  const GLITCH_TICKS = 26;     // how many glitch frames
-  const GLITCH_STEP = 75;      // ms per glitch frame
-
-  /* ---------- utilities ---------- */
-  function ExplodeText({ text }) {
-    return (
-      <>
-        {text.split("").map((ch, i) => {
-          const dx = (Math.random() - 0.5) * 220;
-          const dy = (Math.random() - 0.5) * 140;
-          const rot = (Math.random() - 0.5) * 360;
-          return (
-            <span
-              key={i}
-              className="explode-out"
-              style={{ "--dx": dx, "--dy": dy, "--rot": rot }}
-            >
-              {ch}
-            </span>
-          );
-        })}
-      </>
-    );
-  }
-
-  /* ---------- Phase 0: type NAME, then explode, then go to phase 1 ---------- */
-  React.useEffect(() => {
-    if (phase !== 0) return;
-
-    setTyped("");
-    setExplodeName(false);
-
-    let i = 0;
-    const typeOne = () => {
-      setTyped(NAME.slice(0, i + 1));
-      i++;
-      if (i < NAME.length) {
-        setTimeout(typeOne, TYPE_SPEED);
-      } else {
-        // hold, then explode, then advance
-        setTimeout(() => {
-          setExplodeName(true);
-          setTimeout(() => setPhase(1), EXPLODE_TIME);
-        }, HOLD_TIME);
-      }
+  /* ---------- REQUIRED: only Enter key or the "Enter" button exits ---------- */
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Enter") onClose();
     };
-    typeOne();
-  }, [phase]);
-
-  /* ---------- Phase 1: glitch BRAND, then explode, then go to phase 2 ---------- */
-  React.useEffect(() => {
-    if (phase !== 1) return;
-
-    setExplodeBrand(false);
-    const base = BRAND;
-    let ticks = 0;
-    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-    const run = () => {
-      ticks++;
-      const out = base
-        .split("")
-        .map((c) =>
-          c === " "
-            ? " "
-            : Math.random() < 0.18
-            ? CHARS[Math.floor(Math.random() * CHARS.length)]
-            : c
-        )
-        .join("");
-      setGlitchText(out);
-
-      if (ticks < GLITCH_TICKS) {
-        setTimeout(run, GLITCH_STEP);
-      } else {
-        // stabilize to real brand, hold, explode, then advance
-        setGlitchText(base);
-        setTimeout(() => {
-          setExplodeBrand(true);
-          setTimeout(() => setPhase(2), EXPLODE_TIME);
-        }, HOLD_TIME);
-      }
-    };
-    run();
-  }, [phase]);
-
-  /* ---------- Image ripple (click does NOT close) ---------- */
-  const handleImageClick = (e) => {
-    const holder = e.currentTarget;
-    const rect = holder.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const ripple = document.createElement("span");
-    ripple.className = "ripple";
-    ripple.style.left = `${x - 16}px`;
-    ripple.style.top = `${y - 16}px`;
-    ripple.style.width = ripple.style.height = "32px";
-    holder.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 650);
-  };
-
-  /* ---------- Exit only with Enter key ---------- */
-  React.useEffect(() => {
-    const onKey = (e) => e.key === "Enter" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  /* ---------- Typing #1: PRADEEP MOORTHY ---------- */
+  useEffect(() => {
+    if (phase !== "type1") return;
+    const text = "PRADEEP MOORTHY";
+    const step = 90; // slower
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      setTyped1(text.slice(0, i));
+      if (i >= text.length) {
+        clearInterval(t);
+        setTimeout(() => setPhase("type2"), 800); // hold, then go next
+      }
+    }, step);
+    return () => clearInterval(t);
+  }, [phase]);
+
+  /* ---------- Typing #2: PRADHU PHOTOGRAPHY (with 2 quick pulses) ---------- */
+  useEffect(() => {
+    if (phase !== "type2") return;
+    const text = "PRADHU PHOTOGRAPHY";
+    const step = 90;
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      setTyped2(text.slice(0, i));
+      if (i >= text.length) {
+        clearInterval(t);
+        // explode out, then reveal image
+        setTimeout(() => setPhase("image"), 900);
+      }
+    }, step);
+    return () => clearInterval(t);
+  }, [phase]);
+
+  /* ---------- Ensure image actually shows during image/titles/final ---------- */
+  const showImage =
+    phase === "image" || phase === "titles" || phase === "final";
+
+  /* ---------- After image reveals, slide in titles + do image “hit” ripples ---------- */
+  useEffect(() => {
+    if (phase !== "image") return;
+    // move to titles a bit after the radial reveal
+    const toTitles = setTimeout(() => setPhase("titles"), 1100);
+    return () => clearTimeout(toTitles);
+  }, [phase]);
+
+  // Helper: trigger a visible ripple at x/y inside rippleLayer
+  const triggerRipple = (x, y) => {
+    const layer = rippleLayerRef.current;
+    if (!layer) return;
+    const dot = document.createElement("span");
+    dot.className = "cin-ripple-el";
+    dot.style.left = `${x}px`;
+    dot.style.top = `${y}px`;
+    layer.appendChild(dot);
+    dot.addEventListener("animationend", () => dot.remove(), { once: true });
+  };
+
+  // Helper: trigger ripple at image center
+  const rippleAtImageCenter = () => {
+    const img = imgRef.current;
+    const layer = rippleLayerRef.current;
+    if (!img || !layer) return;
+    const rect = layer.getBoundingClientRect();
+    const ir = img.getBoundingClientRect();
+    const cx = (ir.left + ir.right) / 2 - rect.left;
+    const cy = (ir.top + ir.bottom) / 2 - rect.top;
+    triggerRipple(cx, cy);
+  };
+
+  /* ---------- When titles “hit”, create a ripple on image ---------- */
+  useEffect(() => {
+    if (phase !== "titles") return;
+    // two hits: brand then subbrand
+    const r1 = setTimeout(rippleAtImageCenter, 480);  // brand overshoot
+    const r2 = setTimeout(rippleAtImageCenter, 1050); // subbrand overshoot
+    return () => {
+      clearTimeout(r1);
+      clearTimeout(r2);
+    };
+  }, [phase]);
+
+  /* ---------- Click handling ----------
+     - Clicking anywhere on the overlay DOES NOT close.
+     - Clicking on the image area makes a ripple at click spot.
+  */
+  const onOverlayClick = (e) => {
+    // do nothing (prevent accidental close)
+  };
+
+  const onImageClick = (e) => {
+    const layer = rippleLayerRef.current;
+    if (!layer) return;
+    const rect = layer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    triggerRipple(x, y);
+  };
+
+  const onPressEnterButton = (e) => {
+    e.stopPropagation();
+    onClose();
+  };
+
+  /* ---------- Render ---------- */
   return (
-    <div className="fixed inset-0 bg-black text-white z-[9999]" role="dialog" aria-label="Intro overlay">
-      {/* Phase 0: typing NAME (center screen) */}
-      {phase === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(28px,6vw,64px)]">
-              {!explodeName ? (
+    <div
+      className="fixed inset-0 bg-black text-white"
+      style={{ zIndex: 9999 }}
+      role="dialog"
+      aria-label="Intro overlay"
+      onClick={onOverlayClick}
+    >
+      <div className="h-full flex items-center justify-center p-6">
+        <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
+          {/* Left spacer */}
+          <div className="hidden md:block" />
+
+          {/* Center: image (initially hidden; reveals in phase "image") */}
+          <div
+            className="relative cin-image-holder select-none"
+            style={{ visibility: showImage ? "visible" : "hidden" }}
+            onClick={onImageClick}
+          >
+            <img
+              ref={imgRef}
+              src={INTRO_LEFT_IMAGE_URL}
+              alt="Intro"
+              className={`w-full h-auto object-contain max-h-[78vh]
+                ${phase === "image" ? "cin-radial-reveal cin-image-move-in" : ""}
+                ${phase === "titles" || phase === "final" ? "opacity-100" : "opacity-0"}`}
+            />
+            {/* Vignette */}
+            <div className="pointer-events-none absolute inset-0 cin-vignette" />
+            {/* Ripple layer (for programmatic + click ripples) */}
+            <div
+              ref={rippleLayerRef}
+              className="cin-ripple-layer absolute inset-0 overflow-hidden"
+            />
+          </div>
+
+          {/* Right: titles/cta + the typing scenes */}
+          <div className="flex flex-col items-end justify-between gap-6">
+            <div className="text-right select-none">
+              {/* TYPING STAGE (centered in right column) */}
+              {(phase === "type1" || phase === "type2") && (
+                <div className="min-h-[120px] flex flex-col items-end justify-center">
+                  {/* Line 1 typing */}
+                  <div
+                    className={`font-['Playfair_Display'] uppercase tracking-[0.08em] whitespace-nowrap
+                                text-[clamp(28px,5vw,56px)]`}
+                    style={{ letterSpacing: "0.08em" }}
+                  >
+                    <span className="align-middle">{typed1}</span>
+                    {phase === "type1" && <span className="cin-caret align-middle ml-[3px] w-[1px]" />}
+                  </div>
+
+                  {/* Line 2 typing with double pulse */}
+                  <div
+                    className={`mt-2 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em]
+                                text-[clamp(20px,3.5vw,39px)] ${
+                                  phase === "type2" && typed2 ? "cin-pulse-zoom-twice" : ""
+                                }`}
+                    style={{ letterSpacing: "0.08em", opacity: 0.95 }}
+                  >
+                    <span className="align-middle">{typed2}</span>
+                    {phase === "type2" && typed2.length < "PRADHU PHOTOGRAPHY".length && (
+                      <span className="cin-caret align-middle ml-[3px] w-[1px]" />
+                    )}
+                  </div>
+
+                  {/* Explode outs (overlap briefly at the end of type1/type2) */}
+                  {phase === "type1" && typed1 && (
+                    <span className="sr-only">.</span>
+                  )}
+                </div>
+              )}
+
+              {/* TITLES STAGE (final layout entry with overshoot & “hits”) */}
+              {(phase === "titles" || phase === "final") && (
                 <>
-                  {typed}
-                  <span className="cin-caret ml-1 w-[2px] align-middle inline-block" />
+                  <div className="text-[12px] tracking-[0.25em] opacity-80 cin-fade-in" style={{ animationDuration: "900ms", animationDelay: "120ms" }}>
+                    VISUAL & HONEST STORIES
+                  </div>
+
+                  <h1
+                    className={`mt-2 leading-[0.95] font-['Playfair_Display'] tracking-[0.08em] uppercase whitespace-nowrap
+                                text-[clamp(28px,5vw,56px)] cin-overshoot-in`}
+                    style={{ letterSpacing: "0.08em", animationDuration: "820ms" }}
+                  >
+                    PRADEEP MOORTHY
+                  </h1>
+
+                  <div
+                    className={`mt-1 font-['Playfair_Display'] uppercase whitespace-nowrap tracking-[0.08em]
+                                text-[clamp(20px,3.5vw,39px)] cin-overshoot-in delay-[520ms]`}
+                    style={{ letterSpacing: "0.08em", opacity: 0.95, animationDuration: "820ms" }}
+                  >
+                    PRADHU PHOTOGRAPHY
+                  </div>
                 </>
-              ) : (
-                <ExplodeText text={NAME} />
               )}
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Phase 1: glitch BRAND (center screen) */}
-      {phase === 1 && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(22px,5vw,50px)]">
-            {!explodeBrand ? <>{glitchText}</> : <ExplodeText text={BRAND} />}
-          </div>
-        </div>
-      )}
-
-      {/* Phase 2: image + final titles + Enter */}
-      {phase >= 2 && (
-        <div className="h-full flex items-center justify-center p-6">
-          <div className="w-full max-w-[1100px] grid md:grid-cols-[1fr_640px_1fr] items-center gap-6">
-            <div className="hidden md:block" />
-            <div
-              ref={imgWrapRef}
-              onClick={handleImageClick}
-              className="relative overflow-hidden cin-image-holder"
-              style={{ maxHeight: "78vh" }}
-            >
-              <img
-                src={INTRO_LEFT_IMAGE_URL}
-                alt="Intro"
-                className="w-full h-auto object-contain cin-radial-reveal cin-image-move-in"
-              />
-              {/* soft vignette */}
-              <div className="pointer-events-none absolute inset-0 cin-vignette" />
-            </div>
-            <div className="flex flex-col items-end justify-between gap-6">
-              <div className="text-right select-none">
-                <div className="cin-overshoot-in delay-[220ms] uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(24px,5vw,56px)] whitespace-nowrap">
-                  PRADEEP MOORTHY
-                </div>
-                <div className="cin-overshoot-in delay-[750ms] uppercase tracking-[0.08em] font-['Playfair_Display'] text-[clamp(18px,3.5vw,39px)] whitespace-nowrap opacity-[0.95]">
-                  PRADHU PHOTOGRAPHY
-                </div>
-                <div className="cin-overshoot-in delay-[1150ms] text-[12px] tracking-[0.25em] opacity-80">
-                  VISUAL &amp; HONEST STORIES
-                </div>
-              </div>
+            {/* CTA – only in final & titles */}
+            {(phase === "titles" || phase === "final") && (
               <button
-                onClick={onClose}
+                onClick={onPressEnterButton}
                 className="rounded-full border border-white/40 px-5 py-2 text-sm hover:bg-white/10 transition cin-fade-in-delayed"
+                aria-label="Enter"
               >
                 Enter ↵
               </button>
-            </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Explode-out overlays for the two typing lines (centered in the whole screen, timed to vanish) */}
+      {phase === "type1" && typed1 && (
+        <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
+          <div className="cin-explode-out text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[min(9vw,64px)]">
+            {typed1}
+          </div>
+        </div>
+      )}
+
+      {phase === "type2" && typed2 && (
+        <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
+          <div className="cin-explode-out text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[min(7vw,48px)]">
+            {typed2}
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 
 
