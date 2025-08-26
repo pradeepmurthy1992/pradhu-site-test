@@ -771,6 +771,66 @@ function PricingSection({ T, showTitle = true }) {
   );
 }
 
+// ---- Micro parallax hook (for vertical scroll) ----
+function useMicroParallax(containerRef, opts = {}) {
+  const {
+    selector = "figure[data-idx] img",
+    strength = 14, // max px shift up/down (tweak 10–18)
+    thresholdPx = 1, // skip work offscreen
+  } = opts;
+
+  useEffect(() => {
+    const root = containerRef?.current;
+    if (!root) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const imgs = Array.from(root.querySelectorAll(selector));
+    if (!imgs.length) return;
+
+    let raf = 0;
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+    const update = () => {
+      raf = 0;
+      const vh = window.innerHeight || 1;
+      const mid = vh / 2;
+      for (const img of imgs) {
+        const r = img.getBoundingClientRect();
+        // quick reject when far offscreen
+        if (r.bottom < -thresholdPx || r.top > vh + thresholdPx) continue;
+
+        // distance of image center from viewport center (normalized)
+        const cy = r.top + r.height / 2;
+        const norm = (cy - mid) / vh; // ~ -0.5..0.5 usually
+        const shift = clamp(norm * strength * 2, -strength, strength);
+
+        img.style.transform = `translateY(${shift.toFixed(2)}px)`;
+      }
+    };
+
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    const onResize = onScroll;
+
+    // initial styles/classes
+    imgs.forEach((img) => img.classList.add("parallax-img"));
+
+    // kick and listen
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      if (raf) cancelAnimationFrame(raf);
+      imgs.forEach((img) => (img.style.transform = ""));
+    };
+  }, [containerRef, selector, strength, thresholdPx]);
+}
+
+
 /* ===================== Tiles (one line) ===================== */
 function SectionTiles({ openId, setOpenId, T }) {
   const tiles = [
@@ -1143,28 +1203,62 @@ function Input({
 }
 
 /* ===================== Portfolio (Landing + Pages + Hash) ===================== */
-function useHash() {
-  const [hash, setHash] = useState(() => window.location.hash || "");
+// ---- Micro parallax hook (for vertical scroll) ----
+function useMicroParallax(containerRef, opts = {}) {
+  const {
+    selector = "figure[data-idx] img",
+    strength = 14, // max px shift
+    thresholdPx = 1,
+  } = opts;
+
   useEffect(() => {
-    const onHash = () => setHash(window.location.hash || "");
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
+    const root = containerRef?.current;
+    if (!root) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const imgs = Array.from(root.querySelectorAll(selector));
+    if (!imgs.length) return;
+
+    let raf = 0;
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+    const update = () => {
+      raf = 0;
+      const vh = window.innerHeight || 1;
+      const mid = vh / 2;
+      for (const img of imgs) {
+        const r = img.getBoundingClientRect();
+        if (r.bottom < -thresholdPx || r.top > vh + thresholdPx) continue;
+
+        const cy = r.top + r.height / 2;
+        const norm = (cy - mid) / vh; // -0.5..0.5
+        const shift = clamp(norm * strength * 2, -strength, strength);
+
+        img.style.transform = `translateY(${shift.toFixed(2)}px)`;
+      }
+    };
+
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    const onResize = onScroll;
+
+    imgs.forEach((img) => img.classList.add("parallax-img"));
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      if (raf) cancelAnimationFrame(raf);
+      imgs.forEach((img) => (img.style.transform = ""));
+    };
+  }, [containerRef, selector, strength, thresholdPx]);
 }
 
-// Optional extended metadata per category (subtitle text for the page header)
-const GH_CATEGORIES_EXT = {
-  Events: {
-    blurb:
-      "Candid coverage of people and moments—clean color, honest expressions, and storytelling frames.",
-  },
-  Fashion: {
-    blurb:
-      "Editorial-leaning looks with modern skin tones and simple, confident direction.",
-  },
-};
-
+// ---------- Portfolio Landing ----------
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
@@ -1225,14 +1319,15 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
+// ---------- Portfolio Page ----------
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
-  // Track which image is centered for the progress indicator
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // active index observer
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
@@ -1251,6 +1346,9 @@ function PortfolioPage({ T, cat, state, onBack }) {
     nodes.forEach((n) => obs.observe(n));
     return () => obs.disconnect();
   }, [state.loading]);
+
+  // 👉 micro parallax enabled
+  useMicroParallax(containerRef, { strength: 14 });
 
   return (
     <section className="py-2" id="portfolio">
@@ -1282,7 +1380,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         </div>
       </div>
 
-      {/* Centered tall images with air/whitespace */}
+      {/* Centered tall images */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
@@ -1291,14 +1389,13 @@ function PortfolioPage({ T, cat, state, onBack }) {
         <div ref={containerRef} className="mx-auto max-w-[980px]">
           {items.map((it, i) => (
             <figure key={it.sha || i} data-idx={i} className="my-10 sm:my-16 md:my-24">
-  <img
-    src={it.url}
-    alt={`${cat.label} — ${it.name}`}
-    className="max-h-[85vh] w-auto mx-auto object-contain"
-    loading="lazy"
-  />
-</figure>
-
+              <img
+                src={it.url}
+                alt={`${cat.label} — ${it.name}`}
+                className="max-h-[85vh] w-auto mx-auto object-contain parallax-img"
+                loading="lazy"
+              />
+            </figure>
           ))}
         </div>
       ) : (
@@ -1308,15 +1405,14 @@ function PortfolioPage({ T, cat, state, onBack }) {
   );
 }
 
+// ---------- Portfolio Wrapper ----------
 function Portfolio({ T }) {
-  // states per category
   const [states, setStates] = useState(() =>
     GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
   );
 
-  // Hash router: #portfolio or #portfolio/Fashion
   const [hash, setHash] = useHash();
-  const [view, setView] = useState("landing"); // "landing" | "page"
+  const [view, setView] = useState("landing");
   const [activeIdx, setActiveIdx] = useState(-1);
 
   const openCat = (label) => {
@@ -1335,7 +1431,6 @@ function Portfolio({ T }) {
     setHash("#portfolio");
   };
 
-  // hash → view sync (deep-link support)
   useEffect(() => {
     if (!hash.startsWith("#portfolio")) return;
     const seg = hash.split("/");
@@ -1352,34 +1447,22 @@ function Portfolio({ T }) {
     setActiveIdx(-1);
   }, [hash]);
 
-  // fetch images per category
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const results = await Promise.all(
         GH_CATEGORIES.map(async (cat) => {
           try {
-            const list = await ghListFolder(
-              GH_OWNER,
-              GH_REPO,
-              cat.path,
-              GH_BRANCH
-            );
+            const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
             return { loading: false, error: "", images: list };
           } catch (e) {
-            return {
-              loading: false,
-              error: e?.message || "Failed to load",
-              images: [],
-            };
+            return { loading: false, error: e?.message || "Failed to load", images: [] };
           }
         })
       );
       if (!cancelled) setStates(results);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   if (view === "page" && activeIdx >= 0) {
