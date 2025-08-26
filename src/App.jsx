@@ -588,7 +588,7 @@ function ServicesSection({ T, showTitle = true }) {
             <li>60–90 min session · up to 2 outfits</li>
             <li>Clean, natural retouching</li>
             <li>Guidance on wardrobe, posing & locations</li>
-            <li>Deliverables: curated 25–40 edited images</li>
+            <li>Deliverables: curated 3 - 5 edited images per outfit</li>
           </ul>
         </article>
 
@@ -608,8 +608,7 @@ function ServicesSection({ T, showTitle = true }) {
             <li>Coverage by hours or session blocks</li>
             <li>Emphasis on key moments & people</li>
             <li>Balanced set of colour-graded selects</li>
-            <li>Teasers available as an add-on</li>
-          </ul>
+            </ul>
         </article>
       </div>
 
@@ -638,38 +637,39 @@ function PricingSection({ T, showTitle = true }) {
       includes: [
         "60–90 min · up to 2 outfits",
         "6 lightly retouched hero shots",
-        "Curated 25–40 edited images",
+        "Curated 3 - 5 edited images per outfit",
         "Location & styling guidance",
       ],
     },
     {
       name: "Headshots (Solo/Team)",
-      price: "from ₹3,000",
+      price: "from ₹5,000",
       includes: [
-        "Efficient, minimal setup",
+        "60–90 min · up to 2 outfits"
         "Consistent lighting & framing",
-        "Light retouching for final selects",
+        "Curated 3 - 5 edited images per outfit",
         "On-location option available",
       ],
     },
     {
       name: "Fashion / Editorial (Half-day)",
-      price: "from ₹12,000",
+      price: "from ₹10,000",
       includes: [
         "Pre-prod planning & moodboard",
         "Lighting & look management",
-        "Editorial-leaning colour grade",
+         "Curated 3 - 5 edited images per outfit",
         "Team coordination on request",
+         "Hour based - no limits for outfit changes",
       ],
     },
     {
       name: "Event Coverage (2 hrs)",
-      price: "from ₹6,000",
+      price: "from ₹8,000",
       includes: [
         "Focused coverage of key moments",
         "Colour-graded selects",
-        "Optional teasers within 48h",
         "Extendable by hour",
+       "Editing based on request - add on",
       ],
     },
   ];
@@ -704,7 +704,7 @@ function PricingSection({ T, showTitle = true }) {
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
           <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
           <p className={`mt-2 text-sm ${T.muted}`}>
-            Portraits: 5–7 days. Weddings/events: teaser in ~48h, full gallery in ~3–4 weeks.
+            Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks. 
           </p>
         </div>
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
@@ -713,7 +713,8 @@ function PricingSection({ T, showTitle = true }) {
             <li>Advance to reserve the date (adjustable in final invoice).</li>
             <li>One complimentary reschedule with 72h notice (subject to availability).</li>
             <li>Outstation travel/stay billed at actuals.</li>
-            <li>Commercial usage/licensing quoted per brief.</li>
+            <li>Entire shoot pics will be shared in a couple of days</li>
+             <li>Editing requests upto two revisions are accepted</li>
           </ul>
         </div>
       </div>
