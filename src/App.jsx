@@ -52,11 +52,11 @@ const SHEET_WEB_APP =
 const NAV_BRAND = "PRADHU PHOTOGRAPHY";
 const NAV_ITEMS = [
   { label: "Home", id: "home", icon: "home" },
-  { label: "Portfolio", id: "portfolio", icon: "grid" },
-  { label: "Services", id: "services", icon: "briefcase" },
-  { label: "Pricing", id: "pricing", icon: "tag" },
-  { label: "About", id: "about", icon: "user" },
-  { label: "Contact", id: "booking", icon: "mail" },
+  // { label: "Portfolio", id: "portfolio", icon: "grid" },
+  //{ label: "Services", id: "services", icon: "briefcase" },
+  //{ label: "Pricing", id: "pricing", icon: "tag" },
+  //{ label: "About", id: "about", icon: "user" },
+  { label: "Contact Me", id: "booking", icon: "mail" },
 ];
 const SECTION_IDS = ["portfolio", "services", "pricing", "faq"]; // tiles
 
