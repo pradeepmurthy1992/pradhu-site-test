@@ -13,14 +13,14 @@ const INTRO_BRAND = "PRADEEP";
 const INTRO_NAME = "Pradhu Photography";
 const INTRO_AUTO_DISMISS_MS = 0;
 const INTRO_LEFT_IMAGE_URL =
-  "https://github.com/pradeepmurthy1992/pradhu-site-test/blob/2b8e46aab00dc3123d7fae72929218a600e32053/left%20img.jpg";
+  "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/2b8e46aab00dc3123d7fae72929218a600e32053/left%20img.jpg";
 
 const INTRO_REMEMBER = true;
 const INTRO_FORCE_QUERY = "intro"; // use ?intro=1
 const INTRO_FORCE_HASH = "#intro";
 
 const HERO_BG_URL =
-  "https://github.com/pradeepmurthy1992/pradhu-site-test/blob/2b8e46aab00dc3123d7fae72929218a600e32053/hero%20bg.jpg";
+  "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/2b8e46aab00dc3123d7fae72929218a600e32053/hero%20bg.jpg";
 
 // GitHub media repo (live portfolio)
 const GH_OWNER = "pradeepmurthy1992";
