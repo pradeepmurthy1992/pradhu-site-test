@@ -2,10 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
    PRADHU — Dual Theme (Light/Dark) + Cinematic Intro + Portfolio
-   Requests applied:
-   - Portfolio: original magazine-style tiles & horizontal page
-   - New One Piece–themed Intro overlay (straw-hat rope / map dots)
-   - Renamed brand to "PRADHU PHOTOGRAPHY"
+   - Portfolio landing: magazine-style tiles (cover image + serif)
+   - Portfolio page: centered tall images + right progress rail
+   - Services, Pricing, FAQ, Booking (About + Enquiry)
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -14,14 +13,14 @@ const INTRO_BRAND = "PRADEEP";
 const INTRO_NAME = "Pradhu Photography";
 const INTRO_AUTO_DISMISS_MS = 0;
 const INTRO_LEFT_IMAGE_URL =
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop";
+  "https://github.com/pradeepmurthy1992/pradhu-site-test/blob/2b8e46aab00dc3123d7fae72929218a600e32053/left%20img.jpg";
 
-const INTRO_REMEMBER = false;
+const INTRO_REMEMBER = true;
 const INTRO_FORCE_QUERY = "intro"; // use ?intro=1
 const INTRO_FORCE_HASH = "#intro";
 
 const HERO_BG_URL =
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2400&q=80";
+  "https://github.com/pradeepmurthy1992/pradhu-site-test/blob/2b8e46aab00dc3123d7fae72929218a600e32053/hero%20bg.jpg";
 
 // GitHub media repo (live portfolio)
 const GH_OWNER = "pradeepmurthy1992";
@@ -101,8 +100,7 @@ function useThemeTokens(theme) {
     muted: "text-neutral-600",
     muted2: "text-neutral-500",
     chipActive: "bg-rose-200 text-rose-900 border-rose-300",
-    chipInactive:
-      "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
+    chipInactive: "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
     btnOutline: "border-neutral-300 text-neutral-900 hover:bg-rose-50",
     inputBg: "bg-white",
     inputBorder: "border-neutral-300",
@@ -130,8 +128,7 @@ function useThemeTokens(theme) {
     muted: "text-neutral-300",
     muted2: "text-neutral-400",
     chipActive: "bg-teal-300 text-[#1c1e26] border-teal-400",
-    chipInactive:
-      "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
+    chipInactive: "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
     btnOutline: "border-neutral-600 text-neutral-100 hover:bg-[#333640]",
     inputBg: "bg-[#1c1e26]",
     inputBorder: "border-neutral-600",
@@ -154,12 +151,7 @@ function useHash() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  return [
-    hash,
-    (h) => {
-      if (h !== window.location.hash) window.location.hash = h;
-    },
-  ];
+  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
 }
 
 /* ===================== Icons ===================== */
@@ -256,22 +248,12 @@ function Icon({ name, className = "h-4 w-4" }) {
           <path d="M12.6 12.9l.9-1.1 1.7.6" />
         </svg>
       );
-    case "hat": // simple straw-hat mark
-      return (
-        <svg {...p}>
-          <path d="M4 15c2.5-1.5 5.5-2.3 8-2.3S17.5 13.5 20 15" />
-          <path d="M6 12c1.4-.9 3.1-1.4 6-1.4s4.6.5 6 1.4" />
-          <path d="M8 10s2-3 4-3 4 3 4 3" />
-        </svg>
-      );
     default:
       return null;
   }
 }
 
-/* ===================== One Piece–themed Intro Overlay ===================== */
-/* Visuals: nautical map dots + dark vignette, rope divider, straw-hat accent.
-   Keeps your typewriter + ripple timing, adds a subtle OP flair. */
+/* ===================== Intro Overlay (final cinematic) ===================== */
 function IntroOverlay({ onClose }) {
   // Phases: 1) typeName → 2) typeBrand → 3) revealImg → 4) titles
   const [phase, setPhase] = useState("typeName");
@@ -289,18 +271,13 @@ function IntroOverlay({ onClose }) {
 
   // Enter closes. Clicks make ripple/flash only.
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Enter") onClose();
-    };
+    const onKey = (e) => { if (e.key === "Enter") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const onAnyClick = (e) => makeRipple(e.clientX, e.clientY, true);
-  const onPressEnterButton = (e) => {
-    e.stopPropagation();
-    onClose();
-  };
+  const onPressEnterButton = (e) => { e.stopPropagation(); onClose(); };
 
   function makeRipple(x, y, withFlash = false) {
     const host = rippleLayerRef.current;
@@ -327,8 +304,7 @@ function IntroOverlay({ onClose }) {
 
   // Typing logic
   useEffect(() => {
-    const str =
-      phase === "typeName" ? NAME : phase === "typeBrand" ? BRAND : "";
+    const str = phase === "typeName" ? NAME : phase === "typeBrand" ? BRAND : "";
     if (!str) return;
     setTyped("");
     setStep(0);
@@ -376,9 +352,9 @@ function IntroOverlay({ onClose }) {
   };
   useEffect(() => {
     if (phase !== "titles") return;
-    impactRipple(420); // VISUAL & HONEST STORIES
-    impactRipple(900); // NAME
-    impactRipple(1250); // BRAND
+    impactRipple(420);  // VISUAL & HONEST STORIES
+    impactRipple(900);  // PRADEEP MOORTHY
+    impactRipple(1250); // PRADHU PHOTOGRAPHY
   }, [phase]);
 
   const renderTyping = (text) => (
@@ -386,38 +362,26 @@ function IntroOverlay({ onClose }) {
       <div className="text-white text-center">
         <div
           className={[
-            "inline-flex items-center gap-2 font-['Playfair_Display'] uppercase tracking-[0.08em]",
+            "inline-flex items-center gap-1 font-['Playfair_Display'] uppercase tracking-[0.08em]",
             "text-[clamp(26px,7vw,88px)] leading-none whitespace-nowrap",
             step === 2 ? "cin-explode-out" : "",
           ].join(" ")}
         >
-          <Icon name="hat" className="w-8 h-8 opacity-90" />
           <span>{text}</span>
-          {step === 0 ? (
-            <span className="cin-caret w-[0.5ch] inline-block align-bottom" />
-          ) : null}
+          {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
         </div>
       </div>
     </div>
   );
 
-  // OP map-dots + ocean gradient background style
-  const bgStyle = {
-    backgroundImage:
-      "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(180deg,#001f3f 0%,#005a8d 50%,#00a2c7 100%)",
-    backgroundSize: "22px 22px,100% 100%",
-    backgroundPosition: "0 0,center",
-  };
-
   return (
     <div
-      className="fixed inset-0 text-white"
-      style={{ zIndex: 9999, ...bgStyle }}
+      className="fixed inset-0 bg-black text-white"
+      style={{ zIndex: 9999 }}
       role="dialog"
       aria-label="Intro overlay"
       onClick={onAnyClick}
     >
-      <div className="absolute inset-0 bg-black/35" />
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
 
       {(phase === "typeName") && renderTyping(typed)}
@@ -426,62 +390,41 @@ function IntroOverlay({ onClose }) {
       {/* Layout for revealImg/titles */}
       <div
         className={[
-          "relative h-full w-full grid items-center justify-center p-6",
-          "md:grid-cols-[640px_1fr] gap-6",
+          "h-full w-full grid items-center justify-center p-6",
+          "md:grid-cols-[640px_1fr] gap-4",
           phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100",
         ].join(" ")}
       >
         {/* Left image */}
-        <div className="relative">
+        <div className="relative cin-image-holder">
           <img
             ref={imgRef}
             src={INTRO_LEFT_IMAGE_URL}
             alt="Intro"
             className={[
-              "w-full h-auto object-contain max-h-[78vh] drop-shadow-2xl",
+              "w-full h-auto object-contain max-h-[78vh]",
               phase === "revealImg" ? "cin-radial-reveal cin-image-move-in" : "",
               phase === "titles" ? "opacity-100" : "",
             ].join(" ")}
           />
-          <div className="pointer-events-none absolute inset-0"
-               style={{boxShadow:"inset 0 0 160px rgba(0,0,0,0.55)"}}/>
+          <div className="pointer-events-none absolute inset-0 cin-vignette" />
         </div>
 
-        {/* Right titles (with rope divider) */}
+        {/* Right titles */}
         <div
           className={[
-            "relative flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
-            "px-6 py-5 rounded-2xl bg-black/20 border border-white/20",
+            "flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          }}
         >
-          <div
-            className="absolute left-0 right-0 -top-1 h-2"
-            style={{
-              background:
-                "repeating-linear-gradient(45deg,#c8a96e 0 6px,#a77f3e 6px 12px)",
-              borderRadius: "9999px",
-              filter: "drop-shadow(0 2px 0 rgba(0,0,0,.25))",
-            }}
-            aria-hidden
-          />
-          <div
-            className={[
-              "text-[12px] tracking-[0.25em] opacity-90",
-              phase === "titles" ? "cin-overshoot-in" : "",
-            ].join(" ")}
-          >
+          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>
             VISUAL & HONEST STORIES
           </div>
 
           <h1
             className={[
               "mt-1 font-['Playfair_Display'] uppercase",
-              "text-[clamp(32px,6vw,72px)] leading-tight drop-shadow",
+              "text-[clamp(32px,6vw,72px)] leading-tight",
               phase === "titles" ? "cin-overshoot-in delay-[480ms]" : "",
             ].join(" ")}
           >
@@ -491,7 +434,7 @@ function IntroOverlay({ onClose }) {
           <div
             className={[
               "mt-0.5 font-['Playfair_Display'] uppercase",
-              "text-[clamp(24px,4.5vw,50px)] leading-tight drop-shadow",
+              "text-[clamp(24px,4.5vw,50px)] leading-tight",
               phase === "titles" ? "cin-overshoot-in delay-[850ms]" : "",
             ].join(" ")}
           >
@@ -524,8 +467,7 @@ async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
   const now = Date.now();
-  const nocache =
-    new URLSearchParams(window.location.search).get("refresh") === "1";
+  const nocache = new URLSearchParams(window.location.search).get("refresh") === "1";
 
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
@@ -538,9 +480,7 @@ async function ghListFolder(owner, repo, path, ref) {
   const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
     repo
   )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
-  const res = await fetch(url, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
+  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (!res.ok) {
     if (res.status === 404) return [];
     const text = await res.text();
@@ -574,12 +514,12 @@ function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-[2]">
         <div className={`${CONTAINER} pb-10 md:pb-14 text-white`}>
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
-            Freeze the moment. <span className="opacity-90">Tell the story.</span>
+            Collect the Treasure. <span className="opacity-90">ONE PIECE at a time.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
             Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
           </p>
-        </div>
+         </div>
       </div>
     </section>
   );
@@ -667,7 +607,7 @@ function ServicesSection({ T, showTitle = true }) {
             <li>Coverage by hours or session blocks</li>
             <li>Emphasis on key moments & people</li>
             <li>Balanced set of colour-graded selects</li>
-          </ul>
+            </ul>
         </article>
       </div>
 
@@ -690,48 +630,49 @@ function ServicesSection({ T, showTitle = true }) {
 /* ===================== Pricing (Indicative) ===================== */
 function PricingSection({ T, showTitle = true }) {
   const tiers = [
-    {
-      name: "Portrait Session",
-      price: "from ₹4,500",
-      includes: [
-        "60–90 min · up to 2 outfits",
-        "6 lightly retouched hero shots",
-        "Curated 3 - 5 edited images per outfit",
-        "Location & styling guidance",
-      ],
-    },
-    {
-      name: "Headshots (Solo/Team)",
-      price: "from ₹5,000",
-      includes: [
-        "60–90 min · up to 2 outfits",
-        "Consistent lighting & framing",
-        "Curated 3 - 5 edited images per outfit",
-        "On-location option available",
-      ],
-    },
-    {
-      name: "Fashion / Editorial (Half-day)",
-      price: "from ₹10,000",
-      includes: [
-        "Pre-prod planning & moodboard",
-        "Lighting & look management",
-        "Curated 3 - 5 edited images per outfit",
-        "Team coordination on request",
-        "Hour based - no limits for outfit changes",
-      ],
-    },
-    {
-      name: "Event Coverage (2 hrs)",
-      price: "from ₹8,000",
-      includes: [
-        "Focused coverage of key moments",
-        "Colour-graded selects",
-        "Extendable by hour",
-        "Editing based on request - add on",
-      ],
-    },
-  ];
+  {
+    name: "Portrait Session",
+    price: "from ₹4,500",
+    includes: [
+      "60–90 min · up to 2 outfits",
+      "6 lightly retouched hero shots",
+      "Curated 3 - 5 edited images per outfit",
+      "Location & styling guidance",
+    ],
+  },
+  {
+    name: "Headshots (Solo/Team)",
+    price: "from ₹5,000",
+    includes: [
+      "60–90 min · up to 2 outfits",
+      "Consistent lighting & framing",
+      "Curated 3 - 5 edited images per outfit",
+      "On-location option available",
+    ],
+  },
+  {
+    name: "Fashion / Editorial (Half-day)",
+    price: "from ₹10,000",
+    includes: [
+      "Pre-prod planning & moodboard",
+      "Lighting & look management",
+      "Curated 3 - 5 edited images per outfit",
+      "Team coordination on request",
+      "Hour based - no limits for outfit changes",
+    ],
+  },
+  {
+    name: "Event Coverage (2 hrs)",
+    price: "from ₹8,000",
+    includes: [
+      "Focused coverage of key moments",
+      "Colour-graded selects",
+      "Extendable by hour",
+      "Editing based on request - add on",
+    ],
+  },
+];
+
 
   return (
     <section id="pricing" className="py-2">
@@ -765,7 +706,7 @@ function PricingSection({ T, showTitle = true }) {
           <p className={`mt-2 text-sm ${T.muted}`}>
             <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks. </li>
             <li>Entire shoot pics will be shared in 3 - 5 days </li>
-            <li>Editing timeline starts post the shortlisting of images</li>
+             <li>Editing timeline starts post the shortlisting of images</li>
           </p>
         </div>
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
@@ -813,10 +754,10 @@ function Input({
 }
 
 /* ===================== Portfolio (Landing + Pages + Hash) ===================== */
+/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
 // Micro parallax (vertical)
 function useMicroParallax(containerRef, opts = {}) {
-  const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } =
-    opts;
+  const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } = opts;
 
   useEffect(() => {
     const root = containerRef?.current;
@@ -843,9 +784,7 @@ function useMicroParallax(containerRef, opts = {}) {
       }
     };
 
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
     const onResize = onScroll;
 
     imgs.forEach((img) => img.classList.add("parallax-img"));
@@ -867,16 +806,9 @@ function useKeyNav(enabled, { goPrev, goNext, onExit }) {
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        goPrev();
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        goNext();
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        onExit?.();
-      }
+      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+      else if (e.key === "Escape") { e.preventDefault(); onExit?.(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -890,14 +822,15 @@ function preloadImage(url) {
   img.src = url;
 }
 
-// Landing (tiles) — ORIGINAL styling restored
+// ---------- Landing ----------
+/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
+
+// Landing (tiles)
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
       <header className="mb-8">
-        <h2
-          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
         <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
@@ -934,9 +867,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       >
                         {c.label}
                       </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
-                        PORTFOLIO
-                      </div>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
                     </div>
                   </div>
                 </div>
@@ -949,7 +880,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-// Page (horizontal carousel) — ORIGINAL styling restored
+// Page (horizontal carousel)
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
@@ -962,7 +893,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     if (!root) return;
 
     const update = () => {
-      const slides = Array.from(root.querySelectorAll("[data-idx]"));
+      const slides = Array.from(root.querySelectorAll('[data-idx]'));
       if (!slides.length) return;
 
       const center = root.scrollLeft + root.clientWidth / 2;
@@ -982,11 +913,11 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
 
     update();
-    root.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    root.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
     return () => {
-      root.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      root.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
     };
   }, []);
 
@@ -995,19 +926,19 @@ function PortfolioPage({ T, cat, state, onBack }) {
     const go = (dir) => {
       const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
       const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-      el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     };
     const onKey = (e) => {
-      if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === 'ArrowRight') go(1);
+      if (e.key === 'ArrowLeft') go(-1);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [activeIndex, items.length]);
 
   const goTo = (idx) => {
     const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
   return (
@@ -1060,18 +991,19 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 "
               >
                 <img
-                  src={it.url}
-                  alt={`${cat.label} — ${it.name}`}
-                  className={`
-                    mx-auto
-                    rounded-2xl
-                    object-contain
-                    max-h-[68vh]
-                    w-auto
-                    h-[58vh] sm:h-[64vh] md:h-[68vh]
-                  `}
-                  loading="lazy"
-                />
+  src={it.url}
+  alt={`${cat.label} — ${it.name}`}
+  className={`
+    mx-auto
+    rounded-2xl
+    object-contain
+    max-h-[68vh]   /* cap portrait height */
+    w-auto         /* portrait keeps proportions */
+    h-[58vh] sm:h-[64vh] md:h-[68vh]  /* base landscape height */
+  `}
+  loading="lazy"
+/>
+
               </div>
             ))}
           </div>
@@ -1116,11 +1048,7 @@ function Portfolio({ T }) {
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const goLanding = () => {
-    setView("landing");
-    setActiveIdx(-1);
-    setHash("#portfolio");
-  };
+  const goLanding = () => { setView("landing"); setActiveIdx(-1); setHash("#portfolio"); };
 
   // hash → view
   useEffect(() => {
@@ -1129,14 +1057,9 @@ function Portfolio({ T }) {
     if (seg.length >= 2 && seg[1]) {
       const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
       const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) {
-        setActiveIdx(idx);
-        setView("page");
-        return;
-      }
+      if (idx >= 0) { setActiveIdx(idx); setView("page"); return; }
     }
-    setView("landing");
-    setActiveIdx(-1);
+    setView("landing"); setActiveIdx(-1);
   }, [hash]);
 
   // fetch images
@@ -1155,9 +1078,7 @@ function Portfolio({ T }) {
       );
       if (!cancelled) setStates(results);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   if (view === "page" && activeIdx >= 0) {
@@ -1165,10 +1086,9 @@ function Portfolio({ T }) {
     const st = states[activeIdx] || { loading: true, error: "", images: [] };
     return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
   }
-  return (
-    <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />
-  );
+  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
 }
+
 
 /* ===================== Tiles (one line) ===================== */
 function SectionTiles({ openId, setOpenId, T }) {
@@ -1180,10 +1100,7 @@ function SectionTiles({ openId, setOpenId, T }) {
   ];
   return (
     <div id="tiles" className={`${CONTAINER} pt-10`}>
-      <div
-        className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2"
-        style={{ scrollbarWidth: "none" }}
-      >
+      <div className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2" style={{ scrollbarWidth: "none" }}>
         {tiles.map((t) => {
           const active = openId === t.id;
           return (
@@ -1201,10 +1118,7 @@ function SectionTiles({ openId, setOpenId, T }) {
               aria-controls={`section-${t.id}`}
               aria-expanded={active}
             >
-              <Icon
-                name={t.icon}
-                className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`}
-              />
+              <Icon name={t.icon} className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`} />
               <span className="text-sm">{t.label}</span>
             </button>
           );
@@ -1217,20 +1131,14 @@ function SectionTiles({ openId, setOpenId, T }) {
 /* ===================== Booking (About + Enquiry) ===================== */
 function BookingSection({ T }) {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    service: "Portraits",
-    city: "Pune",
-    date: "",
-    message: "",
+    name: "", email: "", phone: "",
+    service: "Portraits", city: "Pune", date: "", message: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState("");
 
   const minDateStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
+    const d = new Date(); d.setDate(d.getDate() + 2);
     const off = d.getTimezoneOffset();
     const local = new Date(d.getTime() - off * 60000);
     return local.toISOString().slice(0, 10);
@@ -1238,11 +1146,7 @@ function BookingSection({ T }) {
   const fmtHuman = (yyyy_mm_dd) => {
     if (!yyyy_mm_dd) return "";
     const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
   };
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -1254,37 +1158,22 @@ function BookingSection({ T }) {
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
-    if (form.date && form.date < minDateStr)
-      missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
-    if (missing.length) {
-      setNote(`Please fill: ${missing.join(", ")}`);
-      return;
-    }
+    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
+    if (missing.length) { setNote(`Please fill: ${missing.join(", ")}`); return; }
 
     setSubmitting(true);
     try {
       await fetch(SHEET_WEB_APP, {
-        method: "POST",
-        mode: "no-cors",
+        method: "POST", mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, source: "website" }),
       });
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        service: "Portraits",
-        city: "Pune",
-        date: "",
-        message: "",
-      });
+      setForm({ name: "", email: "", phone: "", service: "Portraits", city: "Pune", date: "", message: "" });
       setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
       console.error(err);
       setNote("Couldn’t submit right now. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -1293,62 +1182,38 @@ function BookingSection({ T }) {
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* LEFT: About */}
           <div id="about">
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
               As an aspiring photographer from Kanchipuram, I work across fashion, portraits, candids and events. I run a client-first process: I listen to your brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless. On set, I work with calm, unobtrusive direction to create space for genuine expression. My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
             </p>
             <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>
-                Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio,
-                Professional Headshots, Street Fashion, Studio
-              </li>
-              <li>Kit: Nikon D7500, Softboxes (octa & strip), multiple flashes, light modifiers</li>
+              <li>Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Professional Headshots, Street Fashion, Studio </li>
+               <li>Kit: Nikon D7500, Softboxes (octa & strip), multiple flashes, light modifiers</li>
               <li>{SERVICE_CITIES}</li>
             </ul>
 
             <div className="mt-5 flex items-center gap-3">
-              <a
-                href={`https://www.instagram.com/${IG_USERNAME}/`}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Instagram"
-                title="Instagram"
-                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-              >
+              <a href={`https://www.instagram.com/${IG_USERNAME}/`} target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram"
+                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
                 <Icon name="camera" className="h-5 w-5" />
               </a>
 
               {WHATSAPP_NUMBER.includes("X") ? (
-                <span
-                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
-                  title="WhatsApp unavailable"
-                  aria-hidden="true"
-                >
+                <span className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
+                      title="WhatsApp unavailable" aria-hidden="true">
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </span>
               ) : (
-                <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="WhatsApp"
-                  title="WhatsApp"
-                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-                >
+                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" title="WhatsApp"
+                   className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </a>
               )}
 
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                aria-label="Email"
-                title="Email"
-                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-              >
+              <a href={`mailto:${CONTACT_EMAIL}`} aria-label="Email" title="Email"
+                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
                 <Icon name="mail" className="h-5 w-5" />
               </a>
             </div>
@@ -1356,46 +1221,25 @@ function BookingSection({ T }) {
 
           {/* RIGHT: Enquiry */}
           <div>
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
               Enquire / Book
             </h2>
             <p className={`mt-2 ${T.muted}`}>Share details and I’ll reply with availability and a quote.</p>
 
-            <form
-              onSubmit={onSubmit}
-              className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-            >
+            <form onSubmit={onSubmit} className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
               <div className="grid grid-cols-1 gap-4">
                 <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
                 <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
-                <Input
-                  T={T}
-                  label="Phone"
-                  name="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={onChange}
-                  required
-                  placeholder="+91-XXXXXXXXXX"
-                />
+                <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Preferred Date</label>
                   <input
-                    name="date"
-                    type="date"
-                    min={minDateStr}
-                    value={form.date}
-                    onKeyDown={(e) => e.preventDefault()}
-                    onPaste={(e) => e.preventDefault()}
+                    name="date" type="date" min={minDateStr} value={form.date}
+                    onKeyDown={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}
                     onChange={(e) => {
                       let v = e.target.value;
-                      if (v && v < minDateStr) {
-                        v = minDateStr;
-                        setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
-                      }
+                      if (v && v < minDateStr) { v = minDateStr; setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`); }
                       setForm({ ...form, date: v });
                     }}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
@@ -1406,10 +1250,7 @@ function BookingSection({ T }) {
                 <div>
                   <label className={`text-sm ${T.muted}`}>Message</label>
                   <textarea
-                    name="message"
-                    value={form.message}
-                    onChange={onChange}
-                    rows={5}
+                    name="message" value={form.message} onChange={onChange} rows={5}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                     placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
                   />
@@ -1419,41 +1260,29 @@ function BookingSection({ T }) {
                   <div>
                     <label className={`text-sm ${T.muted}`}>Service</label>
                     <select
-                      name="service"
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.service}
-                      onChange={onChange}
+                      name="service" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.service} onChange={onChange}
                     >
                       {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
+                        <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className={`text-sm ${T.muted}`}>City</label>
                     <select
-                      name="city"
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.city}
-                      onChange={onChange}
+                      name="city" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.city} onChange={onChange}
                     >
-                      <option>Pune</option>
-                      <option>Mumbai</option>
-                      <option>Chennai</option>
-                      <option>Bengaluru</option>
-                      <option>Other</option>
+                      <option>Pune</option><option>Mumbai</option><option>Chennai</option>
+                      <option>Bengaluru</option><option>Other</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
-                  >
+                  <button type="submit" disabled={submitting}
+                          className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60">
                     {submitting ? "Submitting…" : "Send Enquiry"}
                   </button>
                   {note && <span className="text-sm opacity-80">{note}</span>}
@@ -1471,20 +1300,14 @@ function BookingSection({ T }) {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
-    try {
-      return sessionStorage.getItem("pradhu:theme") || "dark";
-    } catch {
-      return "dark";
-    }
+    try { return sessionStorage.getItem("pradhu:theme") || "dark"; } catch { return "dark"; }
   });
   const T = useThemeTokens(theme);
 
   const [showIntro, setShowIntro] = useState(() => {
     if (!INTRO_ENABLED) return false;
     const url = new URL(window.location.href);
-    const forced =
-      url.searchParams.get(INTRO_FORCE_QUERY) === "1" ||
-      url.hash === INTRO_FORCE_HASH;
+    const forced = url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
     if (forced) return true;
     if (!INTRO_REMEMBER) return true;
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
@@ -1538,20 +1361,18 @@ export default function App() {
 
   const closeIntro = () => {
     setShowIntro(false);
-    try {
-      if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1");
-    } catch {}
+    try { if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1"); } catch {}
   };
 
   useEffect(() => {
-    try {
-      sessionStorage.setItem("pradhu:theme", theme);
-    } catch {}
+    try { sessionStorage.setItem("pradhu:theme", theme); } catch {}
   }, [theme]);
 
   return (
     <main
-      className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter']`}
+      className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${
+        theme === "light" ? "bg-dots-light" : "bg-dots-dark"
+      }`}
     >
       <HeadFonts />
       {showIntro && <IntroOverlay onClose={closeIntro} />}
@@ -1669,10 +1490,7 @@ function ThemeSlider({ theme, setTheme }) {
   const isDark = theme === "dark";
   const setLight = () => setTheme("light");
   const setDark = () => setTheme("dark");
-  const onKeyDown = (e) => {
-    if (e.key === "ArrowLeft") setLight();
-    if (e.key === "ArrowRight") setDark();
-  };
+  const onKeyDown = (e) => { if (e.key === "ArrowLeft") setLight(); if (e.key === "ArrowRight") setDark(); };
   return (
     <div className="relative h-9 w-[150px] select-none" role="tablist" aria-label="Theme" onKeyDown={onKeyDown}>
       <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
