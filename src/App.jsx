@@ -976,77 +976,65 @@ function useEdgeSpacers(containerRef, slideSelector) {
 
 /* Landing (tiles) */
 function PortfolioLanding({ T, cats, states, openCat }) {
-  const [active, setActive] = useState(0);
-  const st = states[active] || { images: [], loading: true, error: "" };
-  const cover = pickCoverForCategory(st.images, cats[active]?.label);
-  const count = st.images?.length || 0;
+  const [hoverIdx, setHoverIdx] = useState(-1);
 
   return (
     <section id="portfolio" className="py-2">
-      <header className="mb-8">
+      <header className="mb-6">
         <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
-        <p className={`mt-2 ${T.muted}`}>Hover a category to preview; click to open.</p>
+        <p className={`mt-2 ${T.muted}`}>Move your mouse over cards, click to enter.</p>
       </header>
 
-      <div className="grid md:grid-cols-[360px_1fr] gap-6 items-start">
-        {/* Left: chips list */}
-        <ul className="grid gap-2 content-start">
-          {cats.map((c, i) => {
-            const isActive = i === active;
-            const count = states[i]?.images?.length || 0;
-            return (
-              <li key={c.label}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setActive(i)}
-                  onFocus={() => setActive(i)}
-                  onClick={() => openCat(c.label)}
-                  className={[
-                    "w-full flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition shadow-sm",
-                    isActive ? T.chipActive : T.chipInactive,
-                  ].join(" ")}
-                  aria-current={isActive ? "true" : undefined}
-                >
-                  <span className="font-medium">{c.label}</span>
-                  {count > 0 && (
-                    <span className="text-[11px] opacity-80">{count}</span>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      <div className="flex gap-4 sm:gap-5 md:gap-6 overflow-x-auto px-2 sm:px-3 md:px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {cats.map((c, i) => {
+          const st = states[i] || { images: [], loading: true, error: "" };
+          const cover = pickCoverForCategory(st.images, c.label);
+          const [rx, ry, s] = hoverIdx === i ? [4, -4, 1.02] : [0, 0, 1];
 
-        {/* Right: preview */}
-        <div className={`relative rounded-2xl overflow-hidden border shadow-sm aspect-[16/10] ${T.cardBorder} ${T.cardBg}`}>
-          {cover ? (
-            <img
-              src={cover}
-              alt={cats[active]?.label || "Preview"}
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-neutral-600/30" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-          <div className="absolute left-4 right-4 bottom-4 flex items-end justify-between">
-            <div>
-              <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(20px,3.2vw,36px)] drop-shadow">
-                {cats[active]?.label}
-              </h3>
-              {count > 0 && <div className="text-white/90 text-xs mt-1">{count} images</div>}
-            </div>
-            <button
-              onClick={() => openCat(cats[active]?.label)}
-              className="rounded-full bg-white/90 hover:bg-white px-4 py-2 text-sm text-black font-medium"
+          return (
+            <article
+              key={c.label}
+              className="relative flex-shrink-0 w-[76%] sm:w-[56%] md:w-[42%] lg:w-[34%]"
+              onMouseEnter={() => setHoverIdx(i)}
+              onMouseLeave={() => setHoverIdx(-1)}
             >
-              View →
-            </button>
-          </div>
-        </div>
+              <button
+                type="button"
+                onClick={() => openCat(c.label)}
+                className={[
+                  "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
+                  T.cardBorder, T.cardBg,
+                ].join(" ")}
+                style={{ transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})` }}
+                aria-label={`Open ${c.label}`}
+              >
+                <div className="aspect-[4/5] relative">
+                  {cover ? (
+                    <img
+                      src={cover}
+                      alt={c.label}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-neutral-600/30" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50" />
+                  <div className="absolute left-4 right-4 bottom-4">
+                    <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(22px,3.4vw,36px)] drop-shadow">
+                      {c.label}
+                    </h3>
+                    <span className="inline-flex items-center gap-1 text-white/90 text-xs opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                      Enter →
+                    </span>
+                  </div>
+                </div>
+              </button>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
