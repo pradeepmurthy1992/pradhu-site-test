@@ -42,7 +42,7 @@ const GH_CATEGORIES = [
    { label: "High Fashion", path: "High Fashion" },
    { label: "Street Fashion", path: "Street Fashion" },
    { label: "Headshots", path: "Headshots" },
-   { label: "Kidz Zone", path: "Kids Zone" },
+   { label: "Kidz Zone", path: "Kidz Zone" },
    { label: "Maternity", path: "Maternity" },
    { label: "Streets", path: "Streets" },
    { label: "Landscapes", path: "Landscapes" },
