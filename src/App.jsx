@@ -33,7 +33,7 @@ const GH_BRANCH = "main";
 const GH_CATEGORIES = [
   { label: "Celeb Corner", path: "Celeb Corner" },
   { label: "Editorial", path: "Editorial" },
-  { label: "Kidz Zone", path: "Kids Zone" },
+  { label: "Kidz Zone", path: "Kidz Zone" },
   { label: "Model Portfolio", path: "Model Portfolio" },
   { label: "Designer Portfolio", path: "Designer Portfolio" },
   { label: "Conceptual", path: "Conceptual" },
