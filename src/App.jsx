@@ -33,6 +33,7 @@ const GH_BRANCH = "main";
 const GH_CATEGORIES = [
   { label: "Celeb Corner", path: "Celeb Corner" },
   { label: "Editorial", path: "Editorial" },
+  { label: "Kidz Zone", path: "Kids Zone" },
   { label: "Model Portfolio", path: "Model Portfolio" },
   { label: "Designer Portfolio", path: "Designer Portfolio" },
   { label: "Conceptual", path: "Conceptual" },
@@ -42,7 +43,6 @@ const GH_CATEGORIES = [
   { label: "High Fashion", path: "High Fashion" },
   { label: "Street Fashion", path: "Street Fashion" },
   { label: "Headshots", path: "Headshots" },
-  { label: "Kidz Zone", path: "Kids Zone" },
   { label: "Maternity", path: "Maternity" },
   { label: "Streets", path: "Streets" },
   { label: "Landscapes", path: "Landscapes" },
