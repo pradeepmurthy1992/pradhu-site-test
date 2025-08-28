@@ -1017,8 +1017,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       >
                         {c.label}
                       </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
-                    </div>
+                      </div>
                   </div>
                 </div>
               </button>
