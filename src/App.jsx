@@ -2,9 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
    PRADHU — Dual Theme (Light/Dark) + Cinematic Intro + Portfolio
-   - Portfolio landing: magazine-style tiles (cover image + serif)
-   - Portfolio page: interactive carousel + thumbs + lightbox
-   - Services, Pricing, FAQ, Booking (About + Enquiry)
+   Manifest-first portfolio (no API rate-limit issues)
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -22,18 +20,16 @@ const INTRO_FORCE_HASH = "#intro";
 const HERO_BG_URL =
   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/5a13fa5f50b380a30762e6d0f3d74ab44eb505a5/baseimg/02..jpg";
 
-// Load images from a static manifest first (avoids API rate limits)
+/** Manifest (media repo) */
 const MEDIA_MANIFEST_URL =
   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-portfolio-media/main/manifest.json";
 
-// GitHub media repo (live portfolio)
+/** Media repo details (for raw image URLs and fallback) */
 const GH_OWNER = "pradeepmurthy1992";
 const GH_REPO = "pradhu-portfolio-media";
 const GH_BRANCH = "main";
-const GH_CATEGORIES = [
-  { label: "Events", path: "Events" },
-  { label: "Fashion", path: "Fashion" },
-];
+
+/** Optional category blurbs */
 const GH_CATEGORIES_EXT = {
   Events: {
     blurb:
@@ -44,6 +40,7 @@ const GH_CATEGORIES_EXT = {
       "Editorial-leaning looks with modern skin tones and simple, confident direction.",
   },
 };
+
 const GH_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // Brand / contact
@@ -104,7 +101,8 @@ function useThemeTokens(theme) {
     muted: "text-neutral-600",
     muted2: "text-neutral-500",
     chipActive: "bg-rose-200 text-rose-900 border-rose-300",
-    chipInactive: "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
+    chipInactive:
+      "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
     btnOutline: "border-neutral-300 text-neutral-900 hover:bg-rose-50",
     inputBg: "bg-white",
     inputBorder: "border-neutral-300",
@@ -132,7 +130,8 @@ function useThemeTokens(theme) {
     muted: "text-neutral-300",
     muted2: "text-neutral-400",
     chipActive: "bg-teal-300 text-[#1c1e26] border-teal-400",
-    chipInactive: "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
+    chipInactive:
+      "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
     btnOutline: "border-neutral-600 text-neutral-100 hover:bg-[#333640]",
     inputBg: "bg-[#1c1e26]",
     inputBorder: "border-neutral-600",
@@ -155,7 +154,12 @@ function useHash() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
+  return [
+    hash,
+    (h) => {
+      if (h !== window.location.hash) window.location.hash = h;
+    },
+  ];
 }
 
 /* ===================== Icons ===================== */
@@ -257,31 +261,31 @@ function Icon({ name, className = "h-4 w-4" }) {
   }
 }
 
-/* ===================== Intro Overlay (final cinematic) ===================== */
+/* ===================== Intro Overlay (cinematic) ===================== */
 function IntroOverlay({ onClose }) {
-  // Phases: 1) typeName → 2) typeBrand → 3) revealImg → 4) titles
   const [phase, setPhase] = useState("typeName");
-
-  // typewriter
   const NAME = "PRADEEP MOORTHY";
   const BRAND = "PRADHU PHOTOGRAPHY";
   const [typed, setTyped] = useState("");
-  const [step, setStep] = useState(0); // 0 typing, 1 pause, 2 explode
+  const [step, setStep] = useState(0);
   const typingRef = useRef(null);
 
-  // ripple layer + img ref
   const imgRef = useRef(null);
   const rippleLayerRef = useRef(null);
 
-  // Enter closes. Clicks make ripple/flash only.
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Enter") onClose(); };
+    const onKey = (e) => {
+      if (e.key === "Enter") onClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const onAnyClick = (e) => makeRipple(e.clientX, e.clientY, true);
-  const onPressEnterButton = (e) => { e.stopPropagation(); onClose(); };
+  const onPressEnterButton = (e) => {
+    e.stopPropagation();
+    onClose();
+  };
 
   function makeRipple(x, y, withFlash = false) {
     const host = rippleLayerRef.current;
@@ -306,7 +310,6 @@ function IntroOverlay({ onClose }) {
     setTimeout(() => ripple.remove(), 800);
   }
 
-  // Typing logic
   useEffect(() => {
     const str = phase === "typeName" ? NAME : phase === "typeBrand" ? BRAND : "";
     if (!str) return;
@@ -323,7 +326,7 @@ function IntroOverlay({ onClose }) {
         clearInterval(typingRef.current);
         setStep(1);
         setTimeout(() => {
-          setStep(2); // explode
+          setStep(2);
           setTimeout(() => {
             if (phase === "typeName") setPhase("typeBrand");
             else if (phase === "typeBrand") setPhase("revealImg");
@@ -335,14 +338,12 @@ function IntroOverlay({ onClose }) {
     return () => clearInterval(typingRef.current);
   }, [phase]);
 
-  // after image reveal, move to titles
   useEffect(() => {
     if (phase !== "revealImg") return;
     const t = setTimeout(() => setPhase("titles"), 1400);
     return () => clearTimeout(t);
   }, [phase]);
 
-  // impact ripples when titles overshoot
   const impactRipple = (delayMs = 0) => {
     setTimeout(() => {
       const img = imgRef.current;
@@ -356,9 +357,9 @@ function IntroOverlay({ onClose }) {
   };
   useEffect(() => {
     if (phase !== "titles") return;
-    impactRipple(420);  // VISUAL & HONEST STORIES
-    impactRipple(900);  // PRADEEP MOORTHY
-    impactRipple(1250); // PRADHU PHOTOGRAPHY
+    impactRipple(420);
+    impactRipple(900);
+    impactRipple(1250);
   }, [phase]);
 
   const renderTyping = (text) => (
@@ -372,7 +373,9 @@ function IntroOverlay({ onClose }) {
           ].join(" ")}
         >
           <span>{text}</span>
-          {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
+          {step === 0 ? (
+            <span className="cin-caret w-[0.5ch] inline-block align-bottom" />
+          ) : null}
         </div>
       </div>
     </div>
@@ -388,8 +391,8 @@ function IntroOverlay({ onClose }) {
     >
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
 
-      {(phase === "typeName") && renderTyping(typed)}
-      {(phase === "typeBrand") && renderTyping(typed)}
+      {phase === "typeName" && renderTyping(typed)}
+      {phase === "typeBrand" && renderTyping(typed)}
 
       {/* Layout for revealImg/titles */}
       <div
@@ -421,7 +424,12 @@ function IntroOverlay({ onClose }) {
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
-          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>
+          <div
+            className={[
+              "text-[12px] tracking-[0.25em] opacity-80",
+              phase === "titles" ? "cin-overshoot-in" : "",
+            ].join(" ")}
+          >
             VISUAL & HONEST STORIES
           </div>
 
@@ -461,12 +469,29 @@ function IntroOverlay({ onClose }) {
   );
 }
 
-/* ===================== GitHub helpers (manifest-first) ===================== */
+/* ===================== GitHub helpers & manifest helpers ===================== */
 const GH_API = "https://api.github.com";
-const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
+const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".heic"];
 const isImageName = (name = "") =>
   IMG_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
 
+async function fetchManifest(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Manifest ${res.status}`);
+  return res.json();
+}
+
+function imagesFromManifest(manifest, owner, repo, branch, label) {
+  const list = manifest?.[label] || [];
+  return list.map((fullPath) => ({
+    name: fullPath.split("/").pop(),
+    url: `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${fullPath}`,
+    sha: fullPath,
+    size: 0,
+  }));
+}
+
+// Fallback loader (only used if manifest fails)
 async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
@@ -474,7 +499,6 @@ async function ghListFolder(owner, repo, path, ref) {
   const nocache =
     new URLSearchParams(window.location.search).get("refresh") === "1";
 
-  // Serve from session cache if fresh
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
     if (!nocache && ts && now - ts < GH_CACHE_TTL_MS) {
@@ -483,56 +507,21 @@ async function ghListFolder(owner, repo, path, ref) {
     }
   } catch {}
 
-  // 1) Try static manifest first (no API calls)
-  try {
-    if (MEDIA_MANIFEST_URL) {
-      const mRes = await fetch(MEDIA_MANIFEST_URL, { cache: "no-store" });
-      if (mRes.ok) {
-        const manifest = await mRes.json();
-        // Expected shape: { "Events": ["Events/img1.jpg", ...], "Fashion": [...] }
-        const list = (manifest[path] || [])
-          .filter(Boolean)
-          .map((fullPath) => ({
-            name: fullPath.split("/").pop(),
-            url: `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fullPath}`,
-            sha: fullPath,
-            size: 0,
-          }));
-        if (list.length) {
-          try {
-            sessionStorage.setItem(key, JSON.stringify(list));
-            sessionStorage.setItem(tkey, String(now));
-          } catch {}
-          return list;
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore manifest errors and fall through
-  }
-
-  // 2) Fallback to GitHub Contents API
-  const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
-    repo
-  )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
+  const url = `${GH_API}/repos/${encodeURIComponent(
+    owner
+  )}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(
+    path
+  )}?ref=${encodeURIComponent(ref)}`;
   const res = await fetch(url, {
     headers: { Accept: "application/vnd.github+json" },
   });
   if (!res.ok) {
-    if (res.status === 403) {
-      console.warn(
-        "GitHub API rate limit hit. Add/keep manifest.json or retry later."
-      );
-      return [];
-    }
-    if (res.status === 404) return [];
+    if (res.status === 404 || res.status === 403) return [];
     const text = await res.text();
     throw new Error(`GitHub API ${res.status}: ${text}`);
   }
   const json = await res.json();
-  const files = Array.isArray(json)
-    ? json.filter((it) => it.type === "file")
-    : [];
+  const files = Array.isArray(json) ? json.filter((it) => it.type === "file") : [];
   const imgs = files
     .filter((f) => isImageName(f.name))
     .map((f) => ({ name: f.name, url: f.download_url, sha: f.sha, size: f.size }));
@@ -598,14 +587,21 @@ function FaqSection({ T, showTitle = true }) {
   return (
     <section id="faq" className="py-2">
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           FAQ
         </h2>
       )}
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         {items.map((item) => (
-          <details key={item.q} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>{item.q}</summary>
+          <details
+            key={item.q}
+            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+          >
+            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
+              {item.q}
+            </summary>
             <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
           </details>
         ))}
@@ -619,17 +615,24 @@ function ServicesSection({ T, showTitle = true }) {
   return (
     <section id="services" className="py-2">
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Services
         </h2>
       )}
       <p className={`mt-2 ${T.muted}`}>
-        Multi-genre coverage designed around your brief. I’ll suggest looks, lighting windows and locations so the day feels effortless.
+        Multi-genre coverage designed around your brief. I’ll suggest looks,
+        lighting windows and locations so the day feels effortless.
       </p>
 
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Portraits & Headshots</h3>
+        <article
+          className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+        >
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>
+            Portraits & Headshots
+          </h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>60–90 min session · up to 2 outfits</li>
             <li>Clean, natural retouching</li>
@@ -638,8 +641,12 @@ function ServicesSection({ T, showTitle = true }) {
           </ul>
         </article>
 
-        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Fashion / Editorial</h3>
+        <article
+          className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+        >
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>
+            Fashion / Editorial
+          </h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>Moodboard & looks planning</li>
             <li>On-set lighting & styling coordination</li>
@@ -648,8 +655,12 @@ function ServicesSection({ T, showTitle = true }) {
           </ul>
         </article>
 
-        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Events & Candids</h3>
+        <article
+          className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+        >
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>
+            Events & Candids
+          </h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>Coverage by hours or session blocks</li>
             <li>Emphasis on key moments & people</li>
@@ -668,7 +679,9 @@ function ServicesSection({ T, showTitle = true }) {
           <li>Rush teasers / same-day selects</li>
           <li>Prints, albums and frames</li>
         </ul>
-        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>Enquire for availability →</a>
+        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>
+          Enquire for availability →
+        </a>
       </div>
     </section>
   );
@@ -723,25 +736,35 @@ function PricingSection({ T, showTitle = true }) {
   return (
     <section id="pricing" className="py-2">
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Pricing (indicative)
         </h2>
       )}
       <p className={`mt-2 ${T.muted}`}>
-        Final quote depends on scope, locations, team and timelines. Share your brief for a tailored estimate.
+        Final quote depends on scope, locations, team and timelines. Share your
+        brief for a tailored estimate.
       </p>
 
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {tiers.map((t) => (
-          <article key={t.name} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <article
+            key={t.name}
+            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+          >
             <div className="flex items-baseline justify-between">
               <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
               <span className="text-sm opacity-80">{t.price}</span>
             </div>
             <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
-              {t.includes.map((line) => <li key={line}>{line}</li>)}
+              {t.includes.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
-            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>Request a quote →</a>
+            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>
+              Request a quote →
+            </a>
           </article>
         ))}
       </div>
@@ -799,59 +822,14 @@ function Input({
   );
 }
 
-/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
-// Micro parallax (vertical)
-function useMicroParallax(containerRef, opts = {}) {
-  const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } = opts;
-
-  useEffect(() => {
-    const root = containerRef?.current;
-    if (!root) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const imgs = Array.from(root.querySelectorAll(selector));
-    if (!imgs.length) return;
-
-    let raf = 0;
-    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-
-    const update = () => {
-      raf = 0;
-      const vh = window.innerHeight || 1;
-      const mid = vh / 2;
-      for (const img of imgs) {
-        const r = img.getBoundingClientRect();
-        if (r.bottom < -thresholdPx || r.top > vh + thresholdPx) continue;
-        const cy = r.top + r.height / 2;
-        const norm = (cy - mid) / vh;
-        const shift = clamp(norm * strength * 2, -strength, strength);
-        img.style.transform = `translateY(${shift.toFixed(2)}px)`;
-      }
-    };
-
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
-    const onResize = onScroll;
-
-    imgs.forEach((img) => img.classList.add("parallax-img"));
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      if (raf) cancelAnimationFrame(raf);
-      imgs.forEach((img) => (img.style.transform = ""));
-    };
-  }, [containerRef, selector, strength, thresholdPx]);
-}
-
-// Landing (tiles)
+/* ===================== Portfolio — Landing ===================== */
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
       <header className="mb-8">
-        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Portfolio
         </h2>
         <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
@@ -888,7 +866,9 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       >
                         {c.label}
                       </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
+                        PORTFOLIO
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -901,83 +881,72 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-/* ===================== Portfolio Page (carousel + thumbs + lightbox) ===================== */
+/* ===================== Portfolio — Page (Carousel + Thumbs + Lightbox) ===================== */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
+
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1); // lightbox index (-1 = closed)
+  const [lbIdx, setLbIdx] = useState(-1);
 
-  // Track nearest slide to center while scrolling/resizing
+  // Track centered slide on scroll/resize
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-
     const update = () => {
-      const slides = Array.from(root.querySelectorAll('[data-idx]'));
+      const slides = Array.from(root.querySelectorAll("[data-idx]"));
       if (!slides.length) return;
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0, bestDist = Infinity;
+      let best = 0;
+      let bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) { bestDist = d; best = i; }
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
       });
       setActiveIndex(best);
     };
-
     update();
-    root.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    return () => { root.removeEventListener('scroll', update); window.removeEventListener('resize', update); };
+    root.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      root.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
-  // Keyboard: arrows for carousel; Esc for lightbox; Home/End jump
+  // Keyboard navigation
   useEffect(() => {
     const go = (dir) => {
-      const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
+      const idx = Math.min(
+        items.length - 1,
+        Math.max(0, activeIndex + dir)
+      );
       const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     };
     const onKey = (e) => {
-      if (lbIdx >= 0 && e.key === 'Escape') { setLbIdx(-1); return; }
-      if (e.key === 'ArrowRight') go(1);
-      if (e.key === 'ArrowLeft') go(-1);
-      if (e.key === 'Home') {
-        containerRef.current?.querySelector('[data-idx="0"]')?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      if (lbIdx >= 0) {
+        if (e.key === "Escape") setLbIdx(-1);
+        if (e.key === "ArrowRight" && lbIdx < items.length - 1) setLbIdx(lbIdx + 1);
+        if (e.key === "ArrowLeft" && lbIdx > 0) setLbIdx(lbIdx - 1);
+        return;
       }
-      if (e.key === 'End') {
-        containerRef.current?.querySelector(`[data-idx="${items.length - 1}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "Enter") setLbIdx(activeIndex);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [activeIndex, items.length, lbIdx]);
-
-  // Drag / swipe to scroll (mouse + touch)
-  useEffect(() => {
-    const el = containerRef.current; if (!el) return;
-    let isDown = false, startX = 0, startLeft = 0;
-    const onDown = (e) => { isDown = true; startX = (e.touches?.[0]?.pageX ?? e.pageX); startLeft = el.scrollLeft; };
-    const onMove = (e) => { if (!isDown) return; const x = (e.touches?.[0]?.pageX ?? e.pageX); el.scrollLeft = startLeft - (x - startX); };
-    const onUp = () => { isDown = false; };
-    el.addEventListener('mousedown', onDown); el.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
-    el.addEventListener('touchstart', onDown, { passive: true }); el.addEventListener('touchmove', onMove, { passive: true }); el.addEventListener('touchend', onUp);
-    return () => { el.removeEventListener('mousedown', onDown); el.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); el.removeEventListener('touchstart', onDown); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onUp); };
-  }, []);
-
-  // Translate vertical wheel to horizontal when hovering carousel
-  useEffect(() => {
-    const el = containerRef.current; if (!el) return;
-    const onWheel = (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
 
   const goTo = (idx) => {
     const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
   return (
@@ -985,11 +954,17 @@ function PortfolioPage({ T, cat, state, onBack }) {
       {/* Sticky breadcrumb + title */}
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
-        <span className={`${T.muted2} mx-2`}>/</span>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+            Portfolio
+          </button>
+          <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>{cat.label}</h2>
+        <h2
+          className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
+          {cat.label}
+        </h2>
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
 
@@ -998,13 +973,13 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
+      {/* Horizontal carousel */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
         <div className={`${T.muted2}`}>Loading…</div>
       ) : items.length ? (
         <>
-          {/* Carousel */}
           <div
             ref={containerRef}
             role="region"
@@ -1018,14 +993,14 @@ function PortfolioPage({ T, cat, state, onBack }) {
               <figure
                 key={it.sha || i}
                 data-idx={i}
-                className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300 ${i===activeIndex ? 'scale-[1.01]' : 'scale-[0.995]'}`}
+                className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300 ${
+                  i === activeIndex ? "scale-[1.01]" : "scale-[0.995]"
+                }`}
               >
                 {/* Subtle shadow on active */}
-                <div className={`rounded-2xl ${i===activeIndex ? 'shadow-lg' : 'shadow-sm'}`}>
+                <div className={`rounded-2xl ${i === activeIndex ? "shadow-lg" : "shadow-sm"}`}>
                   <img
                     src={it.url}
-                    srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`}
-                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 72vw, 58vw"
                     alt={`${cat.label} — ${it.name}`}
                     className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
@@ -1037,13 +1012,15 @@ function PortfolioPage({ T, cat, state, onBack }) {
           </div>
 
           {/* Thumbnail strip */}
-          <div className="mt-2 flex gap-2 overflow-x-auto px-2 pb-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="mt-2 flex gap-2 overflow-x-auto px-2 pb-1" style={{ scrollbarWidth: "none" }}>
             {items.map((it, i) => (
               <button
                 key={`thumb-${i}`}
                 onClick={() => goTo(i)}
                 aria-label={`Go to image ${i + 1}`}
-                className={`h-14 w-10 rounded-md overflow-hidden border transition ${i===activeIndex ? 'opacity-100 ring-2 ring-white' : 'opacity-60 hover:opacity-90'}`}
+                className={`h-14 w-10 rounded-md overflow-hidden border transition ${
+                  i === activeIndex ? "opacity-100 ring-2 ring-white" : "opacity-60 hover:opacity-90"
+                }`}
               >
                 <img src={it.url} alt="" className="h-full w-full object-cover" loading="lazy" />
               </button>
@@ -1074,25 +1051,68 @@ function PortfolioPage({ T, cat, state, onBack }) {
   );
 }
 
-/* ===================== Wrapper (hash-driven view switch) ===================== */
+/* ===================== Portfolio — Wrapper (Manifest-first) ===================== */
 function Portfolio({ T }) {
-  const [states, setStates] = useState(() =>
-    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
-  );
   const [hash, setHash] = useHash();
   const [view, setView] = useState("landing"); // "landing" | "page"
   const [activeIdx, setActiveIdx] = useState(-1);
 
-  const openCat = (label) => {
-    const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-    if (idx < 0) return;
-    setActiveIdx(idx);
-    setView("page");
-    setHash(`#portfolio/${encodeURIComponent(label)}`);
-    const el = document.getElementById("portfolio");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-  const goLanding = () => { setView("landing"); setActiveIdx(-1); setHash("#portfolio"); };
+  const [manifest, setManifest] = useState(null);
+  const [cats, setCats] = useState([]); // [{label, path}]
+  const [states, setStates] = useState([]); // [{loading,error,images:[]}]
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const mf = await fetchManifest(MEDIA_MANIFEST_URL);
+        if (cancelled) return;
+
+        setManifest(mf);
+        const labels = Object.keys(mf);
+        const derivedCats = labels.map((label) => ({ label, path: label }));
+        setCats(derivedCats);
+
+        // Build states directly from manifest (no API calls)
+        const s = derivedCats.map((c) => ({
+          loading: false,
+          error: "",
+          images: imagesFromManifest(mf, GH_OWNER, GH_REPO, GH_BRANCH, c.label),
+        }));
+        setStates(s);
+        setError("");
+      } catch (e) {
+        if (cancelled) return;
+        // Fallback to static categories via GitHub API (rate-limited, but cached)
+        console.warn("Manifest fetch failed, falling back to GitHub API:", e?.message || e);
+        const FALLBACK_CATS = [
+          { label: "Events", path: "Events" },
+          { label: "Fashion", path: "Fashion" },
+        ];
+        setCats(FALLBACK_CATS);
+        const results = await Promise.all(
+          FALLBACK_CATS.map(async (cat) => {
+            try {
+              const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
+              return { loading: false, error: "", images: list };
+            } catch (err) {
+              return { loading: false, error: err?.message || "Failed to load", images: [] };
+            }
+          })
+        );
+        setStates(results);
+        setError(e?.message || "Could not load manifest");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // hash → view
   useEffect(() => {
@@ -1100,37 +1120,55 @@ function Portfolio({ T }) {
     const seg = hash.split("/");
     if (seg.length >= 2 && seg[1]) {
       const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
-      const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) { setActiveIdx(idx); setView("page"); return; }
+      const idx = cats.findIndex((c) => c.label === label);
+      if (idx >= 0) {
+        setActiveIdx(idx);
+        setView("page");
+        return;
+      }
     }
-    setView("landing"); setActiveIdx(-1);
-  }, [hash]);
+    setView("landing");
+    setActiveIdx(-1);
+  }, [hash, cats]);
 
-  // fetch images for all categories on mount (served from manifest when available)
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const results = await Promise.all(
-        GH_CATEGORIES.map(async (cat) => {
-          try {
-            const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
-            return { loading: false, error: "", images: list };
-          } catch (e) {
-            return { loading: false, error: e?.message || "Failed to load", images: [] };
-          }
-        })
-      );
-      if (!cancelled) setStates(results);
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const openCat = (label) => {
+    const idx = cats.findIndex((c) => c.label === label);
+    if (idx < 0) return;
+    setActiveIdx(idx);
+    setView("page");
+    setHash(`#portfolio/${encodeURIComponent(label)}`);
+    const el = document.getElementById("portfolio");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const goLanding = () => {
+    setView("landing");
+    setActiveIdx(-1);
+    setHash("#portfolio");
+  };
+
+  if (loading) {
+    return (
+      <section className="py-2" id="portfolio">
+        <div className={T.muted2}>Loading…</div>
+      </section>
+    );
+  }
+  if (!cats.length) {
+    return (
+      <section className="py-2" id="portfolio">
+        <div className="text-red-500">
+          No categories found{error ? ` — ${error}` : ""}.
+        </div>
+      </section>
+    );
+  }
 
   if (view === "page" && activeIdx >= 0) {
-    const cat = GH_CATEGORIES[activeIdx];
+    const cat = cats[activeIdx];
     const st = states[activeIdx] || { loading: true, error: "", images: [] };
     return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
   }
-  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
+  return <PortfolioLanding T={T} cats={cats} states={states} openCat={openCat} />;
 }
 
 /* ===================== Tiles (one line) ===================== */
@@ -1143,7 +1181,10 @@ function SectionTiles({ openId, setOpenId, T }) {
   ];
   return (
     <div id="tiles" className={`${CONTAINER} pt-10`}>
-      <div className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2" style={{ scrollbarWidth: "none" }}>
+      <div
+        className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2"
+        style={{ scrollbarWidth: "none" }}
+      >
         {tiles.map((t) => {
           const active = openId === t.id;
           return (
@@ -1161,7 +1202,10 @@ function SectionTiles({ openId, setOpenId, T }) {
               aria-controls={`section-${t.id}`}
               aria-expanded={active}
             >
-              <Icon name={t.icon} className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`} />
+              <Icon
+                name={t.icon}
+                className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`}
+              />
               <span className="text-sm">{t.label}</span>
             </button>
           );
@@ -1174,14 +1218,20 @@ function SectionTiles({ openId, setOpenId, T }) {
 /* ===================== Booking (About + Enquiry) ===================== */
 function BookingSection({ T }) {
   const [form, setForm] = useState({
-    name: "", email: "", phone: "",
-    service: "Portraits", city: "Pune", date: "", message: "",
+    name: "",
+    email: "",
+    phone: "",
+    service: "Portraits",
+    city: "Pune",
+    date: "",
+    message: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState("");
 
   const minDateStr = useMemo(() => {
-    const d = new Date(); d.setDate(d.getDate() + 2);
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
     const off = d.getTimezoneOffset();
     const local = new Date(d.getTime() - off * 60000);
     return local.toISOString().slice(0, 10);
@@ -1189,7 +1239,11 @@ function BookingSection({ T }) {
   const fmtHuman = (yyyy_mm_dd) => {
     if (!yyyy_mm_dd) return "";
     const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -1201,22 +1255,37 @@ function BookingSection({ T }) {
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
-    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
-    if (missing.length) { setNote(`Please fill: ${missing.join(", ")}`); return; }
+    if (form.date && form.date < minDateStr)
+      missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
+    if (missing.length) {
+      setNote(`Please fill: ${missing.join(", ")}`);
+      return;
+    }
 
     setSubmitting(true);
     try {
       await fetch(SHEET_WEB_APP, {
-        method: "POST", mode: "no-cors",
+        method: "POST",
+        mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, source: "website" }),
       });
-      setForm({ name: "", email: "", phone: "", service: "Portraits", city: "Pune", date: "", message: "" });
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        service: "Portraits",
+        city: "Pune",
+        date: "",
+        message: "",
+      });
       setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
       console.error(err);
       setNote("Couldn’t submit right now. Please try again.");
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -1225,38 +1294,65 @@ function BookingSection({ T }) {
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* LEFT: About */}
           <div id="about">
-            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+            <h2
+              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+            >
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
-              As an aspiring photographer from Kanchipuram, I work across fashion, portraits, candids and events. I run a client-first process: I listen to your brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless. On set, I work with calm, unobtrusive direction to create space for genuine expression. My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
+              As an aspiring photographer from Kanchipuram, I work across fashion,
+              portraits, candids and events. I run a client-first process: I listen to your
+              brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless.
+              On set, I work with calm, unobtrusive direction to create space for genuine expression.
+              My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
             </p>
             <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Professional Headshots, Street Fashion, Studio</li>
+              <li>
+                Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Professional Headshots, Street Fashion, Studio
+              </li>
               <li>Kit: Nikon D7500, Softboxes (octa & strip), multiple flashes, light modifiers</li>
               <li>{SERVICE_CITIES}</li>
             </ul>
 
             <div className="mt-5 flex items-center gap-3">
-              <a href={`https://www.instagram.com/${IG_USERNAME}/`} target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram"
-                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+              <a
+                href={`https://www.instagram.com/${IG_USERNAME}/`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                title="Instagram"
+                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+              >
                 <Icon name="camera" className="h-5 w-5" />
               </a>
 
               {WHATSAPP_NUMBER.includes("X") ? (
-                <span className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
-                      title="WhatsApp unavailable" aria-hidden="true">
+                <span
+                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
+                  title="WhatsApp unavailable"
+                  aria-hidden="true"
+                >
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </span>
               ) : (
-                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" title="WhatsApp"
-                   className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="WhatsApp"
+                  title="WhatsApp"
+                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+                >
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </a>
               )}
 
-              <a href={`mailto:${CONTACT_EMAIL}`} aria-label="Email" title="Email"
-                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                aria-label="Email"
+                title="Email"
+                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+              >
                 <Icon name="mail" className="h-5 w-5" />
               </a>
             </div>
@@ -1264,36 +1360,64 @@ function BookingSection({ T }) {
 
           {/* RIGHT: Enquiry */}
           <div>
-            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+            <h2
+              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+            >
               Enquire / Book
             </h2>
-            <p className={`mt-2 ${T.muted}`}>Share details and I’ll reply with availability and a quote.</p>
+            <p className={`mt-2 ${T.muted}`}>
+              Share details and I’ll reply with availability and a quote.
+            </p>
 
-            <form onSubmit={onSubmit} className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+            <form
+              onSubmit={onSubmit}
+              className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+            >
               <div className="grid grid-cols-1 gap-4">
                 <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
                 <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
-                <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
+                <Input
+                  T={T}
+                  label="Phone"
+                  name="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={onChange}
+                  required
+                  placeholder="+91-XXXXXXXXXX"
+                />
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Preferred Date</label>
                   <input
-                    name="date" type="date" min={minDateStr} value={form.date}
-                    onKeyDown={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}
+                    name="date"
+                    type="date"
+                    min={minDateStr}
+                    value={form.date}
+                    onKeyDown={(e) => e.preventDefault()}
+                    onPaste={(e) => e.preventDefault()}
                     onChange={(e) => {
                       let v = e.target.value;
-                      if (v && v < minDateStr) { v = minDateStr; setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`); }
+                      if (v && v < minDateStr) {
+                        v = minDateStr;
+                        setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
+                      }
                       setForm({ ...form, date: v });
                     }}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                   />
-                  <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    Earliest selectable: {fmtHuman(minDateStr)}
+                  </p>
                 </div>
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Message</label>
                   <textarea
-                    name="message" value={form.message} onChange={onChange} rows={5}
+                    name="message"
+                    value={form.message}
+                    onChange={onChange}
+                    rows={5}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                     placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
                   />
@@ -1303,29 +1427,43 @@ function BookingSection({ T }) {
                   <div>
                     <label className={`text-sm ${T.muted}`}>Service</label>
                     <select
-                      name="service" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.service} onChange={onChange}
+                      name="service"
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.service}
+                      onChange={onChange}
                     >
-                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
+                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map(
+                        (s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
                   <div>
                     <label className={`text-sm ${T.muted}`}>City</label>
                     <select
-                      name="city" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.city} onChange={onChange}
+                      name="city"
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.city}
+                      onChange={onChange}
                     >
-                      <option>Pune</option><option>Mumbai</option><option>Chennai</option>
-                      <option>Bengaluru</option><option>Other</option>
+                      <option>Pune</option>
+                      <option>Mumbai</option>
+                      <option>Chennai</option>
+                      <option>Bengaluru</option>
+                      <option>Other</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="submit" disabled={submitting}
-                          className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
+                  >
                     {submitting ? "Submitting…" : "Send Enquiry"}
                   </button>
                   {note && <span className="text-sm opacity-80">{note}</span>}
@@ -1343,14 +1481,19 @@ function BookingSection({ T }) {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
-    try { return sessionStorage.getItem("pradhu:theme") || "dark"; } catch { return "dark"; }
+    try {
+      return sessionStorage.getItem("pradhu:theme") || "dark";
+    } catch {
+      return "dark";
+    }
   });
   const T = useThemeTokens(theme);
 
   const [showIntro, setShowIntro] = useState(() => {
     if (!INTRO_ENABLED) return false;
     const url = new URL(window.location.href);
-    const forced = url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
+    const forced =
+      url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
     if (forced) return true;
     if (!INTRO_REMEMBER) return true;
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
@@ -1362,7 +1505,9 @@ export default function App() {
   // Active nav via IntersectionObserver
   useEffect(() => {
     const ids = ["home", "portfolio", "services", "pricing", "faq", "about", "booking"];
-    const els = ids.map((id) => [id, document.getElementById(id)]).filter(([, el]) => !!el);
+    const els = ids
+      .map((id) => [id, document.getElementById(id)])
+      .filter(([, el]) => !!el);
     if (els.length === 0) return;
 
     let current = activeNav;
@@ -1378,7 +1523,10 @@ export default function App() {
           const id = e.target.getAttribute("id");
           if (dist < best.dist) best = { id, dist };
         });
-        if (best.id && best.id !== current) { current = best.id; setActiveNav(best.id); }
+        if (best.id && best.id !== current) {
+          current = best.id;
+          setActiveNav(best.id);
+        }
       },
       { root: null, threshold: [0.35], rootMargin: "-10% 0px -50% 0px" }
     );
@@ -1404,11 +1552,15 @@ export default function App() {
 
   const closeIntro = () => {
     setShowIntro(false);
-    try { if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1"); } catch {}
+    try {
+      if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1");
+    } catch {}
   };
 
   useEffect(() => {
-    try { sessionStorage.setItem("pradhu:theme", theme); } catch {}
+    try {
+      sessionStorage.setItem("pradhu:theme", theme);
+    } catch {}
   }, [theme]);
 
   return (
@@ -1445,7 +1597,10 @@ export default function App() {
                     activeNav === id ? T.chipActive : T.chipInactive
                   }`}
                 >
-                  <Icon name={icon} className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`} />
+                  <Icon
+                    name={icon}
+                    className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`}
+                  />
                   <span className="text-sm">{label}</span>
                 </button>
               </li>
@@ -1480,7 +1635,10 @@ export default function App() {
                         activeNav === id ? T.chipActive : T.chipInactive
                       }`}
                     >
-                      <Icon name={icon} className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`} />
+                      <Icon
+                        name={icon}
+                        className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`}
+                      />
                       <span>{label}</span>
                     </button>
                   </li>
@@ -1520,7 +1678,9 @@ export default function App() {
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
         <div className={`${CONTAINER} py-10 text-sm`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <p className={T.muted}>© {new Date().getFullYear()} PRADHU — All rights reserved.</p>
+            <p className={T.muted}>
+              © {new Date().getFullYear()} PRADHU — All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
@@ -1533,26 +1693,72 @@ function ThemeSlider({ theme, setTheme }) {
   const isDark = theme === "dark";
   const setLight = () => setTheme("light");
   const setDark = () => setTheme("dark");
-  const onKeyDown = (e) => { if (e.key === "ArrowLeft") setLight(); if (e.key === "ArrowRight") setDark(); };
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowLeft") setLight();
+    if (e.key === "ArrowRight") setDark();
+  };
   return (
-    <div className="relative h-9 w-[150px] select-none" role="tablist" aria-label="Theme" onKeyDown={onKeyDown}>
+    <div
+      className="relative h-9 w-[150px] select-none"
+      role="tablist"
+      aria-label="Theme"
+      onKeyDown={onKeyDown}
+    >
       <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
       <div
         className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
-          isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"
+          isDark
+            ? "translate-x-full bg-neutral-900"
+            : "translate-x-0 bg-white border border-neutral-300"
         }`}
         aria-hidden="true"
       />
       <div className="relative z-10 grid grid-cols-2 h-full">
-        <button type="button" role="tab" aria-selected={!isDark} aria-pressed={!isDark} onClick={setLight}
-                className="flex items-center justify-center gap-1.5 px-3 h-full">
-          <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
-          <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>Light</span>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!isDark}
+          aria-pressed={!isDark}
+          onClick={setLight}
+          className="flex items-center justify-center gap-1.5 px-3 h-full"
+        >
+          <Icon
+            name="sun"
+            className={`h-4 w-4 ${
+              isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"
+            }`}
+          />
+          <span
+            className={`text-xs ${
+              isDark
+                ? "opacity-50 text-neutral-700"
+                : "opacity-100 text-neutral-900 font-medium"
+            }`}
+          >
+            Light
+          </span>
         </button>
-        <button type="button" role="tab" aria-selected={isDark} aria-pressed={isDark} onClick={setDark}
-                className="flex items-center justify-center gap-1.5 px-3 h-full">
-          <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
-          <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>Dark</span>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isDark}
+          aria-pressed={isDark}
+          onClick={setDark}
+          className="flex items-center justify-center gap-1.5 px-3 h-full"
+        >
+          <Icon
+            name="moon"
+            className={`h-4 w-4 ${
+              isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"
+            }`}
+          />
+          <span
+            className={`text-xs ${
+              isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"
+            }`}
+          >
+            Dark
+          </span>
         </button>
       </div>
     </div>
