@@ -1,45 +1,38 @@
 // vite.config.js
 import { defineConfig } from 'vite';
-// If you use React Fast Refresh & JSX auto transform, keep this plugin.
-// If your project doesn't have it installed, remove the next two lines.
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => {
-  const isProd = mode === 'production';
+// Auto-detect correct base when building on GitHub Pages.
+// - Repo pages:   https://user.github.io/<repo>/  -> base = "/<repo>/"
+// - User/Org page https://user.github.io          -> base = "/"
+// - Local/dev or other hosts                      -> base = process.env.VITE_BASE || "/"
+function detectBase() {
+  const repo = process.env.GITHUB_REPOSITORY
+    ? process.env.GITHUB_REPOSITORY.split('/').pop()
+    : '';
 
-  return {
-    // Remove plugins: [react()] if you don't use @vitejs/plugin-react
-    plugins: [react()],
+  if (!repo) return process.env.VITE_BASE || '/';
 
-    build: {
-      // ✅ No readable source maps in production bundles
-      sourcemap: false,
+  const isUserOrOrgPage = /\.github\.io$/i.test(repo);
+  if (isUserOrOrgPage) return '/';
 
-      // Minify/obfuscate with esbuild (default)
-      minify: 'esbuild',
+  return `/${repo}/`;
+}
 
-      // Reasonable modern target for smaller bundles
-      target: 'es2018',
+export default defineConfig(({ mode }) => ({
+  base: detectBase(),
 
-      // Optional: tighter code-splitting control (tweak as you like)
-      rollupOptions: {
-        output: {
-          // Example: put React in its own chunk to improve caching
-          manualChunks: {
-            react: ['react', 'react-dom'],
-          },
-        },
-      },
-    },
+  plugins: [react()],
 
-    // Extra obfuscation: strip console/debugger only for prod
-    esbuild: isProd
-      ? {
-          drop: ['console', 'debugger'],
-          legalComments: 'none',
-        }
-      : {
-          legalComments: 'eof',
-        },
-  };
-});
+  build: {
+    sourcemap: false,      // no readable source maps in prod
+    minify: 'esbuild',     // fast minification/obfuscation
+    target: 'es2018',
+  },
+
+  // Keep console in prod for now to surface runtime errors if any.
+  // After you verify everything, you can set drop: ['console','debugger'].
+  esbuild: mode === 'production'
+    ? { legalComments: 'none' }
+    : { legalComments: 'eof' },
+}));
