@@ -977,10 +977,11 @@ function useEdgeSpacers(containerRef, slideSelector) {
 /* Landing (tiles) */
 // ==== Toggle either/both ====
 // ==== Toggles (keep both if you like) ====
+// You can keep these toggles at top-level or inline inside the component.
 const SHOW_ARROW_NAV = true;
 const SHOW_CHIP_BAR  = true;
 
-function PortfolioLanding({ T, cats, states, openCat }) {
+function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   const [hoverIdx, setHoverIdx] = useState(-1);
   const [active, setActive] = useState(0);        // centered tile index
   const [canLeft, setCanLeft] = useState(false);
@@ -989,7 +990,18 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   const trackRef = useRef(null);
   const wrapRef = useRef(null);
 
-  // center-detect the active tile while scrolling/resizing
+  // Center the given initial index when we land on this view
+  useEffect(() => {
+    if (!trackRef.current) return;
+    const idx = Math.min(cats.length - 1, Math.max(0, initialIdx));
+    setActive(idx);
+    requestAnimationFrame(() => {
+      const el = trackRef.current?.querySelector(`[data-idx="${idx}"]`);
+      el?.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+    });
+  }, [initialIdx, cats.length]);
+
+  // Track which tile is visually centered and whether we can scroll left/right
   useEffect(() => {
     const root = trackRef.current;
     if (!root) return;
@@ -1007,7 +1019,6 @@ function PortfolioLanding({ T, cats, states, openCat }) {
       });
       setActive(best);
 
-      // can scroll left/right?
       const sl = root.scrollLeft;
       const max = root.scrollWidth - root.clientWidth;
       setCanLeft(sl > 8);
@@ -1031,8 +1042,8 @@ function PortfolioLanding({ T, cats, states, openCat }) {
 
   const go = (dir) => scrollToIdx(active + dir);
 
-  // show arrows only when mouse near container edges
-  const EDGE_ZONE = 88; // px from left/right edge to reveal arrow
+  // Reveal arrows only when the pointer is near the left/right edge
+  const EDGE_ZONE = 88; // px from edge
   const onPointerMove = (e) => {
     const host = wrapRef.current;
     if (!host) return;
@@ -1056,7 +1067,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
         <p className={`mt-2 ${T.muted}`}>Hover near the edges for arrows, or use chips to jump.</p>
       </header>
 
-      {/* Chip bar (single line) */}
+      {/* Chip bar (single line, optional) */}
       {SHOW_CHIP_BAR && (
         <nav
           aria-label="Categories"
@@ -1089,7 +1100,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
         onMouseMove={onPointerMove}
         onMouseLeave={onPointerLeave}
       >
-        {/* Arrow nav (hidden by default, appear near edges & only if scrollable) */}
+        {/* Edge-hover arrow nav */}
         {SHOW_ARROW_NAV && (
           <>
             <button
@@ -1124,7 +1135,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
           </>
         )}
 
-        {/* Track (compact tilt deck) */}
+        {/* The horizontal deck */}
         <div
           ref={trackRef}
           className="
@@ -1137,7 +1148,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
           aria-label="Category cards"
           tabIndex={0}
         >
-          {/* spacers so first/last can truly center */}
+          {/* Left spacer so the first tile can be centered */}
           <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
 
           {cats.map((c, i) => {
@@ -1193,12 +1204,14 @@ function PortfolioLanding({ T, cats, states, openCat }) {
             );
           })}
 
+          {/* Right spacer so the last tile can be centered */}
           <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
         </div>
       </div>
     </section>
   );
 }
+
 
 
 
@@ -1212,6 +1225,18 @@ function PortfolioPage({ T, cat, state, onBack }) {
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lbIdx, setLbIdx] = useState(-1); // -1 = closed
+   
+{/* Floating quick-exit button */}
+<div className="fixed left-3 md:left-4 top-[calc(72px+10px)] z-20">
+  <button
+    type="button"
+    onClick={onBack}
+    aria-label="Back to categories"
+    className="rounded-full px-3 py-1.5 text-sm border border-white/30 bg-black/30 text-white backdrop-blur-sm hover:bg-black/50"
+  >
+    ← All categories
+  </button>
+</div>
 
   // Track which slide is centered
   useEffect(() => {
