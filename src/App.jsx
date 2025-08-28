@@ -881,13 +881,15 @@ function PortfolioLanding({ T, cats, states, openCat }) {
 }
 
 // Page (horizontal carousel)
+// Paste this component to REPLACE your existing PortfolioPage in App.jsx
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [lbIdx, setLbIdx] = useState(-1); // lightbox index (-1 = closed)
 
-  // Find nearest slide to center while scrolling/resizing
+  // Track nearest slide to center while scrolling/resizing
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
@@ -895,20 +897,14 @@ function PortfolioPage({ T, cat, state, onBack }) {
     const update = () => {
       const slides = Array.from(root.querySelectorAll('[data-idx]'));
       if (!slides.length) return;
-
       const center = root.scrollLeft + root.clientWidth / 2;
       let best = 0;
       let bestDist = Infinity;
-
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) {
-          bestDist = d;
-          best = i;
-        }
+        if (d < bestDist) { bestDist = d; best = i; }
       });
-
       setActiveIndex(best);
     };
 
@@ -921,7 +917,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
   }, []);
 
-  // Keyboard support
+  // Keyboard: arrows for carousel; Esc for lightbox
   useEffect(() => {
     const go = (dir) => {
       const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
@@ -929,12 +925,57 @@ function PortfolioPage({ T, cat, state, onBack }) {
       el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     };
     const onKey = (e) => {
+      if (lbIdx >= 0 && e.key === 'Escape') { setLbIdx(-1); return; }
       if (e.key === 'ArrowRight') go(1);
       if (e.key === 'ArrowLeft') go(-1);
+      if (e.key === 'Home') {
+        const el = containerRef.current?.querySelector('[data-idx="0"]');
+        el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+      if (e.key === 'End') {
+        const el = containerRef.current?.querySelector(`[data-idx="${items.length - 1}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [activeIndex, items.length]);
+  }, [activeIndex, items.length, lbIdx]);
+
+  // #1 Drag / swipe to scroll (mouse + touch)
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    let isDown = false, startX = 0, startLeft = 0;
+    const onDown = (e) => { isDown = true; startX = (e.touches?.[0]?.pageX ?? e.pageX); startLeft = el.scrollLeft; };
+    const onMove = (e) => { if (!isDown) return; const x = (e.touches?.[0]?.pageX ?? e.pageX); el.scrollLeft = startLeft - (x - startX); };
+    const onUp = () => { isDown = false; };
+
+    el.addEventListener('mousedown', onDown);
+    el.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+
+    el.addEventListener('touchstart', onDown, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: true });
+    el.addEventListener('touchend', onUp);
+
+    return () => {
+      el.removeEventListener('mousedown', onDown);
+      el.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      el.removeEventListener('touchstart', onDown);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onUp);
+    };
+  }, []);
+
+  // Optional: translate vertical wheel to horizontal when hovering carousel
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
 
   const goTo = (idx) => {
     const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
@@ -947,7 +988,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
           <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
-          <span className={`mx-2 ${T.muted2}`}>/</span>
+          <span className={`${T.muted2} mx-2`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
         <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
@@ -961,67 +1002,74 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
-      {/* Horizontal carousel */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
         <div className={`${T.muted2}`}>Loading…</div>
       ) : items.length ? (
         <>
+          {/* Carousel */}
           <div
             ref={containerRef}
-            className={`
-              mx-auto max-w-[1600px]
-              overflow-x-auto
-              snap-x snap-mandatory
-              flex gap-4 sm:gap-5 md:gap-6
-              px-2 sm:px-3 md:px-4
-              pb-6
-              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-            `}
+            role="region"
+            aria-roledescription="carousel"
+            aria-label={`${cat.label} images`}
+            aria-live="polite"
+            tabIndex={0}
+            className="mx-auto max-w-[1600px] overflow-x-auto snap-x snap-mandatory flex gap-4 sm:gap-5 md:gap-6 px-2 sm:px-3 md:px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none"
           >
             {items.map((it, i) => (
-              <div
+              <figure
                 key={it.sha || i}
                 data-idx={i}
-                className="
-                  flex-shrink-0
-                  w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%]
-                  snap-center
-                "
+                className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300 ${i===activeIndex ? 'scale-[1.01]' : 'scale-[0.995]'} `}
               >
-                <img
-  src={it.url}
-  alt={`${cat.label} — ${it.name}`}
-  className={`
-    mx-auto
-    rounded-2xl
-    object-contain
-    max-h-[68vh]   /* cap portrait height */
-    w-auto         /* portrait keeps proportions */
-    h-[58vh] sm:h-[64vh] md:h-[68vh]  /* base landscape height */
-  `}
-  loading="lazy"
-/>
-
-              </div>
+                {/* Subtle shadow on active */}
+                <div className={`rounded-2xl ${i===activeIndex ? 'shadow-lg' : 'shadow-sm'}`}>
+                  <img
+                    src={it.url}
+                    srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`} // #7 responsive quality
+                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 72vw, 58vw"
+                    alt={`${cat.label} — ${it.name}`}
+                    className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
+                    loading="lazy"
+                    onClick={() => setLbIdx(i)} // #4 open lightbox
+                  />
+                </div>
+              </figure>
             ))}
           </div>
 
-          {/* Dots */}
-          <div className="flex justify-center gap-2 mt-2">
-            {items.map((_, i) => (
+          {/* #3 Thumbnail strip (replaces dots) */}
+          <div className="mt-2 flex gap-2 overflow-x-auto px-2 pb-1" style={{ scrollbarWidth: 'none' }}>
+            {items.map((it, i) => (
               <button
-                key={i}
+                key={`thumb-${i}`}
                 onClick={() => goTo(i)}
                 aria-label={`Go to image ${i + 1}`}
-                className={`
-                  h-2.5 w-2.5 rounded-full transition
-                  ${i === activeIndex ? "bg-white" : "bg-white/35 hover:bg-white/60"}
-                `}
-              />
+                className={`h-14 w-10 rounded-md overflow-hidden border transition ${i===activeIndex ? 'opacity-100 ring-2 ring-white' : 'opacity-60 hover:opacity-90'}`}
+              >
+                <img src={it.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+              </button>
             ))}
           </div>
+
+          {/* #4 Lightbox */}
+          {lbIdx >= 0 && (
+            <div
+              className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Image viewer"
+              onClick={() => setLbIdx(-1)}
+            >
+              <img
+                src={items[lbIdx].url}
+                alt={items[lbIdx].name}
+                className="max-h-[92vh] max-w-[92vw] object-contain cursor-zoom-out"
+              />
+            </div>
+          )}
         </>
       ) : (
         <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
@@ -1029,6 +1077,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     </section>
   );
 }
+
 
 // Wrapper (hash-driven view switch)
 function Portfolio({ T }) {
