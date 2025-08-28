@@ -822,6 +822,52 @@ function Input({
   );
 }
 
+// ---- Hook: add edge padding so first/last items can be centered ----
+function useEdgeCenteringPadding(ref, childSelector = ":scope > *") {
+  const recalc = React.useCallback(() => {
+    const scroller = ref.current;
+    if (!scroller) return;
+
+    // Find the first visible child (we’ll use its width as a proxy)
+    const firstItem =
+      scroller.querySelector(childSelector) ||
+      scroller.firstElementChild;
+
+    if (!firstItem) return;
+
+    const scrollerRect = scroller.getBoundingClientRect();
+    const itemRect = firstItem.getBoundingClientRect();
+
+    // How much space to add so that the first/last item can sit centered
+    const pad = Math.max(0, (scrollerRect.width - itemRect.width) / 2);
+
+    // Apply both padding and scroll-padding (snap aware)
+    scroller.style.paddingLeft = `${pad}px`;
+    scroller.style.paddingRight = `${pad}px`;
+    scroller.style.scrollPaddingLeft = `${pad}px`;
+    scroller.style.scrollPaddingRight = `${pad}px`;
+  }, [ref, childSelector]);
+
+  React.useEffect(() => {
+    // Initial pass
+    recalc();
+
+    // Recalc when the scroller or viewport size changes
+    const el = ref.current;
+    const ro = new ResizeObserver(() => recalc());
+    if (el) ro.observe(el);
+    const onResize = () => recalc();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
+  }, [recalc]);
+
+  return recalc; // you can call recalc() manually after content loads
+}
+
 /* ===================== Portfolio — Landing ===================== */
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
@@ -886,83 +932,87 @@ function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
-  const containerRef = useRef(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1);
+  const containerRef = React.useRef(null);    // main carousel
+  const thumbsRef = React.useRef(null);       // thumbnail strip
 
-  // Track centered slide on scroll/resize
-  useEffect(() => {
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const [lbIdx, setLbIdx] = React.useState(-1);
+
+  // Add dynamic edge padding so first/last can be centered
+  const recalcMainPad  = useEdgeCenteringPadding(containerRef, '[data-idx]');
+  const recalcThumbPad = useEdgeCenteringPadding(thumbsRef, '[data-thumb]');
+
+  // Keep activeIndex updated to whichever slide is nearest the center
+  React.useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-    const update = () => {
-      const slides = Array.from(root.querySelectorAll("[data-idx]"));
+
+    const updateActive = () => {
+      const slides = Array.from(root.querySelectorAll('[data-idx]'));
       if (!slides.length) return;
+
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0;
-      let bestDist = Infinity;
+      let best = 0, bestDist = Infinity;
+
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) {
-          bestDist = d;
-          best = i;
-        }
+        if (d < bestDist) { best = i; bestDist = d; }
       });
+
       setActiveIndex(best);
     };
-    update();
-    root.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+
+    updateActive();
+    root.addEventListener('scroll', updateActive, { passive: true });
+    window.addEventListener('resize', updateActive);
     return () => {
-      root.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      root.removeEventListener('scroll', updateActive);
+      window.removeEventListener('resize', updateActive);
     };
   }, []);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const go = (dir) => {
-      const idx = Math.min(
-        items.length - 1,
-        Math.max(0, activeIndex + dir)
-      );
-      const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-      el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    };
-    const onKey = (e) => {
-      if (lbIdx >= 0) {
-        if (e.key === "Escape") setLbIdx(-1);
-        if (e.key === "ArrowRight" && lbIdx < items.length - 1) setLbIdx(lbIdx + 1);
-        if (e.key === "ArrowLeft" && lbIdx > 0) setLbIdx(lbIdx - 1);
-        return;
-      }
-      if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft") go(-1);
-      if (e.key === "Enter") setLbIdx(activeIndex);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, items.length, lbIdx]);
+  // Recompute edge padding when items change, then center the current slide
+  React.useEffect(() => {
+    recalcMainPad();
+    recalcThumbPad();
+    // center after padding is applied
+    const id = requestAnimationFrame(() => {
+      const el = containerRef.current?.querySelector(`[data-idx="${activeIndex}"]`);
+      el?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [items.length, recalcMainPad, recalcThumbPad]); // runs when images load
 
   const goTo = (idx) => {
-    const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const clamped = Math.min(items.length - 1, Math.max(0, idx));
+    const el = containerRef.current?.querySelector(
+      `[data-idx="${clamped}"]`
+    );
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
+
+  // Keyboard support: left/right arrows to navigate
+  React.useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); goTo(activeIndex + 1); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(activeIndex - 1); }
+      if (e.key === 'Escape' && lbIdx >= 0) setLbIdx(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeIndex, lbIdx]);
 
   return (
     <section className="py-2" id="portfolio">
       {/* Sticky breadcrumb + title */}
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
-            Portfolio
-          </button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2
-          className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           {cat.label}
         </h2>
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
@@ -973,7 +1023,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
-      {/* Horizontal carousel */}
+      {/* Main horizontal carousel */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
@@ -987,42 +1037,69 @@ function PortfolioPage({ T, cat, state, onBack }) {
             aria-label={`${cat.label} images`}
             aria-live="polite"
             tabIndex={0}
-            className="mx-auto max-w-[1600px] overflow-x-auto snap-x snap-mandatory flex gap-4 sm:gap-5 md:gap-6 px-2 sm:px-3 md:px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none"
+            className={`
+              mx-auto max-w-[1600px]
+              overflow-x-auto
+              snap-x snap-mandatory [scroll-snap-stop:always]
+              flex gap-4 sm:gap-5 md:gap-6
+              px-0  /* padding is set dynamically via the hook */
+              pb-6
+              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none
+            `}
           >
             {items.map((it, i) => (
               <figure
                 key={it.sha || i}
                 data-idx={i}
-                className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300 ${
-                  i === activeIndex ? "scale-[1.01]" : "scale-[0.995]"
-                }`}
+                className={`
+                  relative flex-shrink-0
+                  w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%]
+                  snap-center transition-transform duration-300
+                  ${i === activeIndex ? 'scale-[1.01]' : 'scale-[0.995]'}
+                `}
               >
-                {/* Subtle shadow on active */}
-                <div className={`rounded-2xl ${i === activeIndex ? "shadow-lg" : "shadow-sm"}`}>
+                <div className={`rounded-2xl ${i === activeIndex ? 'shadow-lg' : 'shadow-sm'}`}>
                   <img
                     src={it.url}
+                    srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`}
+                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 72vw, 58vw"
                     alt={`${cat.label} — ${it.name}`}
                     className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
                     onClick={() => setLbIdx(i)}
+                    onLoad={() => {
+                      // when images finish loading, widths stabilize -> recompute padding
+                      recalcMainPad();
+                    }}
                   />
                 </div>
               </figure>
             ))}
           </div>
 
-          {/* Thumbnail strip */}
-          <div className="mt-2 flex gap-2 overflow-x-auto px-2 pb-1" style={{ scrollbarWidth: "none" }}>
+          {/* Thumbnail strip (centered, edge-padded) */}
+          <div
+            ref={thumbsRef}
+            className="mt-2 flex gap-2 overflow-x-auto px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {items.map((it, i) => (
               <button
                 key={`thumb-${i}`}
+                data-thumb
                 onClick={() => goTo(i)}
                 aria-label={`Go to image ${i + 1}`}
-                className={`h-14 w-10 rounded-md overflow-hidden border transition ${
-                  i === activeIndex ? "opacity-100 ring-2 ring-white" : "opacity-60 hover:opacity-90"
-                }`}
+                className={`
+                  h-14 w-10 rounded-md overflow-hidden border transition flex-shrink-0
+                  ${i === activeIndex ? 'opacity-100 ring-2 ring-white' : 'opacity-60 hover:opacity-90'}
+                `}
               >
-                <img src={it.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img
+                  src={it.url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  onLoad={() => recalcThumbPad()}
+                />
               </button>
             ))}
           </div>
@@ -1050,6 +1127,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     </section>
   );
 }
+
 
 /* ===================== Portfolio — Wrapper (Manifest-first) ===================== */
 function Portfolio({ T }) {
