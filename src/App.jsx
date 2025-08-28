@@ -965,20 +965,24 @@ function PortfolioLanding({ T, cats, states, openCat }) {
 // === replace your existing PortfolioPage with this ===
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
-  const blurb = (window.GH_CATEGORIES_EXT?.[cat.label]?.blurb) || (GH_CATEGORIES_EXT?.[cat.label]?.blurb) || "";
+  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
+
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1); // lightbox index (-1 = closed)
+  const [lbIdx, setLbIdx] = useState(-1); // -1 = closed
 
-  // Track which slide is centered as you scroll
+  // Track which slide is centered
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
+
     const update = () => {
       const slides = Array.from(root.querySelectorAll("[data-idx]"));
       if (!slides.length) return;
+
       const center = root.scrollLeft + root.clientWidth / 2;
       let best = 0, bestDist = Infinity;
+
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
@@ -986,6 +990,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       });
       setActiveIndex(best);
     };
+
     update();
     root.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
@@ -1003,9 +1008,9 @@ function PortfolioPage({ T, cat, state, onBack }) {
       el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     };
     const onKey = (e) => {
-      if (lbIdx >= 0) return; // ignore when lightbox is open
+      if (lbIdx >= 0) return; // don't move the carousel under the lightbox
       if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowLeft")  go(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1039,9 +1044,9 @@ function PortfolioPage({ T, cat, state, onBack }) {
   useEffect(() => {
     if (lbIdx < 0) return;
     const onKey = (e) => {
-      if (e.key === "Escape") { e.preventDefault(); closeLbAndSync(); return; }
-      if (e.key === "ArrowRight") { e.preventDefault(); navLightbox(1); return; }
-      if (e.key === "ArrowLeft")  { e.preventDefault(); navLightbox(-1); return; }
+      if (e.key === "Escape")     { e.preventDefault(); closeLbAndSync(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); navLightbox(1); }
+      if (e.key === "ArrowLeft")  { e.preventDefault(); navLightbox(-1); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1059,7 +1064,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           {cat.label}
         </h2>
-        {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
+        {blurb ? <p className={`mt-1 ${T.muted}`}>{blurb}</p> : null}
       </div>
 
       {/* Right side counter */}
@@ -1085,13 +1090,19 @@ function PortfolioPage({ T, cat, state, onBack }) {
               mx-auto max-w-[1600px]
               overflow-x-auto
               snap-x snap-mandatory
-              flex gap-4 sm:gap-5 md:gap-6
+              flex items-stretch gap-4 sm:gap-5 md:gap-6
               px-2 sm:px-3 md:px-4
               pb-6
               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
               select-none
             "
           >
+            {/* Spacer so first image can center with empty left */}
+            <div
+              className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]"
+              aria-hidden="true"
+            />
+
             {items.map((it, i) => (
               <figure
                 key={it.sha || i}
@@ -1117,6 +1128,12 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 </div>
               </figure>
             ))}
+
+            {/* Spacer so last image can center with empty right */}
+            <div
+              className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]"
+              aria-hidden="true"
+            />
           </div>
 
           {/* Thumbnails (centered strip) */}
@@ -1145,7 +1162,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
               role="dialog"
               aria-modal="true"
               aria-label="Image viewer"
-              onClick={closeLbAndSync} // <- sync on overlay click
+              onClick={closeLbAndSync}
             >
               {/* On-screen nav arrows */}
               <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
