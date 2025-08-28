@@ -987,7 +987,8 @@ function PortfolioLanding({ T, cats, states, openCat }) {
         <p className={`mt-2 ${T.muted}`}>Move your mouse over cards, click to enter.</p>
       </header>
 
-      <div className="flex gap-4 sm:gap-5 md:gap-6 overflow-x-auto px-2 sm:px-3 md:px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* tighter gaps = more cards on screen */}
+      <div className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto px-2 sm:px-3 md:px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {cats.map((c, i) => {
           const st = states[i] || { images: [], loading: true, error: "" };
           const cover = pickCoverForCategory(st.images, c.label);
@@ -996,7 +997,8 @@ function PortfolioLanding({ T, cats, states, openCat }) {
           return (
             <article
               key={c.label}
-              className="relative flex-shrink-0 w-[76%] sm:w-[56%] md:w-[42%] lg:w-[34%]"
+              // narrower widths per breakpoint -> ~4–6 visible cards on desktop
+              className="relative flex-shrink-0 w-[64%] sm:w-[44%] md:w-[30%] lg:w-[24%] xl:w-[20%]"
               onMouseEnter={() => setHoverIdx(i)}
               onMouseLeave={() => setHoverIdx(-1)}
             >
@@ -1005,12 +1007,14 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                 onClick={() => openCat(c.label)}
                 className={[
                   "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
-                  T.cardBorder, T.cardBg,
+                  T.cardBorder,
+                  T.cardBg,
                 ].join(" ")}
                 style={{ transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})` }}
                 aria-label={`Open ${c.label}`}
               >
-                <div className="aspect-[4/5] relative">
+                {/* slightly shorter aspect so more fits vertically */}
+                <div className="aspect-[3/4] relative">
                   {cover ? (
                     <img
                       src={cover}
@@ -1022,11 +1026,12 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                     <div className="absolute inset-0 bg-neutral-600/30" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50" />
-                  <div className="absolute left-4 right-4 bottom-4">
-                    <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(22px,3.4vw,36px)] drop-shadow">
+                  <div className="absolute left-3 right-3 bottom-3">
+                    {/* smaller title clamp */}
+                    <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(18px,2.2vw,28px)] drop-shadow">
                       {c.label}
                     </h3>
-                    <span className="inline-flex items-center gap-1 text-white/90 text-xs opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                    <span className="inline-flex items-center gap-1 text-white/90 text-[11px] opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
                       Enter →
                     </span>
                   </div>
