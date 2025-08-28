@@ -976,48 +976,89 @@ function useEdgeSpacers(containerRef, slideSelector) {
 
 /* Landing (tiles) */
 function PortfolioLanding({ T, cats, states, openCat }) {
+  // choose a repeating span pattern for visual rhythm
+  const spanClass = (i) => {
+    const patterns = [
+      // col-span (xs / md / xl)  + row-span (uses auto-rows)
+      "col-span-6 md:col-span-4 xl:col-span-5 row-span-5",
+      "col-span-6 md:col-span-4 xl:col-span-3 row-span-3",
+      "col-span-6 md:col-span-4 xl:col-span-4 row-span-4",
+      "col-span-6 md:col-span-4 xl:col-span-3 row-span-3",
+      "col-span-6 md:col-span-4 xl:col-span-5 row-span-4",
+      "col-span-6 md:col-span-4 xl:col-span-3 row-span-3",
+    ];
+    return patterns[i % patterns.length];
+  };
+
   return (
-    <section className="py-2" id="portfolio">
+    <section id="portfolio" className="py-2">
       <header className="mb-8">
         <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
-        <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
+        <p className={`mt-2 ${T.muted}`}>Pick a collection to explore.</p>
       </header>
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      {/* masonry grid: make rows short so row-span multiplies nicely */}
+      <div className="grid grid-cols-6 md:grid-cols-8 xl:grid-cols-12 auto-rows-[70px] md:auto-rows-[80px] gap-4">
         {cats.map((c, i) => {
           const st = states[i] || { images: [], loading: true, error: "" };
           const cover = pickCoverForCategory(st.images, c.label);
+          const count = st.images?.length || 0;
 
           return (
             <article
               key={c.label}
-              className={`relative rounded-2xl overflow-hidden border ${T.cardBorder} ${T.cardBg} shadow-sm`}
+              className={[
+                "group relative overflow-hidden rounded-2xl border shadow-sm",
+                T.cardBorder, T.cardBg, spanClass(i),
+                "motion-safe:transition-transform motion-safe:duration-300",
+                "hover:shadow-lg",
+              ].join(" ")}
             >
+              {/* subtle 3D tilt on hover (no JS, just a tiny scale) */}
               <button
                 type="button"
                 onClick={() => openCat(c.label)}
-                className="group block text-left w-full"
+                className="block h-full w-full text-left"
                 aria-label={`Open ${c.label}`}
               >
-                <div className="aspect-[4/5] w-full bg-neutral-200/20 relative">
+                {/* image */}
+                <div className="absolute inset-0">
                   {cover ? (
                     <img
                       src={cover}
                       alt={c.label}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.03]"
                       loading="lazy"
                     />
-                  ) : null}
-                  <div className="absolute top-3 left-3 right-3">
-                    <div className="inline-block px-1.5 py-1">
-                      <h3
-                        className={`text-[clamp(24px,4vw,40px)] leading-none font-['Playfair_Display'] uppercase tracking-[0.1em] text-white drop-shadow`}
-                      >
-                        {c.label}
-                      </h3>
-                      </div>
+                  ) : (
+                    <div className="h-full w-full bg-neutral-600/30" />
+                  )}
+                  {/* dark gradient for title legibility */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/40" />
+                </div>
+
+                {/* label / count / CTA */}
+                <div className="relative z-[1] h-full w-full p-4 flex flex-col justify-between">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className={`font-['Playfair_Display'] uppercase tracking-[0.08em] text-white drop-shadow text-[clamp(20px,3.5vw,34px)]`}>
+                      {c.label}
+                    </h3>
+                    {count > 0 && (
+                      <span className="rounded-full bg-black/40 text-white text-[11px] px-2 py-0.5 leading-5 self-start">
+                        {count}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/90 text-xs opacity-0 translate-y-1 motion-safe:transition-all motion-safe:duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                      View collection
+                    </span>
+                    <span className="h-7 w-7 rounded-full bg-white/80 text-black grid place-items-center opacity-0 translate-x-1 motion-safe:transition-all motion-safe:duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                      →
+                    </span>
                   </div>
                 </div>
               </button>
@@ -1028,6 +1069,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
     </section>
   );
 }
+
 
 
 /* Page (horizontal carousel) — transform-free & edge-centered */
