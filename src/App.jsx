@@ -72,6 +72,46 @@ const SECTION_IDS = ["portfolio", "services", "pricing", "faq"]; // tiles
 /* Wide container helper */
 const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
 
+
+// --- Category tile covers (optional explicit picks; case-insensitive) ---
+// Put just the filename that lives inside the category folder.
+// e.g. "Fashion/lookbook_cover.jpg" => "lookbook_cover.jpg"
+const TILE_COVERS = {
+  // Events: "00_cover.jpg",
+  // Fashion: "lookbook_cover.jpg",
+};
+
+// Choose cover in this order:
+// 1) explicit mapping above (case-insensitive)
+// 2) filename contains "cover" / "tile" / "hero" / "thumb"  (case-insensitive)
+// 3) filename starts with leading zeros (e.g. "00_...jpg")
+// 4) first image
+function pickCoverForCategory(images = [], label = "") {
+  if (!images?.length) return "";
+
+  // 1) explicit pick (case-insensitive)
+  const want = TILE_COVERS[label];
+  if (want) {
+    const wantLc = want.toLowerCase().trim();
+    const match = images.find(it => (it.name || "").toLowerCase() === wantLc);
+    if (match) return match.url;
+  }
+
+  // 2) token in filename
+  const byToken = images.find(it =>
+    /(^|[-_])(cover|tile|hero|thumb)([-_]|\.|$)/i.test(it.name || "")
+  );
+  if (byToken) return byToken.url;
+
+  // 3) leading zeros
+  const byLeadingZero = images.find(it => /^0+/.test(it.name || ""));
+  if (byLeadingZero) return byLeadingZero.url;
+
+  // 4) fallback
+  return images[0]?.url || "";
+}
+
+
 /* ===================== Load Fonts (Inter + Playfair Display) ===================== */
 function HeadFonts() {
   useEffect(() => {
@@ -869,9 +909,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
       <header className="mb-8">
-        <h2
-          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
         <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
@@ -880,7 +918,8 @@ function PortfolioLanding({ T, cats, states, openCat }) {
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {cats.map((c, i) => {
           const st = states[i] || { images: [], loading: true, error: "" };
-          const cover = st.images?.[0]?.url || "";
+          const cover = pickCoverForCategory(st.images, c.label);
+
           return (
             <article
               key={c.label}
@@ -908,9 +947,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       >
                         {c.label}
                       </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
-                        PORTFOLIO
-                      </div>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
                     </div>
                   </div>
                 </div>
@@ -922,6 +959,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
     </section>
   );
 }
+
 
 /* Page (horizontal carousel) — transform-free & edge-centered */
 // === replace your existing PortfolioPage with this ===
