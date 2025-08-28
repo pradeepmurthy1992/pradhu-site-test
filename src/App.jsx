@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
    PRADHU — Dual Theme (Light/Dark) + Cinematic Intro + Portfolio
+   (manifest-first image loading + centered edge handling)
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -19,16 +20,16 @@ const INTRO_FORCE_HASH = "#intro";
 const HERO_BG_URL =
   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/5a13fa5f50b380a30762e6d0f3d74ab44eb505a5/baseimg/02..jpg";
 
-/* Manifest-first media source */
+/* Manifest-first: avoids GitHub API rate limits */
 const MEDIA_MANIFEST_URL =
   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-portfolio-media/main/manifest.json";
 
-/* GitHub fallback (only if manifest not found) */
-const GH_API = "https://api.github.com";
+/* GitHub media repo (used to build raw URLs) */
 const GH_OWNER = "pradeepmurthy1992";
 const GH_REPO = "pradhu-portfolio-media";
 const GH_BRANCH = "main";
 
+/* Categories (paths must match manifest keys/folders) */
 const GH_CATEGORIES = [
   { label: "Events", path: "Events" },
   { label: "Fashion", path: "Fashion" },
@@ -47,23 +48,20 @@ const GH_CATEGORIES_EXT = {
 
 const GH_CACHE_TTL_MS = 5 * 60 * 1000;
 
-// Brand / contact
+/* Brand / contact */
 const CONTACT_EMAIL = "pradhuphotography@gmail.com";
 const SERVICE_CITIES =
   "Base : Pune · Available [ Mumbai · Chennai · Bengaluru ]";
 const IG_USERNAME = "pradhu_photography";
 
-// Enquiry (kept for future; not exposed in UI)
+/* Enquiry (not exposed in UI) */
 const WHATSAPP_NUMBER = "91XXXXXXXXXX";
-const UPI_ID = "yourvpa@upi";
-const RAZORPAY_LINK = "";
-const BOOKING_ADVANCE_INR = 2000;
 
-// Google Sheets Web App endpoint
+/* Google Sheets Web App endpoint */
 const SHEET_WEB_APP =
   "https://script.google.com/macros/s/AKfycbypBhkuSpztHIBlYU3nsJJBsJI1SULQRIpGynZvEY6sDb2hDnr1PXN4IZ8342sy5-Dj/exec";
 
-// Navbar
+/* Navbar */
 const NAV_BRAND = "PRADHU PHOTOGRAPHY";
 const NAV_ITEMS = [
   { label: "Home", id: "home", icon: "home" },
@@ -71,7 +69,7 @@ const NAV_ITEMS = [
 ];
 const SECTION_IDS = ["portfolio", "services", "pricing", "faq"]; // tiles
 
-// Wide container helper
+/* Wide container helper */
 const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
 
 /* ===================== Load Fonts (Inter + Playfair Display) ===================== */
@@ -105,7 +103,8 @@ function useThemeTokens(theme) {
     muted: "text-neutral-600",
     muted2: "text-neutral-500",
     chipActive: "bg-rose-200 text-rose-900 border-rose-300",
-    chipInactive: "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
+    chipInactive:
+      "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
     btnOutline: "border-neutral-300 text-neutral-900 hover:bg-rose-50",
     inputBg: "bg-white",
     inputBorder: "border-neutral-300",
@@ -133,7 +132,8 @@ function useThemeTokens(theme) {
     muted: "text-neutral-300",
     muted2: "text-neutral-400",
     chipActive: "bg-teal-300 text-[#1c1e26] border-teal-400",
-    chipInactive: "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
+    chipInactive:
+      "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
     btnOutline: "border-neutral-600 text-neutral-100 hover:bg-[#333640]",
     inputBg: "bg-[#1c1e26]",
     inputBorder: "border-neutral-600",
@@ -156,7 +156,12 @@ function useHash() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
+  return [
+    hash,
+    (h) => {
+      if (h !== window.location.hash) window.location.hash = h;
+    },
+  ];
 }
 
 /* ===================== Icons ===================== */
@@ -260,24 +265,30 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 /* ===================== Intro Overlay ===================== */
 function IntroOverlay({ onClose }) {
+  // Phases: 1) typeName → 2) typeBrand → 3) revealImg → 4) titles
   const [phase, setPhase] = useState("typeName");
   const NAME = "PRADEEP MOORTHY";
   const BRAND = "PRADHU PHOTOGRAPHY";
   const [typed, setTyped] = useState("");
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(0); // 0 typing, 1 pause, 2 explode
   const typingRef = useRef(null);
 
   const imgRef = useRef(null);
   const rippleLayerRef = useRef(null);
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Enter") onClose(); };
+    const onKey = (e) => {
+      if (e.key === "Enter") onClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const onAnyClick = (e) => makeRipple(e.clientX, e.clientY, true);
-  const onPressEnterButton = (e) => { e.stopPropagation(); onClose(); };
+  const onPressEnterButton = (e) => {
+    e.stopPropagation();
+    onClose();
+  };
 
   function makeRipple(x, y, withFlash = false) {
     const host = rippleLayerRef.current;
@@ -302,6 +313,7 @@ function IntroOverlay({ onClose }) {
     setTimeout(() => ripple.remove(), 800);
   }
 
+  // Typing logic
   useEffect(() => {
     const str = phase === "typeName" ? NAME : phase === "typeBrand" ? BRAND : "";
     if (!str) return;
@@ -330,12 +342,14 @@ function IntroOverlay({ onClose }) {
     return () => clearInterval(typingRef.current);
   }, [phase]);
 
+  // after image reveal, move to titles
   useEffect(() => {
     if (phase !== "revealImg") return;
     const t = setTimeout(() => setPhase("titles"), 1400);
     return () => clearTimeout(t);
   }, [phase]);
 
+  // impact ripples when titles overshoot
   const impactRipple = (delayMs = 0) => {
     setTimeout(() => {
       const img = imgRef.current;
@@ -365,7 +379,9 @@ function IntroOverlay({ onClose }) {
           ].join(" ")}
         >
           <span>{text}</span>
-          {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
+          {step === 0 ? (
+            <span className="cin-caret w-[0.5ch] inline-block align-bottom" />
+          ) : null}
         </div>
       </div>
     </div>
@@ -380,9 +396,11 @@ function IntroOverlay({ onClose }) {
       onClick={onAnyClick}
     >
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
+
       {phase === "typeName" && renderTyping(typed)}
       {phase === "typeBrand" && renderTyping(typed)}
 
+      {/* Layout for revealImg/titles */}
       <div
         className={[
           "h-full w-full grid items-center justify-center p-6",
@@ -390,6 +408,7 @@ function IntroOverlay({ onClose }) {
           phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100",
         ].join(" ")}
       >
+        {/* Left image */}
         <div className="relative cin-image-holder">
           <img
             ref={imgRef}
@@ -404,15 +423,22 @@ function IntroOverlay({ onClose }) {
           <div className="pointer-events-none absolute inset-0 cin-vignette" />
         </div>
 
+        {/* Right titles */}
         <div
           className={[
             "flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
-          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>
+          <div
+            className={[
+              "text-[12px] tracking-[0.25em] opacity-80",
+              phase === "titles" ? "cin-overshoot-in" : "",
+            ].join(" ")}
+          >
             VISUAL & HONEST STORIES
           </div>
+
           <h1
             className={[
               "mt-1 font-['Playfair_Display'] uppercase",
@@ -422,6 +448,7 @@ function IntroOverlay({ onClose }) {
           >
             PRADEEP MOORTHY
           </h1>
+
           <div
             className={[
               "mt-0.5 font-['Playfair_Display'] uppercase",
@@ -431,6 +458,7 @@ function IntroOverlay({ onClose }) {
           >
             PRADHU PHOTOGRAPHY
           </div>
+
           <button
             onClick={onPressEnterButton}
             className={[
@@ -447,17 +475,20 @@ function IntroOverlay({ onClose }) {
   );
 }
 
-/* ===================== Manifest-first GitHub helpers ===================== */
-const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".heic", ".JPG", ".JPEG", ".PNG"];
+/* ===================== Manifest-first image helper ===================== */
+const GH_API = "https://api.github.com";
+const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
 const isImageName = (name = "") =>
-  IMG_EXTS.some((ext) => name.toLowerCase().endsWith(ext.toLowerCase()));
+  IMG_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
 
 async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
   const now = Date.now();
-  const nocache = new URLSearchParams(window.location.search).get("refresh") === "1";
+  const nocache =
+    new URLSearchParams(window.location.search).get("refresh") === "1";
 
+  // Cache first
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
     if (!nocache && ts && now - ts < GH_CACHE_TTL_MS) {
@@ -466,18 +497,20 @@ async function ghListFolder(owner, repo, path, ref) {
     }
   } catch {}
 
-  // 1) Try static manifest first (no API calls)
+  // 1) Try manifest
   try {
     if (MEDIA_MANIFEST_URL) {
       const mRes = await fetch(MEDIA_MANIFEST_URL, { cache: "no-store" });
       if (mRes.ok) {
-        const manifest = await mRes.json();
-        const list = (manifest[path] || []).filter(Boolean).map((fullPath) => ({
-          name: fullPath.split("/").pop(),
-          url: `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fullPath}`,
-          sha: fullPath,
-          size: 0,
-        }));
+        const manifest = await mRes.json(); // { "Events": ["Events/..", ...], ... }
+        const list = (manifest[path] || [])
+          .filter(Boolean)
+          .map((fullPath) => ({
+            name: fullPath.split("/").pop(),
+            url: `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fullPath}`,
+            sha: fullPath,
+            size: 0,
+          }));
         if (list.length) {
           try {
             sessionStorage.setItem(key, JSON.stringify(list));
@@ -487,18 +520,20 @@ async function ghListFolder(owner, repo, path, ref) {
         }
       }
     }
-  } catch (e) {
-    // ignore manifest errors and fall through
+  } catch {
+    // fallthrough to API
   }
 
-  // 2) Fallback to GitHub Contents API
+  // 2) Contents API fallback (in case manifest missing)
   const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
     repo
   )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
-  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+  const res = await fetch(url, {
+    headers: { Accept: "application/vnd.github+json" },
+  });
   if (!res.ok) {
     if (res.status === 403) {
-      console.warn("GitHub API rate limit hit. Add/keep manifest.json or retry later.");
+      console.warn("GitHub rate limit hit. Manifest recommended.");
       return [];
     }
     if (res.status === 404) return [];
@@ -506,7 +541,9 @@ async function ghListFolder(owner, repo, path, ref) {
     throw new Error(`GitHub API ${res.status}: ${text}`);
   }
   const json = await res.json();
-  const files = Array.isArray(json) ? json.filter((it) => it.type === "file") : [];
+  const files = Array.isArray(json)
+    ? json.filter((it) => it.type === "file")
+    : [];
   const imgs = files
     .filter((f) => isImageName(f.name))
     .map((f) => ({ name: f.name, url: f.download_url, sha: f.sha, size: f.size }));
@@ -533,10 +570,12 @@ function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-[2]">
         <div className={`${CONTAINER} pb-10 md:pb-14 text-white`}>
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
-            Collect the Treasure. <span className="opacity-90">ONE PIECE at a time.</span>
+            Collect the Treasure.{" "}
+            <span className="opacity-90">ONE PIECE at a time.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
-            Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
+            Fashion · Portraits · Candids · Portfolio · Professional headshots ·
+            Events .
           </p>
         </div>
       </div>
@@ -544,7 +583,7 @@ function Hero() {
   );
 }
 
-/* ===================== FAQ / Services / Pricing (unchanged content) ===================== */
+/* ===================== FAQ ===================== */
 function FaqSection({ T, showTitle = true }) {
   const items = [
     {
@@ -570,14 +609,21 @@ function FaqSection({ T, showTitle = true }) {
   return (
     <section id="faq" className="py-2">
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           FAQ
         </h2>
       )}
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         {items.map((item) => (
-          <details key={item.q} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
-            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>{item.q}</summary>
+          <details
+            key={item.q}
+            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+          >
+            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
+              {item.q}
+            </summary>
             <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
           </details>
         ))}
@@ -586,11 +632,14 @@ function FaqSection({ T, showTitle = true }) {
   );
 }
 
+/* ===================== Services ===================== */
 function ServicesSection({ T, showTitle = true }) {
   return (
     <section id="services" className="py-2">
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Services
         </h2>
       )}
@@ -639,12 +688,15 @@ function ServicesSection({ T, showTitle = true }) {
           <li>Rush teasers / same-day selects</li>
           <li>Prints, albums and frames</li>
         </ul>
-        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>Enquire for availability →</a>
+        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>
+          Enquire for availability →
+        </a>
       </div>
     </section>
   );
 }
 
+/* ===================== Pricing ===================== */
 function PricingSection({ T, showTitle = true }) {
   const tiers = [
     {
@@ -693,7 +745,9 @@ function PricingSection({ T, showTitle = true }) {
   return (
     <section id="pricing" className="py-2">
       {showTitle && (
-        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Pricing (indicative)
         </h2>
       )}
@@ -703,15 +757,22 @@ function PricingSection({ T, showTitle = true }) {
 
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {tiers.map((t) => (
-          <article key={t.name} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <article
+            key={t.name}
+            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+          >
             <div className="flex items-baseline justify-between">
               <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
               <span className="text-sm opacity-80">{t.price}</span>
             </div>
             <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
-              {t.includes.map((line) => <li key={line}>{line}</li>)}
+              {t.includes.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
-            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>Request a quote →</a>
+            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>
+              Request a quote →
+            </a>
           </article>
         ))}
       </div>
@@ -720,8 +781,8 @@ function PricingSection({ T, showTitle = true }) {
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
           <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
           <p className={`mt-2 text-sm ${T.muted}`}>
-            <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks. </li>
-            <li>Entire shoot pics will be shared in 3 - 5 days </li>
+            <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks.</li>
+            <li>Entire shoot pics will be shared in 3 - 5 days</li>
             <li>Editing timeline starts post the shortlisting of images</li>
           </p>
         </div>
@@ -769,100 +830,48 @@ function Input({
   );
 }
 
-/* ===================== Micro Parallax (optional, not used by carousel) ===================== */
-function useMicroParallax(containerRef, opts = {}) {
-  const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } = opts;
+/* ===================== Portfolio ===================== */
+
+/** Helper: compute left/right "edge spacers" so first/last can center */
+function useEdgeSpacers(containerRef, slideSelector) {
+  const [spacer, setSpacer] = useState(0);
 
   useEffect(() => {
-    const root = containerRef?.current;
+    const root = containerRef.current;
     if (!root) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const imgs = Array.from(root.querySelectorAll(selector));
-    if (!imgs.length) return;
-
-    let raf = 0;
-    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-
-    const update = () => {
-      raf = 0;
-      const vh = window.innerHeight || 1;
-      const mid = vh / 2;
-      for (const img of imgs) {
-        const r = img.getBoundingClientRect();
-        if (r.bottom < -thresholdPx || r.top > vh + thresholdPx) continue;
-        const cy = r.top + r.height / 2;
-        const norm = (cy - mid) / vh;
-        const shift = clamp(norm * strength * 2, -strength, strength);
-        img.style.transform = `translateY(${shift.toFixed(2)}px)`;
-      }
+    const compute = () => {
+      const slide = root.querySelector(slideSelector);
+      if (!slide) return setSpacer(0);
+      const cw = root.clientWidth;
+      const sw = slide.clientWidth || 0;
+      const s = Math.max(0, (cw - sw) / 2);
+      setSpacer(s);
     };
 
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
-    const onResize = onScroll;
+    const rafCompute = () => requestAnimationFrame(compute);
 
-    imgs.forEach((img) => img.classList.add("parallax-img"));
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      if (raf) cancelAnimationFrame(raf);
-      imgs.forEach((img) => (img.style.transform = ""));
-    };
-  }, [containerRef, selector, strength, thresholdPx]);
-}
-
-/* ===== Hook: edge padding so first/last can be centered (main+thumbs) ===== */
-function useEdgeCenteringPadding(ref, childSelector = ":scope > *") {
-  const recalc = React.useCallback(() => {
-    const scroller = ref.current;
-    if (!scroller) return;
-
-    // Use first child as a width proxy
-    const firstItem =
-      scroller.querySelector(childSelector) ||
-      scroller.firstElementChild;
-
-    if (!firstItem) return;
-
-    const scrollerRect = scroller.getBoundingClientRect();
-    const itemRect = firstItem.getBoundingClientRect();
-
-    const pad = Math.max(0, (scrollerRect.width - itemRect.width) / 2);
-
-    scroller.style.paddingLeft = `${pad}px`;
-    scroller.style.paddingRight = `${pad}px`;
-    scroller.style.scrollPaddingLeft = `${pad}px`;
-    scroller.style.scrollPaddingRight = `${pad}px`;
-  }, [ref, childSelector]);
-
-  useEffect(() => {
-    recalc();
-
-    const el = ref.current;
-    const ro = new ResizeObserver(() => recalc());
-    if (el) ro.observe(el);
-    const onResize = () => recalc();
-    window.addEventListener("resize", onResize);
-
+    compute();
+    const ro = new ResizeObserver(rafCompute);
+    ro.observe(root);
+    window.addEventListener("resize", rafCompute);
     return () => {
       ro.disconnect();
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", rafCompute);
     };
-  }, [recalc]);
+  }, [containerRef, slideSelector]);
 
-  return recalc;
+  return spacer;
 }
 
-/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
+/* Landing (tiles) */
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
       <header className="mb-8">
-        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           Portfolio
         </h2>
         <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
@@ -899,7 +908,9 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       >
                         {c.label}
                       </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
+                        PORTFOLIO
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -912,83 +923,99 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-/* ===================== Page (horizontal carousel) ===================== */
+/* Page (horizontal carousel) — transform-free & edge-centered */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
-  const containerRef = useRef(null); // main carousel
-  const thumbsRef = useRef(null);    // thumbnail strip
+  const containerRef = useRef(null);
+  const thumbsRef = useRef(null);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [lbIdx, setLbIdx] = useState(-1);
 
-  // Edge padding so first/last can be centered
-  const recalcMainPad = useEdgeCenteringPadding(containerRef, '[data-idx]');
-  const recalcThumbPad = useEdgeCenteringPadding(thumbsRef, '[data-thumb]');
+  // compute edge spacers
+  const mainSpacer = useEdgeSpacers(containerRef, "[data-idx] .slide-shell");
+  const thumbSpacer = useEdgeSpacers(thumbsRef, "[data-thumb]");
 
-  // Track active slide by nearest-to-center
+  // Track nearest-to-center slide without transforms
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-
-    const updateActive = () => {
-      const slides = Array.from(root.querySelectorAll('[data-idx]'));
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const slides = Array.from(root.querySelectorAll("[data-idx]"));
       if (!slides.length) return;
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0, bestDist = Infinity;
+      let best = 0,
+        bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) { best = i; bestDist = d; }
+        if (d < bestDist) {
+          best = i;
+          bestDist = d;
+        }
       });
       setActiveIndex(best);
     };
-
-    updateActive();
-    root.addEventListener('scroll', updateActive, { passive: true });
-    window.addEventListener('resize', updateActive);
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    root.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
-      root.removeEventListener('scroll', updateActive);
-      window.removeEventListener('resize', updateActive);
+      root.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
     };
   }, []);
 
-  // Recompute padding when items load and center the current slide
+  // Center the first slide on mount/items change
   useEffect(() => {
-    recalcMainPad();
-    recalcThumbPad();
-    const el = containerRef.current?.querySelector(`[data-idx="${activeIndex}"]`);
-    el?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
-  }, [items.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    const el = containerRef.current?.querySelector(`[data-idx="0"]`);
+    el?.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+  }, [items.length]);
 
   const goTo = (idx) => {
     const clamped = Math.min(items.length - 1, Math.max(0, idx));
     const el = containerRef.current?.querySelector(`[data-idx="${clamped}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
   // Keyboard nav + lightbox close
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowRight') { e.preventDefault(); goTo(activeIndex + 1); }
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(activeIndex - 1); }
-      if (e.key === 'Escape' && lbIdx >= 0) setLbIdx(-1);
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goTo(activeIndex + 1);
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goTo(activeIndex - 1);
+      }
+      if (e.key === "Escape" && lbIdx >= 0) setLbIdx(-1);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [activeIndex, lbIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="py-2" id="portfolio">
-      {/* Sticky breadcrumb + title (low z so it never blocks clicks) */}
+      {/* Sticky breadcrumb + title (low z-index so it never blocks clicks) */}
       <div className="mb-4 sticky top-[72px] z-[0] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+            Portfolio
+          </button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2
+          className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+        >
           {cat.label}
         </h2>
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
@@ -999,7 +1026,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
-      {/* Main carousel — NO scale transitions */}
+      {/* Main carousel */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
@@ -1018,23 +1045,27 @@ function PortfolioPage({ T, cat, state, onBack }) {
               overflow-x-auto
               snap-x snap-mandatory [scroll-snap-stop:always]
               flex gap-4 sm:gap-5 md:gap-6
-              px-0 /* dynamic padding via hook */
-              pb-6
+              px-0 pb-6
               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none
             `}
           >
+            {/* Left spacer for centering first */}
+            <div
+              aria-hidden="true"
+              style={{ flex: `0 0 ${mainSpacer}px` }}
+            />
+
             {items.map((it, i) => (
               <figure
                 key={it.sha || i}
                 data-idx={i}
-                className={`
-                  relative flex-shrink-0
-                  w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%]
-                  snap-center
-                `}
+                className="relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center"
               >
-                {/* Subtle shadow on active; no transforms */}
-                <div className={`rounded-2xl overflow-hidden ring-1 ring-black/10 ${i === activeIndex ? 'shadow-lg' : 'shadow-sm'}`}>
+                <div
+                  className={`slide-shell rounded-2xl overflow-hidden ring-1 ring-black/10 ${
+                    i === activeIndex ? "shadow-lg" : "shadow-sm"
+                  }`}
+                >
                   <img
                     src={it.url}
                     srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`}
@@ -1043,18 +1074,24 @@ function PortfolioPage({ T, cat, state, onBack }) {
                     className="block mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
                     onClick={() => setLbIdx(i)}
-                    onLoad={() => recalcMainPad()}
                   />
                 </div>
               </figure>
             ))}
+
+            {/* Right spacer for centering last */}
+            <div
+              aria-hidden="true"
+              style={{ flex: `0 0 ${mainSpacer}px` }}
+            />
           </div>
 
-          {/* Thumbnails — centered with edge padding; always clickable */}
+          {/* Thumbnails — centered with edge spacers */}
           <div
             ref={thumbsRef}
             className="mt-2 flex gap-2 overflow-x-auto px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
+            <div aria-hidden="true" style={{ flex: `0 0 ${thumbSpacer}px` }} />
             {items.map((it, i) => (
               <button
                 key={`thumb-${i}`}
@@ -1063,7 +1100,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 aria-label={`Go to image ${i + 1}`}
                 className={`
                   h-14 w-10 rounded-md overflow-hidden border transition flex-shrink-0
-                  ${i === activeIndex ? 'opacity-100 ring-2 ring-white' : 'opacity-60 hover:opacity-90'}
+                  ${i === activeIndex ? "opacity-100 ring-2 ring-white" : "opacity-60 hover:opacity-90"}
                 `}
               >
                 <img
@@ -1071,10 +1108,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
                   alt=""
                   className="h-full w-full object-cover"
                   loading="lazy"
-                  onLoad={() => recalcThumbPad()}
                 />
               </button>
             ))}
+            <div aria-hidden="true" style={{ flex: `0 0 ${thumbSpacer}px` }} />
           </div>
 
           {/* Lightbox */}
@@ -1101,7 +1138,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
   );
 }
 
-/* ===================== Wrapper (hash-driven view switch) ===================== */
+/* Wrapper (hash-driven view switch) */
 function Portfolio({ T }) {
   const [states, setStates] = useState(() =>
     GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
@@ -1119,7 +1156,11 @@ function Portfolio({ T }) {
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const goLanding = () => { setView("landing"); setActiveIdx(-1); setHash("#portfolio"); };
+  const goLanding = () => {
+    setView("landing");
+    setActiveIdx(-1);
+    setHash("#portfolio");
+  };
 
   // hash → view
   useEffect(() => {
@@ -1128,28 +1169,44 @@ function Portfolio({ T }) {
     if (seg.length >= 2 && seg[1]) {
       const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
       const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
-      if (idx >= 0) { setActiveIdx(idx); setView("page"); return; }
+      if (idx >= 0) {
+        setActiveIdx(idx);
+        setView("page");
+        return;
+      }
     }
-    setView("landing"); setActiveIdx(-1);
+    setView("landing");
+    setActiveIdx(-1);
   }, [hash]);
 
-  // fetch images for each category
+  // fetch images (manifest-first)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const results = await Promise.all(
         GH_CATEGORIES.map(async (cat) => {
           try {
-            const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
+            const list = await ghListFolder(
+              GH_OWNER,
+              GH_REPO,
+              cat.path,
+              GH_BRANCH
+            );
             return { loading: false, error: "", images: list };
           } catch (e) {
-            return { loading: false, error: e?.message || "Failed to load", images: [] };
+            return {
+              loading: false,
+              error: e?.message || "Failed to load",
+              images: [],
+            };
           }
         })
       );
       if (!cancelled) setStates(results);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (view === "page" && activeIdx >= 0) {
@@ -1157,7 +1214,14 @@ function Portfolio({ T }) {
     const st = states[activeIdx] || { loading: true, error: "", images: [] };
     return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
   }
-  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
+  return (
+    <PortfolioLanding
+      T={T}
+      cats={GH_CATEGORIES}
+      states={states}
+      openCat={openCat}
+    />
+  );
 }
 
 /* ===================== Tiles (one line) ===================== */
@@ -1170,7 +1234,10 @@ function SectionTiles({ openId, setOpenId, T }) {
   ];
   return (
     <div id="tiles" className={`${CONTAINER} pt-10`}>
-      <div className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2" style={{ scrollbarWidth: "none" }}>
+      <div
+        className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2"
+        style={{ scrollbarWidth: "none" }}
+      >
         {tiles.map((t) => {
           const active = openId === t.id;
           return (
@@ -1188,7 +1255,12 @@ function SectionTiles({ openId, setOpenId, T }) {
               aria-controls={`section-${t.id}`}
               aria-expanded={active}
             >
-              <Icon name={t.icon} className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`} />
+              <Icon
+                name={t.icon}
+                className={`h-4 w-4 ${
+                  active ? "opacity-100" : "opacity-60"
+                }`}
+              />
               <span className="text-sm">{t.label}</span>
             </button>
           );
@@ -1201,14 +1273,20 @@ function SectionTiles({ openId, setOpenId, T }) {
 /* ===================== Booking (About + Enquiry) ===================== */
 function BookingSection({ T }) {
   const [form, setForm] = useState({
-    name: "", email: "", phone: "",
-    service: "Portraits", city: "Pune", date: "", message: "",
+    name: "",
+    email: "",
+    phone: "",
+    service: "Portraits",
+    city: "Pune",
+    date: "",
+    message: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState("");
 
   const minDateStr = useMemo(() => {
-    const d = new Date(); d.setDate(d.getDate() + 2);
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
     const off = d.getTimezoneOffset();
     const local = new Date(d.getTime() - off * 60000);
     return local.toISOString().slice(0, 10);
@@ -1216,7 +1294,11 @@ function BookingSection({ T }) {
   const fmtHuman = (yyyy_mm_dd) => {
     if (!yyyy_mm_dd) return "";
     const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -1228,22 +1310,37 @@ function BookingSection({ T }) {
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
-    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
-    if (missing.length) { setNote(`Please fill: ${missing.join(", ")}`); return; }
+    if (form.date && form.date < minDateStr)
+      missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
+    if (missing.length) {
+      setNote(`Please fill: ${missing.join(", ")}`);
+      return;
+    }
 
     setSubmitting(true);
     try {
       await fetch(SHEET_WEB_APP, {
-        method: "POST", mode: "no-cors",
+        method: "POST",
+        mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, source: "website" }),
       });
-      setForm({ name: "", email: "", phone: "", service: "Portraits", city: "Pune", date: "", message: "" });
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        service: "Portraits",
+        city: "Pune",
+        date: "",
+        message: "",
+      });
       setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
       console.error(err);
       setNote("Couldn’t submit right now. Please try again.");
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -1252,7 +1349,9 @@ function BookingSection({ T }) {
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* LEFT: About */}
           <div id="about">
-            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+            <h2
+              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+            >
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
@@ -1265,25 +1364,44 @@ function BookingSection({ T }) {
             </ul>
 
             <div className="mt-5 flex items-center gap-3">
-              <a href={`https://www.instagram.com/${IG_USERNAME}/`} target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram"
-                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+              <a
+                href={`https://www.instagram.com/${IG_USERNAME}/`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                title="Instagram"
+                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+              >
                 <Icon name="camera" className="h-5 w-5" />
               </a>
 
               {WHATSAPP_NUMBER.includes("X") ? (
-                <span className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
-                      title="WhatsApp unavailable" aria-hidden="true">
+                <span
+                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
+                  title="WhatsApp unavailable"
+                  aria-hidden="true"
+                >
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </span>
               ) : (
-                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" title="WhatsApp"
-                   className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="WhatsApp"
+                  title="WhatsApp"
+                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+                >
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </a>
               )}
 
-              <a href={`mailto:${CONTACT_EMAIL}`} aria-label="Email" title="Email"
-                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                aria-label="Email"
+                title="Email"
+                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+              >
                 <Icon name="mail" className="h-5 w-5" />
               </a>
             </div>
@@ -1291,36 +1409,79 @@ function BookingSection({ T }) {
 
           {/* RIGHT: Enquiry */}
           <div>
-            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+            <h2
+              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
+            >
               Enquire / Book
             </h2>
-            <p className={`mt-2 ${T.muted}`}>Share details and I’ll reply with availability and a quote.</p>
+            <p className={`mt-2 ${T.muted}`}>
+              Share details and I’ll reply with availability and a quote.
+            </p>
 
-            <form onSubmit={onSubmit} className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+            <form
+              onSubmit={onSubmit}
+              className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
+            >
               <div className="grid grid-cols-1 gap-4">
-                <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
-                <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
-                <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
+                <Input
+                  T={T}
+                  label="Name"
+                  name="name"
+                  value={form.name}
+                  onChange={onChange}
+                  required
+                />
+                <Input
+                  T={T}
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={onChange}
+                  required
+                />
+                <Input
+                  T={T}
+                  label="Phone"
+                  name="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={onChange}
+                  required
+                  placeholder="+91-XXXXXXXXXX"
+                />
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Preferred Date</label>
                   <input
-                    name="date" type="date" min={minDateStr} value={form.date}
-                    onKeyDown={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}
+                    name="date"
+                    type="date"
+                    min={minDateStr}
+                    value={form.date}
+                    onKeyDown={(e) => e.preventDefault()}
+                    onPaste={(e) => e.preventDefault()}
                     onChange={(e) => {
                       let v = e.target.value;
-                      if (v && v < minDateStr) { v = minDateStr; setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`); }
+                      if (v && v < minDateStr) {
+                        v = minDateStr;
+                        setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
+                      }
                       setForm({ ...form, date: v });
                     }}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                   />
-                  <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    Earliest selectable: {fmtHuman(minDateStr)}
+                  </p>
                 </div>
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Message</label>
                   <textarea
-                    name="message" value={form.message} onChange={onChange} rows={5}
+                    name="message"
+                    value={form.message}
+                    onChange={onChange}
+                    rows={5}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                     placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
                   />
@@ -1330,29 +1491,43 @@ function BookingSection({ T }) {
                   <div>
                     <label className={`text-sm ${T.muted}`}>Service</label>
                     <select
-                      name="service" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.service} onChange={onChange}
+                      name="service"
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.service}
+                      onChange={onChange}
                     >
-                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
+                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map(
+                        (s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
                   <div>
                     <label className={`text-sm ${T.muted}`}>City</label>
                     <select
-                      name="city" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.city} onChange={onChange}
+                      name="city"
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.city}
+                      onChange={onChange}
                     >
-                      <option>Pune</option><option>Mumbai</option><option>Chennai</option>
-                      <option>Bengaluru</option><option>Other</option>
+                      <option>Pune</option>
+                      <option>Mumbai</option>
+                      <option>Chennai</option>
+                      <option>Bengaluru</option>
+                      <option>Other</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="submit" disabled={submitting}
-                          className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
+                  >
                     {submitting ? "Submitting…" : "Send Enquiry"}
                   </button>
                   {note && <span className="text-sm opacity-80">{note}</span>}
@@ -1370,14 +1545,20 @@ function BookingSection({ T }) {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
-    try { return sessionStorage.getItem("pradhu:theme") || "dark"; } catch { return "dark"; }
+    try {
+      return sessionStorage.getItem("pradhu:theme") || "dark";
+    } catch {
+      return "dark";
+    }
   });
   const T = useThemeTokens(theme);
 
   const [showIntro, setShowIntro] = useState(() => {
     if (!INTRO_ENABLED) return false;
     const url = new URL(window.location.href);
-    const forced = url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
+    const forced =
+      url.searchParams.get(INTRO_FORCE_QUERY) === "1" ||
+      url.hash === INTRO_FORCE_HASH;
     if (forced) return true;
     if (!INTRO_REMEMBER) return true;
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
@@ -1389,7 +1570,9 @@ export default function App() {
   // Active nav via IntersectionObserver
   useEffect(() => {
     const ids = ["home", "portfolio", "services", "pricing", "faq", "about", "booking"];
-    const els = ids.map((id) => [id, document.getElementById(id)]).filter(([, el]) => !!el);
+    const els = ids
+      .map((id) => [id, document.getElementById(id)])
+      .filter(([, el]) => !!el);
     if (els.length === 0) return;
 
     let current = activeNav;
@@ -1405,7 +1588,10 @@ export default function App() {
           const id = e.target.getAttribute("id");
           if (dist < best.dist) best = { id, dist };
         });
-        if (best.id && best.id !== current) { current = best.id; setActiveNav(best.id); }
+        if (best.id && best.id !== current) {
+          current = best.id;
+          setActiveNav(best.id);
+        }
       },
       { root: null, threshold: [0.35], rootMargin: "-10% 0px -50% 0px" }
     );
@@ -1431,11 +1617,15 @@ export default function App() {
 
   const closeIntro = () => {
     setShowIntro(false);
-    try { if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1"); } catch {}
+    try {
+      if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1");
+    } catch {}
   };
 
   useEffect(() => {
-    try { sessionStorage.setItem("pradhu:theme", theme); } catch {}
+    try {
+      sessionStorage.setItem("pradhu:theme", theme);
+    } catch {}
   }, [theme]);
 
   return (
@@ -1547,7 +1737,9 @@ export default function App() {
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
         <div className={`${CONTAINER} py-10 text-sm`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <p className={T.muted}>© {new Date().getFullYear()} PRADHU — All rights reserved.</p>
+            <p className={T.muted}>
+              © {new Date().getFullYear()} PRADHU — All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
@@ -1560,26 +1752,70 @@ function ThemeSlider({ theme, setTheme }) {
   const isDark = theme === "dark";
   const setLight = () => setTheme("light");
   const setDark = () => setTheme("dark");
-  const onKeyDown = (e) => { if (e.key === "ArrowLeft") setLight(); if (e.key === "ArrowRight") setDark(); };
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowLeft") setLight();
+    if (e.key === "ArrowRight") setDark();
+  };
   return (
-    <div className="relative h-9 w-[150px] select-none" role="tablist" aria-label="Theme" onKeyDown={onKeyDown}>
+    <div
+      className="relative h-9 w-[150px] select-none"
+      role="tablist"
+      aria-label="Theme"
+      onKeyDown={onKeyDown}
+    >
       <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
       <div
         className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
-          isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"
+          isDark
+            ? "translate-x-full bg-neutral-900"
+            : "translate-x-0 bg-white border border-neutral-300"
         }`}
         aria-hidden="true"
       />
       <div className="relative z-10 grid grid-cols-2 h-full">
-        <button type="button" role="tab" aria-selected={!isDark} aria-pressed={!isDark} onClick={setLight}
-                className="flex items-center justify-center gap-1.5 px-3 h-full">
-          <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
-          <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>Light</span>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!isDark}
+          aria-pressed={!isDark}
+          onClick={setLight}
+          className="flex items-center justify-center gap-1.5 px-3 h-full"
+        >
+          <Icon
+            name="sun"
+            className={`h-4 w-4 ${
+              isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"
+            }`}
+          />
+          <span
+            className={`text-xs ${
+              isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"
+            }`}
+          >
+            Light
+          </span>
         </button>
-        <button type="button" role="tab" aria-selected={isDark} aria-pressed={isDark} onClick={setDark}
-                className="flex items-center justify-center gap-1.5 px-3 h-full">
-          <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
-          <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>Dark</span>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isDark}
+          aria-pressed={isDark}
+          onClick={setDark}
+          className="flex items-center justify-center gap-1.5 px-3 h-full"
+        >
+          <Icon
+            name="moon"
+            className={`h-4 w-4 ${
+              isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"
+            }`}
+          />
+          <span
+            className={`text-xs ${
+              isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"
+            }`}
+          >
+            Dark
+          </span>
         </button>
       </div>
     </div>
