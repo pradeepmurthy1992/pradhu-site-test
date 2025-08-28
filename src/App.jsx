@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================================================
    PRADHU — Dual Theme (Light/Dark) + Cinematic Intro + Portfolio
-   Manifest-first portfolio (no API rate-limit issues)
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -20,16 +19,21 @@ const INTRO_FORCE_HASH = "#intro";
 const HERO_BG_URL =
   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/5a13fa5f50b380a30762e6d0f3d74ab44eb505a5/baseimg/02..jpg";
 
-/** Manifest (media repo) */
+/* Manifest-first media source */
 const MEDIA_MANIFEST_URL =
   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-portfolio-media/main/manifest.json";
 
-/** Media repo details (for raw image URLs and fallback) */
+/* GitHub fallback (only if manifest not found) */
+const GH_API = "https://api.github.com";
 const GH_OWNER = "pradeepmurthy1992";
 const GH_REPO = "pradhu-portfolio-media";
 const GH_BRANCH = "main";
 
-/** Optional category blurbs */
+const GH_CATEGORIES = [
+  { label: "Events", path: "Events" },
+  { label: "Fashion", path: "Fashion" },
+];
+
 const GH_CATEGORIES_EXT = {
   Events: {
     blurb:
@@ -101,8 +105,7 @@ function useThemeTokens(theme) {
     muted: "text-neutral-600",
     muted2: "text-neutral-500",
     chipActive: "bg-rose-200 text-rose-900 border-rose-300",
-    chipInactive:
-      "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
+    chipInactive: "bg-white border-neutral-300 text-neutral-700 hover:bg-rose-50",
     btnOutline: "border-neutral-300 text-neutral-900 hover:bg-rose-50",
     inputBg: "bg-white",
     inputBorder: "border-neutral-300",
@@ -130,8 +133,7 @@ function useThemeTokens(theme) {
     muted: "text-neutral-300",
     muted2: "text-neutral-400",
     chipActive: "bg-teal-300 text-[#1c1e26] border-teal-400",
-    chipInactive:
-      "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
+    chipInactive: "bg-[#2a2d36] border-[#3a3d46] text-neutral-200 hover:bg-[#333640]",
     btnOutline: "border-neutral-600 text-neutral-100 hover:bg-[#333640]",
     inputBg: "bg-[#1c1e26]",
     inputBorder: "border-neutral-600",
@@ -154,12 +156,7 @@ function useHash() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  return [
-    hash,
-    (h) => {
-      if (h !== window.location.hash) window.location.hash = h;
-    },
-  ];
+  return [hash, (h) => { if (h !== window.location.hash) window.location.hash = h; }];
 }
 
 /* ===================== Icons ===================== */
@@ -261,7 +258,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   }
 }
 
-/* ===================== Intro Overlay (cinematic) ===================== */
+/* ===================== Intro Overlay ===================== */
 function IntroOverlay({ onClose }) {
   const [phase, setPhase] = useState("typeName");
   const NAME = "PRADEEP MOORTHY";
@@ -274,18 +271,13 @@ function IntroOverlay({ onClose }) {
   const rippleLayerRef = useRef(null);
 
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Enter") onClose();
-    };
+    const onKey = (e) => { if (e.key === "Enter") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const onAnyClick = (e) => makeRipple(e.clientX, e.clientY, true);
-  const onPressEnterButton = (e) => {
-    e.stopPropagation();
-    onClose();
-  };
+  const onPressEnterButton = (e) => { e.stopPropagation(); onClose(); };
 
   function makeRipple(x, y, withFlash = false) {
     const host = rippleLayerRef.current;
@@ -373,9 +365,7 @@ function IntroOverlay({ onClose }) {
           ].join(" ")}
         >
           <span>{text}</span>
-          {step === 0 ? (
-            <span className="cin-caret w-[0.5ch] inline-block align-bottom" />
-          ) : null}
+          {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
         </div>
       </div>
     </div>
@@ -390,11 +380,9 @@ function IntroOverlay({ onClose }) {
       onClick={onAnyClick}
     >
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
-
       {phase === "typeName" && renderTyping(typed)}
       {phase === "typeBrand" && renderTyping(typed)}
 
-      {/* Layout for revealImg/titles */}
       <div
         className={[
           "h-full w-full grid items-center justify-center p-6",
@@ -402,7 +390,6 @@ function IntroOverlay({ onClose }) {
           phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100",
         ].join(" ")}
       >
-        {/* Left image */}
         <div className="relative cin-image-holder">
           <img
             ref={imgRef}
@@ -417,22 +404,15 @@ function IntroOverlay({ onClose }) {
           <div className="pointer-events-none absolute inset-0 cin-vignette" />
         </div>
 
-        {/* Right titles */}
         <div
           className={[
             "flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
-          <div
-            className={[
-              "text-[12px] tracking-[0.25em] opacity-80",
-              phase === "titles" ? "cin-overshoot-in" : "",
-            ].join(" ")}
-          >
+          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>
             VISUAL & HONEST STORIES
           </div>
-
           <h1
             className={[
               "mt-1 font-['Playfair_Display'] uppercase",
@@ -442,7 +422,6 @@ function IntroOverlay({ onClose }) {
           >
             PRADEEP MOORTHY
           </h1>
-
           <div
             className={[
               "mt-0.5 font-['Playfair_Display'] uppercase",
@@ -452,7 +431,6 @@ function IntroOverlay({ onClose }) {
           >
             PRADHU PHOTOGRAPHY
           </div>
-
           <button
             onClick={onPressEnterButton}
             className={[
@@ -469,35 +447,16 @@ function IntroOverlay({ onClose }) {
   );
 }
 
-/* ===================== GitHub helpers & manifest helpers ===================== */
-const GH_API = "https://api.github.com";
-const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".heic"];
+/* ===================== Manifest-first GitHub helpers ===================== */
+const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".heic", ".JPG", ".JPEG", ".PNG"];
 const isImageName = (name = "") =>
-  IMG_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
+  IMG_EXTS.some((ext) => name.toLowerCase().endsWith(ext.toLowerCase()));
 
-async function fetchManifest(url) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Manifest ${res.status}`);
-  return res.json();
-}
-
-function imagesFromManifest(manifest, owner, repo, branch, label) {
-  const list = manifest?.[label] || [];
-  return list.map((fullPath) => ({
-    name: fullPath.split("/").pop(),
-    url: `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${fullPath}`,
-    sha: fullPath,
-    size: 0,
-  }));
-}
-
-// Fallback loader (only used if manifest fails)
 async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
   const now = Date.now();
-  const nocache =
-    new URLSearchParams(window.location.search).get("refresh") === "1";
+  const nocache = new URLSearchParams(window.location.search).get("refresh") === "1";
 
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
@@ -507,16 +466,42 @@ async function ghListFolder(owner, repo, path, ref) {
     }
   } catch {}
 
-  const url = `${GH_API}/repos/${encodeURIComponent(
-    owner
-  )}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(
-    path
-  )}?ref=${encodeURIComponent(ref)}`;
-  const res = await fetch(url, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
+  // 1) Try static manifest first (no API calls)
+  try {
+    if (MEDIA_MANIFEST_URL) {
+      const mRes = await fetch(MEDIA_MANIFEST_URL, { cache: "no-store" });
+      if (mRes.ok) {
+        const manifest = await mRes.json();
+        const list = (manifest[path] || []).filter(Boolean).map((fullPath) => ({
+          name: fullPath.split("/").pop(),
+          url: `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fullPath}`,
+          sha: fullPath,
+          size: 0,
+        }));
+        if (list.length) {
+          try {
+            sessionStorage.setItem(key, JSON.stringify(list));
+            sessionStorage.setItem(tkey, String(now));
+          } catch {}
+          return list;
+        }
+      }
+    }
+  } catch (e) {
+    // ignore manifest errors and fall through
+  }
+
+  // 2) Fallback to GitHub Contents API
+  const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
+    repo
+  )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
+  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (!res.ok) {
-    if (res.status === 404 || res.status === 403) return [];
+    if (res.status === 403) {
+      console.warn("GitHub API rate limit hit. Add/keep manifest.json or retry later.");
+      return [];
+    }
+    if (res.status === 404) return [];
     const text = await res.text();
     throw new Error(`GitHub API ${res.status}: ${text}`);
   }
@@ -548,12 +533,10 @@ function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-[2]">
         <div className={`${CONTAINER} pb-10 md:pb-14 text-white`}>
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
-            Collect the Treasure.{" "}
-            <span className="opacity-90">ONE PIECE at a time.</span>
+            Collect the Treasure. <span className="opacity-90">ONE PIECE at a time.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
-            Fashion · Portraits · Candids · Portfolio · Professional headshots ·
-            Events .
+            Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
           </p>
         </div>
       </div>
@@ -561,7 +544,7 @@ function Hero() {
   );
 }
 
-/* ===================== FAQ ===================== */
+/* ===================== FAQ / Services / Pricing (unchanged content) ===================== */
 function FaqSection({ T, showTitle = true }) {
   const items = [
     {
@@ -587,21 +570,14 @@ function FaqSection({ T, showTitle = true }) {
   return (
     <section id="faq" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           FAQ
         </h2>
       )}
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         {items.map((item) => (
-          <details
-            key={item.q}
-            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-          >
-            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
-              {item.q}
-            </summary>
+          <details key={item.q} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>{item.q}</summary>
             <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
           </details>
         ))}
@@ -610,29 +586,21 @@ function FaqSection({ T, showTitle = true }) {
   );
 }
 
-/* ===================== Services ===================== */
 function ServicesSection({ T, showTitle = true }) {
   return (
     <section id="services" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Services
         </h2>
       )}
       <p className={`mt-2 ${T.muted}`}>
-        Multi-genre coverage designed around your brief. I’ll suggest looks,
-        lighting windows and locations so the day feels effortless.
+        Multi-genre coverage designed around your brief. I’ll suggest looks, lighting windows and locations so the day feels effortless.
       </p>
 
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <article
-          className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-        >
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>
-            Portraits & Headshots
-          </h3>
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Portraits & Headshots</h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>60–90 min session · up to 2 outfits</li>
             <li>Clean, natural retouching</li>
@@ -641,12 +609,8 @@ function ServicesSection({ T, showTitle = true }) {
           </ul>
         </article>
 
-        <article
-          className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-        >
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>
-            Fashion / Editorial
-          </h3>
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Fashion / Editorial</h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>Moodboard & looks planning</li>
             <li>On-set lighting & styling coordination</li>
@@ -655,12 +619,8 @@ function ServicesSection({ T, showTitle = true }) {
           </ul>
         </article>
 
-        <article
-          className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-        >
-          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>
-            Events & Candids
-          </h3>
+        <article className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+          <h3 className={`text-lg font-medium ${T.navTextStrong}`}>Events & Candids</h3>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>Coverage by hours or session blocks</li>
             <li>Emphasis on key moments & people</li>
@@ -679,15 +639,12 @@ function ServicesSection({ T, showTitle = true }) {
           <li>Rush teasers / same-day selects</li>
           <li>Prints, albums and frames</li>
         </ul>
-        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>
-          Enquire for availability →
-        </a>
+        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>Enquire for availability →</a>
       </div>
     </section>
   );
 }
 
-/* ===================== Pricing (Indicative) ===================== */
 function PricingSection({ T, showTitle = true }) {
   const tiers = [
     {
@@ -736,35 +693,25 @@ function PricingSection({ T, showTitle = true }) {
   return (
     <section id="pricing" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Pricing (indicative)
         </h2>
       )}
       <p className={`mt-2 ${T.muted}`}>
-        Final quote depends on scope, locations, team and timelines. Share your
-        brief for a tailored estimate.
+        Final quote depends on scope, locations, team and timelines. Share your brief for a tailored estimate.
       </p>
 
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {tiers.map((t) => (
-          <article
-            key={t.name}
-            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-          >
+          <article key={t.name} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
             <div className="flex items-baseline justify-between">
               <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
               <span className="text-sm opacity-80">{t.price}</span>
             </div>
             <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
-              {t.includes.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
+              {t.includes.map((line) => <li key={line}>{line}</li>)}
             </ul>
-            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>
-              Request a quote →
-            </a>
+            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>Request a quote →</a>
           </article>
         ))}
       </div>
@@ -773,8 +720,8 @@ function PricingSection({ T, showTitle = true }) {
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
           <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
           <p className={`mt-2 text-sm ${T.muted}`}>
-            <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks.</li>
-            <li>Entire shoot pics will be shared in 3 - 5 days</li>
+            <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks. </li>
+            <li>Entire shoot pics will be shared in 3 - 5 days </li>
             <li>Editing timeline starts post the shortlisting of images</li>
           </p>
         </div>
@@ -822,13 +769,59 @@ function Input({
   );
 }
 
-// ---- Hook: add edge padding so first/last items can be centered ----
+/* ===================== Micro Parallax (optional, not used by carousel) ===================== */
+function useMicroParallax(containerRef, opts = {}) {
+  const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } = opts;
+
+  useEffect(() => {
+    const root = containerRef?.current;
+    if (!root) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const imgs = Array.from(root.querySelectorAll(selector));
+    if (!imgs.length) return;
+
+    let raf = 0;
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+    const update = () => {
+      raf = 0;
+      const vh = window.innerHeight || 1;
+      const mid = vh / 2;
+      for (const img of imgs) {
+        const r = img.getBoundingClientRect();
+        if (r.bottom < -thresholdPx || r.top > vh + thresholdPx) continue;
+        const cy = r.top + r.height / 2;
+        const norm = (cy - mid) / vh;
+        const shift = clamp(norm * strength * 2, -strength, strength);
+        img.style.transform = `translateY(${shift.toFixed(2)}px)`;
+      }
+    };
+
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    const onResize = onScroll;
+
+    imgs.forEach((img) => img.classList.add("parallax-img"));
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      if (raf) cancelAnimationFrame(raf);
+      imgs.forEach((img) => (img.style.transform = ""));
+    };
+  }, [containerRef, selector, strength, thresholdPx]);
+}
+
+/* ===== Hook: edge padding so first/last can be centered (main+thumbs) ===== */
 function useEdgeCenteringPadding(ref, childSelector = ":scope > *") {
   const recalc = React.useCallback(() => {
     const scroller = ref.current;
     if (!scroller) return;
 
-    // Find the first visible child (we’ll use its width as a proxy)
+    // Use first child as a width proxy
     const firstItem =
       scroller.querySelector(childSelector) ||
       scroller.firstElementChild;
@@ -838,21 +831,17 @@ function useEdgeCenteringPadding(ref, childSelector = ":scope > *") {
     const scrollerRect = scroller.getBoundingClientRect();
     const itemRect = firstItem.getBoundingClientRect();
 
-    // How much space to add so that the first/last item can sit centered
     const pad = Math.max(0, (scrollerRect.width - itemRect.width) / 2);
 
-    // Apply both padding and scroll-padding (snap aware)
     scroller.style.paddingLeft = `${pad}px`;
     scroller.style.paddingRight = `${pad}px`;
     scroller.style.scrollPaddingLeft = `${pad}px`;
     scroller.style.scrollPaddingRight = `${pad}px`;
   }, [ref, childSelector]);
 
-  React.useEffect(() => {
-    // Initial pass
+  useEffect(() => {
     recalc();
 
-    // Recalc when the scroller or viewport size changes
     const el = ref.current;
     const ro = new ResizeObserver(() => recalc());
     if (el) ro.observe(el);
@@ -865,17 +854,15 @@ function useEdgeCenteringPadding(ref, childSelector = ":scope > *") {
     };
   }, [recalc]);
 
-  return recalc; // you can call recalc() manually after content loads
+  return recalc;
 }
 
-/* ===================== Portfolio — Landing ===================== */
+/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
 function PortfolioLanding({ T, cats, states, openCat }) {
   return (
     <section className="py-2" id="portfolio">
       <header className="mb-8">
-        <h2
-          className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
         <p className={`mt-2 ${T.muted}`}>Choose a collection.</p>
@@ -912,9 +899,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
                       >
                         {c.label}
                       </h3>
-                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">
-                        PORTFOLIO
-                      </div>
+                      <div className="mt-1 text-[10px] tracking-[0.2em] text-white/90">PORTFOLIO</div>
                     </div>
                   </div>
                 </div>
@@ -927,23 +912,23 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-/* ===================== Portfolio — Page (Carousel + Thumbs + Lightbox) ===================== */
+/* ===================== Page (horizontal carousel) ===================== */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
-  const containerRef = React.useRef(null);    // main carousel
-  const thumbsRef = React.useRef(null);       // thumbnail strip
+  const containerRef = useRef(null); // main carousel
+  const thumbsRef = useRef(null);    // thumbnail strip
 
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const [lbIdx, setLbIdx] = React.useState(-1);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [lbIdx, setLbIdx] = useState(-1);
 
-  // Add dynamic edge padding so first/last can be centered
-  const recalcMainPad  = useEdgeCenteringPadding(containerRef, '[data-idx]');
+  // Edge padding so first/last can be centered
+  const recalcMainPad = useEdgeCenteringPadding(containerRef, '[data-idx]');
   const recalcThumbPad = useEdgeCenteringPadding(thumbsRef, '[data-thumb]');
 
-  // Keep activeIndex updated to whichever slide is nearest the center
-  React.useEffect(() => {
+  // Track active by nearest-to-center
+  useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
 
@@ -972,28 +957,25 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
   }, []);
 
-  // Recompute edge padding when items change, then center the current slide
-  React.useEffect(() => {
+  // Recompute padding when items stabilize then center current
+  useEffect(() => {
     recalcMainPad();
     recalcThumbPad();
-    // center after padding is applied
     const id = requestAnimationFrame(() => {
       const el = containerRef.current?.querySelector(`[data-idx="${activeIndex}"]`);
       el?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
     });
     return () => cancelAnimationFrame(id);
-  }, [items.length, recalcMainPad, recalcThumbPad]); // runs when images load
+  }, [items.length, recalcMainPad, recalcThumbPad]);
 
   const goTo = (idx) => {
     const clamped = Math.min(items.length - 1, Math.max(0, idx));
-    const el = containerRef.current?.querySelector(
-      `[data-idx="${clamped}"]`
-    );
+    const el = containerRef.current?.querySelector(`[data-idx="${clamped}"]`);
     el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
-  // Keyboard support: left/right arrows to navigate
-  React.useEffect(() => {
+  // Keyboard navigation + close lightbox
+  useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'ArrowRight') { e.preventDefault(); goTo(activeIndex + 1); }
       if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(activeIndex - 1); }
@@ -1023,7 +1005,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
-      {/* Main horizontal carousel */}
+      {/* Main carousel */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
@@ -1042,7 +1024,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
               overflow-x-auto
               snap-x snap-mandatory [scroll-snap-stop:always]
               flex gap-4 sm:gap-5 md:gap-6
-              px-0  /* padding is set dynamically via the hook */
+              px-0  /* padding set dynamically */
               pb-6
               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none
             `}
@@ -1067,17 +1049,14 @@ function PortfolioPage({ T, cat, state, onBack }) {
                     className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
                     onClick={() => setLbIdx(i)}
-                    onLoad={() => {
-                      // when images finish loading, widths stabilize -> recompute padding
-                      recalcMainPad();
-                    }}
+                    onLoad={() => recalcMainPad()}
                   />
                 </div>
               </figure>
             ))}
           </div>
 
-          {/* Thumbnail strip (centered, edge-padded) */}
+          {/* Thumbnails */}
           <div
             ref={thumbsRef}
             className="mt-2 flex gap-2 overflow-x-auto px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -1128,89 +1107,17 @@ function PortfolioPage({ T, cat, state, onBack }) {
   );
 }
 
-
-/* ===================== Portfolio — Wrapper (Manifest-first) ===================== */
+/* ===================== Wrapper (hash-driven view switch) ===================== */
 function Portfolio({ T }) {
+  const [states, setStates] = useState(() =>
+    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
+  );
   const [hash, setHash] = useHash();
   const [view, setView] = useState("landing"); // "landing" | "page"
   const [activeIdx, setActiveIdx] = useState(-1);
 
-  const [manifest, setManifest] = useState(null);
-  const [cats, setCats] = useState([]); // [{label, path}]
-  const [states, setStates] = useState([]); // [{loading,error,images:[]}]
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        const mf = await fetchManifest(MEDIA_MANIFEST_URL);
-        if (cancelled) return;
-
-        setManifest(mf);
-        const labels = Object.keys(mf);
-        const derivedCats = labels.map((label) => ({ label, path: label }));
-        setCats(derivedCats);
-
-        // Build states directly from manifest (no API calls)
-        const s = derivedCats.map((c) => ({
-          loading: false,
-          error: "",
-          images: imagesFromManifest(mf, GH_OWNER, GH_REPO, GH_BRANCH, c.label),
-        }));
-        setStates(s);
-        setError("");
-      } catch (e) {
-        if (cancelled) return;
-        // Fallback to static categories via GitHub API (rate-limited, but cached)
-        console.warn("Manifest fetch failed, falling back to GitHub API:", e?.message || e);
-        const FALLBACK_CATS = [
-          { label: "Events", path: "Events" },
-          { label: "Fashion", path: "Fashion" },
-        ];
-        setCats(FALLBACK_CATS);
-        const results = await Promise.all(
-          FALLBACK_CATS.map(async (cat) => {
-            try {
-              const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
-              return { loading: false, error: "", images: list };
-            } catch (err) {
-              return { loading: false, error: err?.message || "Failed to load", images: [] };
-            }
-          })
-        );
-        setStates(results);
-        setError(e?.message || "Could not load manifest");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // hash → view
-  useEffect(() => {
-    if (!hash.startsWith("#portfolio")) return;
-    const seg = hash.split("/");
-    if (seg.length >= 2 && seg[1]) {
-      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
-      const idx = cats.findIndex((c) => c.label === label);
-      if (idx >= 0) {
-        setActiveIdx(idx);
-        setView("page");
-        return;
-      }
-    }
-    setView("landing");
-    setActiveIdx(-1);
-  }, [hash, cats]);
-
   const openCat = (label) => {
-    const idx = cats.findIndex((c) => c.label === label);
+    const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
     if (idx < 0) return;
     setActiveIdx(idx);
     setView("page");
@@ -1218,35 +1125,45 @@ function Portfolio({ T }) {
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const goLanding = () => {
-    setView("landing");
-    setActiveIdx(-1);
-    setHash("#portfolio");
-  };
+  const goLanding = () => { setView("landing"); setActiveIdx(-1); setHash("#portfolio"); };
 
-  if (loading) {
-    return (
-      <section className="py-2" id="portfolio">
-        <div className={T.muted2}>Loading…</div>
-      </section>
-    );
-  }
-  if (!cats.length) {
-    return (
-      <section className="py-2" id="portfolio">
-        <div className="text-red-500">
-          No categories found{error ? ` — ${error}` : ""}.
-        </div>
-      </section>
-    );
-  }
+  // hash → view
+  useEffect(() => {
+    if (!hash.startsWith("#portfolio")) return;
+    const seg = hash.split("/");
+    if (seg.length >= 2 && seg[1]) {
+      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
+      const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
+      if (idx >= 0) { setActiveIdx(idx); setView("page"); return; }
+    }
+    setView("landing"); setActiveIdx(-1);
+  }, [hash]);
+
+  // fetch images for each category
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        GH_CATEGORIES.map(async (cat) => {
+          try {
+            const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
+            return { loading: false, error: "", images: list };
+          } catch (e) {
+            return { loading: false, error: e?.message || "Failed to load", images: [] };
+          }
+        })
+      );
+      if (!cancelled) setStates(results);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   if (view === "page" && activeIdx >= 0) {
-    const cat = cats[activeIdx];
+    const cat = GH_CATEGORIES[activeIdx];
     const st = states[activeIdx] || { loading: true, error: "", images: [] };
     return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
   }
-  return <PortfolioLanding T={T} cats={cats} states={states} openCat={openCat} />;
+  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
 }
 
 /* ===================== Tiles (one line) ===================== */
@@ -1259,10 +1176,7 @@ function SectionTiles({ openId, setOpenId, T }) {
   ];
   return (
     <div id="tiles" className={`${CONTAINER} pt-10`}>
-      <div
-        className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2"
-        style={{ scrollbarWidth: "none" }}
-      >
+      <div className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2" style={{ scrollbarWidth: "none" }}>
         {tiles.map((t) => {
           const active = openId === t.id;
           return (
@@ -1280,10 +1194,7 @@ function SectionTiles({ openId, setOpenId, T }) {
               aria-controls={`section-${t.id}`}
               aria-expanded={active}
             >
-              <Icon
-                name={t.icon}
-                className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`}
-              />
+              <Icon name={t.icon} className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`} />
               <span className="text-sm">{t.label}</span>
             </button>
           );
@@ -1296,20 +1207,14 @@ function SectionTiles({ openId, setOpenId, T }) {
 /* ===================== Booking (About + Enquiry) ===================== */
 function BookingSection({ T }) {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    service: "Portraits",
-    city: "Pune",
-    date: "",
-    message: "",
+    name: "", email: "", phone: "",
+    service: "Portraits", city: "Pune", date: "", message: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState("");
 
   const minDateStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
+    const d = new Date(); d.setDate(d.getDate() + 2);
     const off = d.getTimezoneOffset();
     const local = new Date(d.getTime() - off * 60000);
     return local.toISOString().slice(0, 10);
@@ -1317,11 +1222,7 @@ function BookingSection({ T }) {
   const fmtHuman = (yyyy_mm_dd) => {
     if (!yyyy_mm_dd) return "";
     const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
   };
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -1333,37 +1234,22 @@ function BookingSection({ T }) {
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
-    if (form.date && form.date < minDateStr)
-      missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
-    if (missing.length) {
-      setNote(`Please fill: ${missing.join(", ")}`);
-      return;
-    }
+    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
+    if (missing.length) { setNote(`Please fill: ${missing.join(", ")}`); return; }
 
     setSubmitting(true);
     try {
       await fetch(SHEET_WEB_APP, {
-        method: "POST",
-        mode: "no-cors",
+        method: "POST", mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, source: "website" }),
       });
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        service: "Portraits",
-        city: "Pune",
-        date: "",
-        message: "",
-      });
+      setForm({ name: "", email: "", phone: "", service: "Portraits", city: "Pune", date: "", message: "" });
       setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
       console.error(err);
       setNote("Couldn’t submit right now. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -1372,65 +1258,38 @@ function BookingSection({ T }) {
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* LEFT: About */}
           <div id="about">
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
-              As an aspiring photographer from Kanchipuram, I work across fashion,
-              portraits, candids and events. I run a client-first process: I listen to your
-              brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless.
-              On set, I work with calm, unobtrusive direction to create space for genuine expression.
-              My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
+              As an aspiring photographer from Kanchipuram, I work across fashion, portraits, candids and events. I run a client-first process: I listen to your brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless. On set, I work with calm, unobtrusive direction to create space for genuine expression. My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
             </p>
             <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>
-                Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Professional Headshots, Street Fashion, Studio
-              </li>
+              <li>Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Professional Headshots, Street Fashion, Studio </li>
               <li>Kit: Nikon D7500, Softboxes (octa & strip), multiple flashes, light modifiers</li>
               <li>{SERVICE_CITIES}</li>
             </ul>
 
             <div className="mt-5 flex items-center gap-3">
-              <a
-                href={`https://www.instagram.com/${IG_USERNAME}/`}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Instagram"
-                title="Instagram"
-                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-              >
+              <a href={`https://www.instagram.com/${IG_USERNAME}/`} target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram"
+                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
                 <Icon name="camera" className="h-5 w-5" />
               </a>
 
               {WHATSAPP_NUMBER.includes("X") ? (
-                <span
-                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
-                  title="WhatsApp unavailable"
-                  aria-hidden="true"
-                >
+                <span className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} opacity-60`}
+                      title="WhatsApp unavailable" aria-hidden="true">
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </span>
               ) : (
-                <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="WhatsApp"
-                  title="WhatsApp"
-                  className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-                >
+                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" title="WhatsApp"
+                   className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </a>
               )}
 
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                aria-label="Email"
-                title="Email"
-                className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
-              >
+              <a href={`mailto:${CONTACT_EMAIL}`} aria-label="Email" title="Email"
+                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}>
                 <Icon name="mail" className="h-5 w-5" />
               </a>
             </div>
@@ -1438,64 +1297,36 @@ function BookingSection({ T }) {
 
           {/* RIGHT: Enquiry */}
           <div>
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
               Enquire / Book
             </h2>
-            <p className={`mt-2 ${T.muted}`}>
-              Share details and I’ll reply with availability and a quote.
-            </p>
+            <p className={`mt-2 ${T.muted}`}>Share details and I’ll reply with availability and a quote.</p>
 
-            <form
-              onSubmit={onSubmit}
-              className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-            >
+            <form onSubmit={onSubmit} className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
               <div className="grid grid-cols-1 gap-4">
                 <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
                 <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
-                <Input
-                  T={T}
-                  label="Phone"
-                  name="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={onChange}
-                  required
-                  placeholder="+91-XXXXXXXXXX"
-                />
+                <Input T={T} label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} required placeholder="+91-XXXXXXXXXX" />
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Preferred Date</label>
                   <input
-                    name="date"
-                    type="date"
-                    min={minDateStr}
-                    value={form.date}
-                    onKeyDown={(e) => e.preventDefault()}
-                    onPaste={(e) => e.preventDefault()}
+                    name="date" type="date" min={minDateStr} value={form.date}
+                    onKeyDown={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}
                     onChange={(e) => {
                       let v = e.target.value;
-                      if (v && v < minDateStr) {
-                        v = minDateStr;
-                        setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
-                      }
+                      if (v && v < minDateStr) { v = minDateStr; setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`); }
                       setForm({ ...form, date: v });
                     }}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                   />
-                  <p className="text-xs opacity-70 mt-1">
-                    Earliest selectable: {fmtHuman(minDateStr)}
-                  </p>
+                  <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
                 </div>
 
                 <div>
                   <label className={`text-sm ${T.muted}`}>Message</label>
                   <textarea
-                    name="message"
-                    value={form.message}
-                    onChange={onChange}
-                    rows={5}
+                    name="message" value={form.message} onChange={onChange} rows={5}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                     placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
                   />
@@ -1505,43 +1336,29 @@ function BookingSection({ T }) {
                   <div>
                     <label className={`text-sm ${T.muted}`}>Service</label>
                     <select
-                      name="service"
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.service}
-                      onChange={onChange}
+                      name="service" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.service} onChange={onChange}
                     >
-                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map(
-                        (s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        )
-                      )}
+                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
                     <label className={`text-sm ${T.muted}`}>City</label>
                     <select
-                      name="city"
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.city}
-                      onChange={onChange}
+                      name="city" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
+                      value={form.city} onChange={onChange}
                     >
-                      <option>Pune</option>
-                      <option>Mumbai</option>
-                      <option>Chennai</option>
-                      <option>Bengaluru</option>
-                      <option>Other</option>
+                      <option>Pune</option><option>Mumbai</option><option>Chennai</option>
+                      <option>Bengaluru</option><option>Other</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
-                  >
+                  <button type="submit" disabled={submitting}
+                          className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60">
                     {submitting ? "Submitting…" : "Send Enquiry"}
                   </button>
                   {note && <span className="text-sm opacity-80">{note}</span>}
@@ -1559,19 +1376,14 @@ function BookingSection({ T }) {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
-    try {
-      return sessionStorage.getItem("pradhu:theme") || "dark";
-    } catch {
-      return "dark";
-    }
+    try { return sessionStorage.getItem("pradhu:theme") || "dark"; } catch { return "dark"; }
   });
   const T = useThemeTokens(theme);
 
   const [showIntro, setShowIntro] = useState(() => {
     if (!INTRO_ENABLED) return false;
     const url = new URL(window.location.href);
-    const forced =
-      url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
+    const forced = url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
     if (forced) return true;
     if (!INTRO_REMEMBER) return true;
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
@@ -1583,9 +1395,7 @@ export default function App() {
   // Active nav via IntersectionObserver
   useEffect(() => {
     const ids = ["home", "portfolio", "services", "pricing", "faq", "about", "booking"];
-    const els = ids
-      .map((id) => [id, document.getElementById(id)])
-      .filter(([, el]) => !!el);
+    const els = ids.map((id) => [id, document.getElementById(id)]).filter(([, el]) => !!el);
     if (els.length === 0) return;
 
     let current = activeNav;
@@ -1601,10 +1411,7 @@ export default function App() {
           const id = e.target.getAttribute("id");
           if (dist < best.dist) best = { id, dist };
         });
-        if (best.id && best.id !== current) {
-          current = best.id;
-          setActiveNav(best.id);
-        }
+        if (best.id && best.id !== current) { current = best.id; setActiveNav(best.id); }
       },
       { root: null, threshold: [0.35], rootMargin: "-10% 0px -50% 0px" }
     );
@@ -1630,15 +1437,11 @@ export default function App() {
 
   const closeIntro = () => {
     setShowIntro(false);
-    try {
-      if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1");
-    } catch {}
+    try { if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1"); } catch {}
   };
 
   useEffect(() => {
-    try {
-      sessionStorage.setItem("pradhu:theme", theme);
-    } catch {}
+    try { sessionStorage.setItem("pradhu:theme", theme); } catch {}
   }, [theme]);
 
   return (
@@ -1675,10 +1478,7 @@ export default function App() {
                     activeNav === id ? T.chipActive : T.chipInactive
                   }`}
                 >
-                  <Icon
-                    name={icon}
-                    className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`}
-                  />
+                  <Icon name={icon} className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`} />
                   <span className="text-sm">{label}</span>
                 </button>
               </li>
@@ -1713,10 +1513,7 @@ export default function App() {
                         activeNav === id ? T.chipActive : T.chipInactive
                       }`}
                     >
-                      <Icon
-                        name={icon}
-                        className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`}
-                      />
+                      <Icon name={icon} className={`h-4 w-4 ${activeNav === id ? "opacity-100" : "opacity-60"}`} />
                       <span>{label}</span>
                     </button>
                   </li>
@@ -1756,9 +1553,7 @@ export default function App() {
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
         <div className={`${CONTAINER} py-10 text-sm`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <p className={T.muted}>
-              © {new Date().getFullYear()} PRADHU — All rights reserved.
-            </p>
+            <p className={T.muted}>© {new Date().getFullYear()} PRADHU — All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -1771,72 +1566,26 @@ function ThemeSlider({ theme, setTheme }) {
   const isDark = theme === "dark";
   const setLight = () => setTheme("light");
   const setDark = () => setTheme("dark");
-  const onKeyDown = (e) => {
-    if (e.key === "ArrowLeft") setLight();
-    if (e.key === "ArrowRight") setDark();
-  };
+  const onKeyDown = (e) => { if (e.key === "ArrowLeft") setLight(); if (e.key === "ArrowRight") setDark(); };
   return (
-    <div
-      className="relative h-9 w-[150px] select-none"
-      role="tablist"
-      aria-label="Theme"
-      onKeyDown={onKeyDown}
-    >
+    <div className="relative h-9 w-[150px] select-none" role="tablist" aria-label="Theme" onKeyDown={onKeyDown}>
       <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
       <div
         className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
-          isDark
-            ? "translate-x-full bg-neutral-900"
-            : "translate-x-0 bg-white border border-neutral-300"
+          isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"
         }`}
         aria-hidden="true"
       />
       <div className="relative z-10 grid grid-cols-2 h-full">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={!isDark}
-          aria-pressed={!isDark}
-          onClick={setLight}
-          className="flex items-center justify-center gap-1.5 px-3 h-full"
-        >
-          <Icon
-            name="sun"
-            className={`h-4 w-4 ${
-              isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"
-            }`}
-          />
-          <span
-            className={`text-xs ${
-              isDark
-                ? "opacity-50 text-neutral-700"
-                : "opacity-100 text-neutral-900 font-medium"
-            }`}
-          >
-            Light
-          </span>
+        <button type="button" role="tab" aria-selected={!isDark} aria-pressed={!isDark} onClick={setLight}
+                className="flex items-center justify-center gap-1.5 px-3 h-full">
+          <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
+          <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>Light</span>
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={isDark}
-          aria-pressed={isDark}
-          onClick={setDark}
-          className="flex items-center justify-center gap-1.5 px-3 h-full"
-        >
-          <Icon
-            name="moon"
-            className={`h-4 w-4 ${
-              isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"
-            }`}
-          />
-          <span
-            className={`text-xs ${
-              isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"
-            }`}
-          >
-            Dark
-          </span>
+        <button type="button" role="tab" aria-selected={isDark} aria-pressed={isDark} onClick={setDark}
+                className="flex items-center justify-center gap-1.5 px-3 h-full">
+          <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
+          <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>Dark</span>
         </button>
       </div>
     </div>
