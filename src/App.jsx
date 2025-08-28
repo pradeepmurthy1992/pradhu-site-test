@@ -976,19 +976,10 @@ function useEdgeSpacers(containerRef, slideSelector) {
 
 /* Landing (tiles) */
 function PortfolioLanding({ T, cats, states, openCat }) {
-  // choose a repeating span pattern for visual rhythm
-  const spanClass = (i) => {
-    const patterns = [
-      // col-span (xs / md / xl)  + row-span (uses auto-rows)
-      "col-span-6 md:col-span-4 xl:col-span-5 row-span-5",
-      "col-span-6 md:col-span-4 xl:col-span-3 row-span-3",
-      "col-span-6 md:col-span-4 xl:col-span-4 row-span-4",
-      "col-span-6 md:col-span-4 xl:col-span-3 row-span-3",
-      "col-span-6 md:col-span-4 xl:col-span-5 row-span-4",
-      "col-span-6 md:col-span-4 xl:col-span-3 row-span-3",
-    ];
-    return patterns[i % patterns.length];
-  };
+  const [active, setActive] = useState(0);
+  const st = states[active] || { images: [], loading: true, error: "" };
+  const cover = pickCoverForCategory(st.images, cats[active]?.label);
+  const count = st.images?.length || 0;
 
   return (
     <section id="portfolio" className="py-2">
@@ -996,80 +987,70 @@ function PortfolioLanding({ T, cats, states, openCat }) {
         <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
-        <p className={`mt-2 ${T.muted}`}>Pick a collection to explore.</p>
+        <p className={`mt-2 ${T.muted}`}>Hover a category to preview; click to open.</p>
       </header>
 
-      {/* masonry grid: make rows short so row-span multiplies nicely */}
-      <div className="grid grid-cols-6 md:grid-cols-8 xl:grid-cols-12 auto-rows-[70px] md:auto-rows-[80px] gap-4">
-        {cats.map((c, i) => {
-          const st = states[i] || { images: [], loading: true, error: "" };
-          const cover = pickCoverForCategory(st.images, c.label);
-          const count = st.images?.length || 0;
-
-          return (
-            <article
-              key={c.label}
-              className={[
-                "group relative overflow-hidden rounded-2xl border shadow-sm",
-                T.cardBorder, T.cardBg, spanClass(i),
-                "motion-safe:transition-transform motion-safe:duration-300",
-                "hover:shadow-lg",
-              ].join(" ")}
-            >
-              {/* subtle 3D tilt on hover (no JS, just a tiny scale) */}
-              <button
-                type="button"
-                onClick={() => openCat(c.label)}
-                className="block h-full w-full text-left"
-                aria-label={`Open ${c.label}`}
-              >
-                {/* image */}
-                <div className="absolute inset-0">
-                  {cover ? (
-                    <img
-                      src={cover}
-                      alt={c.label}
-                      className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-neutral-600/30" />
+      <div className="grid md:grid-cols-[360px_1fr] gap-6 items-start">
+        {/* Left: chips list */}
+        <ul className="grid gap-2 content-start">
+          {cats.map((c, i) => {
+            const isActive = i === active;
+            const count = states[i]?.images?.length || 0;
+            return (
+              <li key={c.label}>
+                <button
+                  type="button"
+                  onMouseEnter={() => setActive(i)}
+                  onFocus={() => setActive(i)}
+                  onClick={() => openCat(c.label)}
+                  className={[
+                    "w-full flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition shadow-sm",
+                    isActive ? T.chipActive : T.chipInactive,
+                  ].join(" ")}
+                  aria-current={isActive ? "true" : undefined}
+                >
+                  <span className="font-medium">{c.label}</span>
+                  {count > 0 && (
+                    <span className="text-[11px] opacity-80">{count}</span>
                   )}
-                  {/* dark gradient for title legibility */}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/40" />
-                </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
 
-                {/* label / count / CTA */}
-                <div className="relative z-[1] h-full w-full p-4 flex flex-col justify-between">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className={`font-['Playfair_Display'] uppercase tracking-[0.08em] text-white drop-shadow text-[clamp(20px,3.5vw,34px)]`}>
-                      {c.label}
-                    </h3>
-                    {count > 0 && (
-                      <span className="rounded-full bg-black/40 text-white text-[11px] px-2 py-0.5 leading-5 self-start">
-                        {count}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/90 text-xs opacity-0 translate-y-1 motion-safe:transition-all motion-safe:duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-                      View collection
-                    </span>
-                    <span className="h-7 w-7 rounded-full bg-white/80 text-black grid place-items-center opacity-0 translate-x-1 motion-safe:transition-all motion-safe:duration-300 group-hover:opacity-100 group-hover:translate-x-0">
-                      →
-                    </span>
-                  </div>
-                </div>
-              </button>
-            </article>
-          );
-        })}
+        {/* Right: preview */}
+        <div className={`relative rounded-2xl overflow-hidden border shadow-sm aspect-[16/10] ${T.cardBorder} ${T.cardBg}`}>
+          {cover ? (
+            <img
+              src={cover}
+              alt={cats[active]?.label || "Preview"}
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-neutral-600/30" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+          <div className="absolute left-4 right-4 bottom-4 flex items-end justify-between">
+            <div>
+              <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(20px,3.2vw,36px)] drop-shadow">
+                {cats[active]?.label}
+              </h3>
+              {count > 0 && <div className="text-white/90 text-xs mt-1">{count} images</div>}
+            </div>
+            <button
+              onClick={() => openCat(cats[active]?.label)}
+              className="rounded-full bg-white/90 hover:bg-white px-4 py-2 text-sm text-black font-medium"
+            >
+              View →
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
-
 
 
 /* Page (horizontal carousel) — transform-free & edge-centered */
