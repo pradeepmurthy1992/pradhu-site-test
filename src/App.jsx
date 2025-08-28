@@ -927,7 +927,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
   const recalcMainPad = useEdgeCenteringPadding(containerRef, '[data-idx]');
   const recalcThumbPad = useEdgeCenteringPadding(thumbsRef, '[data-thumb]');
 
-  // Track active by nearest-to-center
+  // Track active slide by nearest-to-center
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
@@ -935,16 +935,13 @@ function PortfolioPage({ T, cat, state, onBack }) {
     const updateActive = () => {
       const slides = Array.from(root.querySelectorAll('[data-idx]'));
       if (!slides.length) return;
-
       const center = root.scrollLeft + root.clientWidth / 2;
       let best = 0, bestDist = Infinity;
-
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
         if (d < bestDist) { best = i; bestDist = d; }
       });
-
       setActiveIndex(best);
     };
 
@@ -957,16 +954,13 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
   }, []);
 
-  // Recompute padding when items stabilize then center current
+  // Recompute padding when items load and center the current slide
   useEffect(() => {
     recalcMainPad();
     recalcThumbPad();
-    const id = requestAnimationFrame(() => {
-      const el = containerRef.current?.querySelector(`[data-idx="${activeIndex}"]`);
-      el?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [items.length, recalcMainPad, recalcThumbPad]);
+    const el = containerRef.current?.querySelector(`[data-idx="${activeIndex}"]`);
+    el?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+  }, [items.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goTo = (idx) => {
     const clamped = Math.min(items.length - 1, Math.max(0, idx));
@@ -974,7 +968,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
-  // Keyboard navigation + close lightbox
+  // Keyboard nav + lightbox close
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'ArrowRight') { e.preventDefault(); goTo(activeIndex + 1); }
@@ -983,12 +977,12 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [activeIndex, lbIdx]);
+  }, [activeIndex, lbIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="py-2" id="portfolio">
-      {/* Sticky breadcrumb + title */}
-      <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
+      {/* Sticky breadcrumb + title (low z so it never blocks clicks) */}
+      <div className="mb-4 sticky top-[72px] z-[0] backdrop-blur">
         <div className="pt-3">
           <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
@@ -1005,7 +999,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
-      {/* Main carousel */}
+      {/* Main carousel — NO scale transitions */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
@@ -1024,7 +1018,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
               overflow-x-auto
               snap-x snap-mandatory [scroll-snap-stop:always]
               flex gap-4 sm:gap-5 md:gap-6
-              px-0  /* padding set dynamically */
+              px-0 /* dynamic padding via hook */
               pb-6
               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none
             `}
@@ -1036,17 +1030,17 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 className={`
                   relative flex-shrink-0
                   w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%]
-                  snap-center transition-transform duration-300
-                  ${i === activeIndex ? 'scale-[1.01]' : 'scale-[0.995]'}
+                  snap-center
                 `}
               >
-                <div className={`rounded-2xl ${i === activeIndex ? 'shadow-lg' : 'shadow-sm'}`}>
+                {/* Subtle shadow on active; no transforms */}
+                <div className={`rounded-2xl overflow-hidden ring-1 ring-black/10 ${i === activeIndex ? 'shadow-lg' : 'shadow-sm'}`}>
                   <img
                     src={it.url}
                     srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`}
                     sizes="(max-width: 640px) 82vw, (max-width: 1024px) 72vw, 58vw"
                     alt={`${cat.label} — ${it.name}`}
-                    className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
+                    className="block mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
                     onClick={() => setLbIdx(i)}
                     onLoad={() => recalcMainPad()}
@@ -1056,7 +1050,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
             ))}
           </div>
 
-          {/* Thumbnails */}
+          {/* Thumbnails — centered with edge padding; always clickable */}
           <div
             ref={thumbsRef}
             className="mt-2 flex gap-2 overflow-x-auto px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
