@@ -975,75 +975,185 @@ function useEdgeSpacers(containerRef, slideSelector) {
 }
 
 /* Landing (tiles) */
+// ==== Toggle either/both ====
+const SHOW_ARROW_NAV = true;
+const SHOW_CHIP_BAR  = true;
+
 function PortfolioLanding({ T, cats, states, openCat }) {
   const [hoverIdx, setHoverIdx] = useState(-1);
+  const [active, setActive] = useState(0);        // centered tile index
+  const trackRef = useRef(null);
+
+  // center-detect the active tile while scrolling/resizing
+  useEffect(() => {
+    const root = trackRef.current;
+    if (!root) return;
+
+    const update = () => {
+      const slides = Array.from(root.querySelectorAll("[data-idx]"));
+      if (!slides.length) return;
+      const center = root.scrollLeft + root.clientWidth / 2;
+      let best = 0, bestDist = Infinity;
+      slides.forEach((el, i) => {
+        const mid = el.offsetLeft + el.offsetWidth / 2;
+        const d = Math.abs(mid - center);
+        if (d < bestDist) { bestDist = d; best = i; }
+      });
+      setActive(best);
+    };
+
+    update();
+    root.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      root.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  const scrollToIdx = (idx) => {
+    const clamped = Math.min(cats.length - 1, Math.max(0, idx));
+    const el = trackRef.current?.querySelector(`[data-idx="${clamped}"]`);
+    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  };
+
+  const go = (dir) => scrollToIdx(active + dir);
 
   return (
     <section id="portfolio" className="py-2">
-      <header className="mb-6">
+      <header className="mb-4">
         <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
-        <p className={`mt-2 ${T.muted}`}>Move your mouse over cards, click to enter.</p>
+        <p className={`mt-2 ${T.muted}`}>Hover a card; use chips or arrows to browse.</p>
       </header>
 
-      {/* tighter gaps = more cards on screen */}
-      <div className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto px-2 sm:px-3 md:px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {cats.map((c, i) => {
-          const st = states[i] || { images: [], loading: true, error: "" };
-          const cover = pickCoverForCategory(st.images, c.label);
-          const [rx, ry, s] = hoverIdx === i ? [4, -4, 1.02] : [0, 0, 1];
+      {/* Chip bar (single line) */}
+      {SHOW_CHIP_BAR && (
+        <nav
+          aria-label="Categories"
+          className="mb-4 -mx-2 sm:-mx-3 md:-mx-4 px-2 sm:px-3 md:px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="flex gap-2">
+            {cats.map((c, i) => {
+              const isActive = i === active;
+              return (
+                <li key={`chip-${c.label}`}>
+                  <button
+                    onClick={() => scrollToIdx(i)}
+                    className={`px-3 py-1.5 rounded-2xl border text-sm transition shadow-sm ${
+                      isActive ? T.chipActive : T.chipInactive
+                    }`}
+                    aria-current={isActive ? "true" : undefined}
+                  >
+                    {c.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
 
-          return (
-            <article
-              key={c.label}
-              // narrower widths per breakpoint -> ~4–6 visible cards on desktop
-              className="relative flex-shrink-0 w-[64%] sm:w-[44%] md:w-[30%] lg:w-[24%] xl:w-[20%]"
-              onMouseEnter={() => setHoverIdx(i)}
-              onMouseLeave={() => setHoverIdx(-1)}
+      <div className="relative">
+        {/* Arrow nav */}
+        {SHOW_ARROW_NAV && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              className="pointer-events-auto mx-1 md:mx-2 h-9 w-9 md:h-10 md:w-10 rounded-full bg-white/80 hover:bg-white border border-black/10 grid place-items-center"
+              aria-label="Previous category"
             >
-              <button
-                type="button"
-                onClick={() => openCat(c.label)}
-                className={[
-                  "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
-                  T.cardBorder,
-                  T.cardBg,
-                ].join(" ")}
-                style={{ transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})` }}
-                aria-label={`Open ${c.label}`}
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              className="pointer-events-auto mx-1 md:mx-2 h-9 w-9 md:h-10 md:w-10 rounded-full bg-white/80 hover:bg-white border border-black/10 grid place-items-center"
+              aria-label="Next category"
+            >
+              →
+            </button>
+          </div>
+        )}
+
+        {/* Track (compact tilt deck) */}
+        <div
+          ref={trackRef}
+          className="
+            flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto px-2 sm:px-3 md:px-4
+            snap-x snap-mandatory
+            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+          "
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Category cards"
+          tabIndex={0}
+        >
+          {/* spacers so first/last can truly center */}
+          <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
+
+          {cats.map((c, i) => {
+            const st = states[i] || { images: [], loading: true, error: "" };
+            const cover = pickCoverForCategory(st.images, c.label);
+            const [rx, ry, s] = hoverIdx === i ? [4, -4, 1.02] : [0, 0, 1];
+            const isActive = i === active;
+
+            return (
+              <article
+                key={c.label}
+                data-idx={i}
+                className="snap-center relative flex-shrink-0 w-[64%] sm:w-[44%] md:w-[30%] lg:w-[24%] xl:w-[20%]"
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx(-1)}
+                onFocus={() => setHoverIdx(i)}
+                onBlur={() => setHoverIdx(-1)}
               >
-                {/* slightly shorter aspect so more fits vertically */}
-                <div className="aspect-[3/4] relative">
-                  {cover ? (
-                    <img
-                      src={cover}
-                      alt={c.label}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-neutral-600/30" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50" />
-                  <div className="absolute left-3 right-3 bottom-3">
-                    {/* smaller title clamp */}
-                    <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(18px,2.2vw,28px)] drop-shadow">
-                      {c.label}
-                    </h3>
-                    <span className="inline-flex items-center gap-1 text-white/90 text-[11px] opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-                      Enter →
-                    </span>
+                <button
+                  type="button"
+                  onClick={() => openCat(c.label)}
+                  className={[
+                    "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
+                    isActive ? "ring-2 ring-white/80" : "",
+                    T.cardBorder, T.cardBg,
+                  ].join(" ")}
+                  style={{ transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})` }}
+                  aria-label={`Open ${c.label}`}
+                >
+                  <div className="aspect-[3/4] relative">
+                    {cover ? (
+                      <img
+                        src={cover}
+                        alt={c.label}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-neutral-600/30" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50" />
+                    <div className="absolute left-3 right-3 bottom-3">
+                      <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(18px,2.2vw,28px)] drop-shadow">
+                        {c.label}
+                      </h3>
+                      <span className="inline-flex items-center gap-1 text-white/90 text-[11px] opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                        Enter →
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </button>
-            </article>
-          );
-        })}
+                </button>
+              </article>
+            );
+          })}
+
+          <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
+        </div>
       </div>
     </section>
   );
 }
+
 
 
 /* Page (horizontal carousel) — transform-free & edge-centered */
