@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 /* ============================================================
    PRADHU — Dual Theme (Light/Dark) + Cinematic Intro + Portfolio
    - Portfolio landing: magazine-style tiles (cover image + serif)
-   - Portfolio page: centered tall images + right progress rail
+   - Portfolio page: interactive carousel + thumbs + lightbox
    - Services, Pricing, FAQ, Booking (About + Enquiry)
 ============================================================ */
 
@@ -20,7 +20,11 @@ const INTRO_FORCE_QUERY = "intro"; // use ?intro=1
 const INTRO_FORCE_HASH = "#intro";
 
 const HERO_BG_URL =
-   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/5a13fa5f50b380a30762e6d0f3d74ab44eb505a5/baseimg/02..jpg";
+  "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/5a13fa5f50b380a30762e6d0f3d74ab44eb505a5/baseimg/02..jpg";
+
+// Load images from a static manifest first (avoids API rate limits)
+const MEDIA_MANIFEST_URL =
+  "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-portfolio-media/main/manifest.json";
 
 // GitHub media repo (live portfolio)
 const GH_OWNER = "pradeepmurthy1992";
@@ -457,7 +461,7 @@ function IntroOverlay({ onClose }) {
   );
 }
 
-/* ===================== GitHub helpers ===================== */
+/* ===================== GitHub helpers (manifest-first) ===================== */
 const GH_API = "https://api.github.com";
 const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
 const isImageName = (name = "") =>
@@ -467,8 +471,10 @@ async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
   const now = Date.now();
-  const nocache = new URLSearchParams(window.location.search).get("refresh") === "1";
+  const nocache =
+    new URLSearchParams(window.location.search).get("refresh") === "1";
 
+  // Serve from session cache if fresh
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
     if (!nocache && ts && now - ts < GH_CACHE_TTL_MS) {
@@ -477,17 +483,56 @@ async function ghListFolder(owner, repo, path, ref) {
     }
   } catch {}
 
+  // 1) Try static manifest first (no API calls)
+  try {
+    if (MEDIA_MANIFEST_URL) {
+      const mRes = await fetch(MEDIA_MANIFEST_URL, { cache: "no-store" });
+      if (mRes.ok) {
+        const manifest = await mRes.json();
+        // Expected shape: { "Events": ["Events/img1.jpg", ...], "Fashion": [...] }
+        const list = (manifest[path] || [])
+          .filter(Boolean)
+          .map((fullPath) => ({
+            name: fullPath.split("/").pop(),
+            url: `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fullPath}`,
+            sha: fullPath,
+            size: 0,
+          }));
+        if (list.length) {
+          try {
+            sessionStorage.setItem(key, JSON.stringify(list));
+            sessionStorage.setItem(tkey, String(now));
+          } catch {}
+          return list;
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore manifest errors and fall through
+  }
+
+  // 2) Fallback to GitHub Contents API
   const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
     repo
   )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
-  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+  const res = await fetch(url, {
+    headers: { Accept: "application/vnd.github+json" },
+  });
   if (!res.ok) {
+    if (res.status === 403) {
+      console.warn(
+        "GitHub API rate limit hit. Add/keep manifest.json or retry later."
+      );
+      return [];
+    }
     if (res.status === 404) return [];
     const text = await res.text();
     throw new Error(`GitHub API ${res.status}: ${text}`);
   }
   const json = await res.json();
-  const files = Array.isArray(json) ? json.filter((it) => it.type === "file") : [];
+  const files = Array.isArray(json)
+    ? json.filter((it) => it.type === "file")
+    : [];
   const imgs = files
     .filter((f) => isImageName(f.name))
     .map((f) => ({ name: f.name, url: f.download_url, sha: f.sha, size: f.size }));
@@ -514,12 +559,14 @@ function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-[2]">
         <div className={`${CONTAINER} pb-10 md:pb-14 text-white`}>
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
-            Collect the Treasure. <span className="opacity-90">ONE PIECE at a time.</span>
+            Collect the Treasure.{" "}
+            <span className="opacity-90">ONE PIECE at a time.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
-            Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
+            Fashion · Portraits · Candids · Portfolio · Professional headshots ·
+            Events .
           </p>
-         </div>
+        </div>
       </div>
     </section>
   );
@@ -607,7 +654,7 @@ function ServicesSection({ T, showTitle = true }) {
             <li>Coverage by hours or session blocks</li>
             <li>Emphasis on key moments & people</li>
             <li>Balanced set of colour-graded selects</li>
-            </ul>
+          </ul>
         </article>
       </div>
 
@@ -630,49 +677,48 @@ function ServicesSection({ T, showTitle = true }) {
 /* ===================== Pricing (Indicative) ===================== */
 function PricingSection({ T, showTitle = true }) {
   const tiers = [
-  {
-    name: "Portrait Session",
-    price: "from ₹4,500",
-    includes: [
-      "60–90 min · up to 2 outfits",
-      "6 lightly retouched hero shots",
-      "Curated 3 - 5 edited images per outfit",
-      "Location & styling guidance",
-    ],
-  },
-  {
-    name: "Headshots (Solo/Team)",
-    price: "from ₹5,000",
-    includes: [
-      "60–90 min · up to 2 outfits",
-      "Consistent lighting & framing",
-      "Curated 3 - 5 edited images per outfit",
-      "On-location option available",
-    ],
-  },
-  {
-    name: "Fashion / Editorial (Half-day)",
-    price: "from ₹10,000",
-    includes: [
-      "Pre-prod planning & moodboard",
-      "Lighting & look management",
-      "Curated 3 - 5 edited images per outfit",
-      "Team coordination on request",
-      "Hour based - no limits for outfit changes",
-    ],
-  },
-  {
-    name: "Event Coverage (2 hrs)",
-    price: "from ₹8,000",
-    includes: [
-      "Focused coverage of key moments",
-      "Colour-graded selects",
-      "Extendable by hour",
-      "Editing based on request - add on",
-    ],
-  },
-];
-
+    {
+      name: "Portrait Session",
+      price: "from ₹4,500",
+      includes: [
+        "60–90 min · up to 2 outfits",
+        "6 lightly retouched hero shots",
+        "Curated 3 - 5 edited images per outfit",
+        "Location & styling guidance",
+      ],
+    },
+    {
+      name: "Headshots (Solo/Team)",
+      price: "from ₹5,000",
+      includes: [
+        "60–90 min · up to 2 outfits",
+        "Consistent lighting & framing",
+        "Curated 3 - 5 edited images per outfit",
+        "On-location option available",
+      ],
+    },
+    {
+      name: "Fashion / Editorial (Half-day)",
+      price: "from ₹10,000",
+      includes: [
+        "Pre-prod planning & moodboard",
+        "Lighting & look management",
+        "Curated 3 - 5 edited images per outfit",
+        "Team coordination on request",
+        "Hour based - no limits for outfit changes",
+      ],
+    },
+    {
+      name: "Event Coverage (2 hrs)",
+      price: "from ₹8,000",
+      includes: [
+        "Focused coverage of key moments",
+        "Colour-graded selects",
+        "Extendable by hour",
+        "Editing based on request - add on",
+      ],
+    },
+  ];
 
   return (
     <section id="pricing" className="py-2">
@@ -704,9 +750,9 @@ function PricingSection({ T, showTitle = true }) {
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
           <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
           <p className={`mt-2 text-sm ${T.muted}`}>
-            <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks. </li>
-            <li>Entire shoot pics will be shared in 3 - 5 days </li>
-             <li>Editing timeline starts post the shortlisting of images</li>
+            <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks.</li>
+            <li>Entire shoot pics will be shared in 3 - 5 days</li>
+            <li>Editing timeline starts post the shortlisting of images</li>
           </p>
         </div>
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
@@ -754,7 +800,6 @@ function Input({
 }
 
 /* ===================== Portfolio (Landing + Pages + Hash) ===================== */
-/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
 // Micro parallax (vertical)
 function useMicroParallax(containerRef, opts = {}) {
   const { selector = "figure[data-idx] img", strength = 14, thresholdPx = 1 } = opts;
@@ -800,30 +845,6 @@ function useMicroParallax(containerRef, opts = {}) {
     };
   }, [containerRef, selector, strength, thresholdPx]);
 }
-
-// ---------- helpers just for the Portfolio page ----------
-function useKeyNav(enabled, { goPrev, goNext, onExit }) {
-  useEffect(() => {
-    if (!enabled) return;
-    const onKey = (e) => {
-      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
-      else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
-      else if (e.key === "Escape") { e.preventDefault(); onExit?.(); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [enabled, goPrev, goNext, onExit]);
-}
-
-function preloadImage(url) {
-  const img = new Image();
-  img.decoding = "async";
-  img.loading = "eager";
-  img.src = url;
-}
-
-// ---------- Landing ----------
-/* ===================== Portfolio (Landing + Pages + Hash) ===================== */
 
 // Landing (tiles)
 function PortfolioLanding({ T, cats, states, openCat }) {
@@ -880,8 +901,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
   );
 }
 
-// Page (horizontal carousel)
-// Paste this component to REPLACE your existing PortfolioPage in App.jsx
+/* ===================== Portfolio Page (carousel + thumbs + lightbox) ===================== */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
@@ -898,8 +918,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       const slides = Array.from(root.querySelectorAll('[data-idx]'));
       if (!slides.length) return;
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0;
-      let bestDist = Infinity;
+      let best = 0, bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
@@ -911,13 +930,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
     update();
     root.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
-    return () => {
-      root.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
+    return () => { root.removeEventListener('scroll', update); window.removeEventListener('resize', update); };
   }, []);
 
-  // Keyboard: arrows for carousel; Esc for lightbox
+  // Keyboard: arrows for carousel; Esc for lightbox; Home/End jump
   useEffect(() => {
     const go = (dir) => {
       const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
@@ -929,50 +945,32 @@ function PortfolioPage({ T, cat, state, onBack }) {
       if (e.key === 'ArrowRight') go(1);
       if (e.key === 'ArrowLeft') go(-1);
       if (e.key === 'Home') {
-        const el = containerRef.current?.querySelector('[data-idx="0"]');
-        el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        containerRef.current?.querySelector('[data-idx="0"]')?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }
       if (e.key === 'End') {
-        const el = containerRef.current?.querySelector(`[data-idx="${items.length - 1}"]`);
-        el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        containerRef.current?.querySelector(`[data-idx="${items.length - 1}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [activeIndex, items.length, lbIdx]);
 
-  // #1 Drag / swipe to scroll (mouse + touch)
+  // Drag / swipe to scroll (mouse + touch)
   useEffect(() => {
     const el = containerRef.current; if (!el) return;
     let isDown = false, startX = 0, startLeft = 0;
     const onDown = (e) => { isDown = true; startX = (e.touches?.[0]?.pageX ?? e.pageX); startLeft = el.scrollLeft; };
     const onMove = (e) => { if (!isDown) return; const x = (e.touches?.[0]?.pageX ?? e.pageX); el.scrollLeft = startLeft - (x - startX); };
     const onUp = () => { isDown = false; };
-
-    el.addEventListener('mousedown', onDown);
-    el.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-
-    el.addEventListener('touchstart', onDown, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: true });
-    el.addEventListener('touchend', onUp);
-
-    return () => {
-      el.removeEventListener('mousedown', onDown);
-      el.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      el.removeEventListener('touchstart', onDown);
-      el.removeEventListener('touchmove', onMove);
-      el.removeEventListener('touchend', onUp);
-    };
+    el.addEventListener('mousedown', onDown); el.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+    el.addEventListener('touchstart', onDown, { passive: true }); el.addEventListener('touchmove', onMove, { passive: true }); el.addEventListener('touchend', onUp);
+    return () => { el.removeEventListener('mousedown', onDown); el.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); el.removeEventListener('touchstart', onDown); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onUp); };
   }, []);
 
-  // Optional: translate vertical wheel to horizontal when hovering carousel
+  // Translate vertical wheel to horizontal when hovering carousel
   useEffect(() => {
     const el = containerRef.current; if (!el) return;
-    const onWheel = (e) => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); }
-    };
+    const onWheel = (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
@@ -988,12 +986,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
           <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
-          <span className={`${T.muted2} mx-2`}>/</span>
+        <span className={`${T.muted2} mx-2`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
-          {cat.label}
-        </h2>
+        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>{cat.label}</h2>
         {blurb && <p className={`mt-1 ${T.muted}`}>{blurb}</p>}
       </div>
 
@@ -1022,25 +1018,25 @@ function PortfolioPage({ T, cat, state, onBack }) {
               <figure
                 key={it.sha || i}
                 data-idx={i}
-                className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300 ${i===activeIndex ? 'scale-[1.01]' : 'scale-[0.995]'} `}
+                className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300 ${i===activeIndex ? 'scale-[1.01]' : 'scale-[0.995]'}`}
               >
                 {/* Subtle shadow on active */}
                 <div className={`rounded-2xl ${i===activeIndex ? 'shadow-lg' : 'shadow-sm'}`}>
                   <img
                     src={it.url}
-                    srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`} // #7 responsive quality
+                    srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`}
                     sizes="(max-width: 640px) 82vw, (max-width: 1024px) 72vw, 58vw"
                     alt={`${cat.label} — ${it.name}`}
                     className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
-                    onClick={() => setLbIdx(i)} // #4 open lightbox
+                    onClick={() => setLbIdx(i)}
                   />
                 </div>
               </figure>
             ))}
           </div>
 
-          {/* #3 Thumbnail strip (replaces dots) */}
+          {/* Thumbnail strip */}
           <div className="mt-2 flex gap-2 overflow-x-auto px-2 pb-1" style={{ scrollbarWidth: 'none' }}>
             {items.map((it, i) => (
               <button
@@ -1054,7 +1050,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
             ))}
           </div>
 
-          {/* #4 Lightbox */}
+          {/* Lightbox */}
           {lbIdx >= 0 && (
             <div
               className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
@@ -1078,8 +1074,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
   );
 }
 
-
-// Wrapper (hash-driven view switch)
+/* ===================== Wrapper (hash-driven view switch) ===================== */
 function Portfolio({ T }) {
   const [states, setStates] = useState(() =>
     GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
@@ -1111,7 +1106,7 @@ function Portfolio({ T }) {
     setView("landing"); setActiveIdx(-1);
   }, [hash]);
 
-  // fetch images
+  // fetch images for all categories on mount (served from manifest when available)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1137,7 +1132,6 @@ function Portfolio({ T }) {
   }
   return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} />;
 }
-
 
 /* ===================== Tiles (one line) ===================== */
 function SectionTiles({ openId, setOpenId, T }) {
@@ -1238,8 +1232,8 @@ function BookingSection({ T }) {
               As an aspiring photographer from Kanchipuram, I work across fashion, portraits, candids and events. I run a client-first process: I listen to your brief and offer tailored recommendations on looks, lighting, locations and timelines so the day feels effortless. On set, I work with calm, unobtrusive direction to create space for genuine expression. My aim is to capture the beauty, joy and decisive moments that define your story—delivering images that feel personal, polished and purposeful.
             </p>
             <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
-              <li>Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Professional Headshots, Street Fashion, Studio </li>
-               <li>Kit: Nikon D7500, Softboxes (octa & strip), multiple flashes, light modifiers</li>
+              <li>Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Professional Headshots, Street Fashion, Studio</li>
+              <li>Kit: Nikon D7500, Softboxes (octa & strip), multiple flashes, light modifiers</li>
               <li>{SERVICE_CITIES}</li>
             </ul>
 
