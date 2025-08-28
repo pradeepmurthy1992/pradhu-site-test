@@ -976,13 +976,18 @@ function useEdgeSpacers(containerRef, slideSelector) {
 
 /* Landing (tiles) */
 // ==== Toggle either/both ====
+// ==== Toggles (keep both if you like) ====
 const SHOW_ARROW_NAV = true;
 const SHOW_CHIP_BAR  = true;
 
 function PortfolioLanding({ T, cats, states, openCat }) {
   const [hoverIdx, setHoverIdx] = useState(-1);
   const [active, setActive] = useState(0);        // centered tile index
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+  const [edge, setEdge] = useState(null);         // 'left' | 'right' | null
   const trackRef = useRef(null);
+  const wrapRef = useRef(null);
 
   // center-detect the active tile while scrolling/resizing
   useEffect(() => {
@@ -992,6 +997,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
     const update = () => {
       const slides = Array.from(root.querySelectorAll("[data-idx]"));
       if (!slides.length) return;
+
       const center = root.scrollLeft + root.clientWidth / 2;
       let best = 0, bestDist = Infinity;
       slides.forEach((el, i) => {
@@ -1000,6 +1006,12 @@ function PortfolioLanding({ T, cats, states, openCat }) {
         if (d < bestDist) { bestDist = d; best = i; }
       });
       setActive(best);
+
+      // can scroll left/right?
+      const sl = root.scrollLeft;
+      const max = root.scrollWidth - root.clientWidth;
+      setCanLeft(sl > 8);
+      setCanRight(sl < max - 8);
     };
 
     update();
@@ -1019,20 +1031,36 @@ function PortfolioLanding({ T, cats, states, openCat }) {
 
   const go = (dir) => scrollToIdx(active + dir);
 
+  // show arrows only when mouse near container edges
+  const EDGE_ZONE = 88; // px from left/right edge to reveal arrow
+  const onPointerMove = (e) => {
+    const host = wrapRef.current;
+    if (!host) return;
+    const r = host.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    if (x <= EDGE_ZONE) setEdge("left");
+    else if (x >= r.width - EDGE_ZONE) setEdge("right");
+    else setEdge(null);
+  };
+  const onPointerLeave = () => setEdge(null);
+
+  const showLeft  = SHOW_ARROW_NAV && edge === "left"  && canLeft;
+  const showRight = SHOW_ARROW_NAV && edge === "right" && canRight;
+
   return (
     <section id="portfolio" className="py-2">
       <header className="mb-4">
         <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Portfolio
         </h2>
-        <p className={`mt-2 ${T.muted}`}>Hover a card; use chips or arrows to browse.</p>
+        <p className={`mt-2 ${T.muted}`}>Hover near the edges for arrows, or use chips to jump.</p>
       </header>
 
       {/* Chip bar (single line) */}
       {SHOW_CHIP_BAR && (
         <nav
           aria-label="Categories"
-          className="mb-4 -mx-2 sm:-mx-3 md:-mx-4 px-2 sm:px-3 md:px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mb-3 -mx-2 sm:-mx-3 md:-mx-4 px-2 sm:px-3 md:px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <ul className="flex gap-2">
             {cats.map((c, i) => {
@@ -1055,27 +1083,45 @@ function PortfolioLanding({ T, cats, states, openCat }) {
         </nav>
       )}
 
-      <div className="relative">
-        {/* Arrow nav */}
+      <div
+        ref={wrapRef}
+        className="relative"
+        onMouseMove={onPointerMove}
+        onMouseLeave={onPointerLeave}
+      >
+        {/* Arrow nav (hidden by default, appear near edges & only if scrollable) */}
         {SHOW_ARROW_NAV && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
+          <>
             <button
               type="button"
               onClick={() => go(-1)}
-              className="pointer-events-auto mx-1 md:mx-2 h-9 w-9 md:h-10 md:w-10 rounded-full bg-white/80 hover:bg-white border border-black/10 grid place-items-center"
+              className={[
+                "pointer-events-auto absolute left-2 md:left-3 top-1/2 -translate-y-1/2",
+                "h-9 w-9 md:h-10 md:w-10 rounded-full border grid place-items-center transition",
+                "backdrop-blur-sm text-white",
+                showLeft ? "bg-black/40 hover:bg-black/55 border-white/20 opacity-100" : "opacity-0 pointer-events-none",
+              ].join(" ")}
               aria-label="Previous category"
+              style={{ zIndex: 5 }}
             >
               ←
             </button>
+
             <button
               type="button"
               onClick={() => go(1)}
-              className="pointer-events-auto mx-1 md:mx-2 h-9 w-9 md:h-10 md:w-10 rounded-full bg-white/80 hover:bg-white border border-black/10 grid place-items-center"
+              className={[
+                "pointer-events-auto absolute right-2 md:right-3 top-1/2 -translate-y-1/2",
+                "h-9 w-9 md:h-10 md:w-10 rounded-full border grid place-items-center transition",
+                "backdrop-blur-sm text-white",
+                showRight ? "bg-black/40 hover:bg-black/55 border-white/20 opacity-100" : "opacity-0 pointer-events-none",
+              ].join(" ")}
               aria-label="Next category"
+              style={{ zIndex: 5 }}
             >
               →
             </button>
-          </div>
+          </>
         )}
 
         {/* Track (compact tilt deck) */}
@@ -1153,6 +1199,7 @@ function PortfolioLanding({ T, cats, states, openCat }) {
     </section>
   );
 }
+
 
 
 
