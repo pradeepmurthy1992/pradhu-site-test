@@ -32,20 +32,20 @@ const GH_BRANCH = "main";
 /* Categories (paths must match manifest keys/folders) */
 const GH_CATEGORIES = [
   { label: "Celeb Corner", path: "Celeb Corner" },
-   { label: "Editorial", path: "Editorial" },
+  { label: "Editorial", path: "Editorial" },
   { label: "Model Portfolio", path: "Model Portfolio" },
-   { label: "Designer Portfolio", path: "Designer Portfolio" },
-   { label: "Conceptual", path: "Conceptual" },
-   { label: "Fantasy", path: "Fantasy" },
-   { label: "Eyes", path: "Eyes" },
-   { label: "Fashion", path: "Fashion" },
-   { label: "High Fashion", path: "High Fashion" },
-   { label: "Street Fashion", path: "Street Fashion" },
-   { label: "Headshots", path: "Headshots" },
-   { label: "Kidz Zone", path: "Kidz Zone" },
-   { label: "Maternity", path: "Maternity" },
-   { label: "Streets", path: "Streets" },
-   { label: "Landscapes", path: "Landscapes" },
+  { label: "Designer Portfolio", path: "Designer Portfolio" },
+  { label: "Conceptual", path: "Conceptual" },
+  { label: "Fantasy", path: "Fantasy" },
+  { label: "Eyes", path: "Eyes" },
+  { label: "Fashion", path: "Fashion" },
+  { label: "High Fashion", path: "High Fashion" },
+  { label: "Street Fashion", path: "Street Fashion" },
+  { label: "Headshots", path: "Headshots" },
+  { label: "Kidz Zone", path: "Kids Zone" },
+  { label: "Maternity", path: "Maternity" },
+  { label: "Streets", path: "Streets" },
+  { label: "Landscapes", path: "Landscapes" },
 ];
 
 const GH_CATEGORIES_EXT = {
@@ -115,7 +115,6 @@ const GH_CATEGORIES_EXT = {
   },
 };
 
-
 const GH_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /* Brand / contact */
@@ -142,45 +141,29 @@ const SECTION_IDS = ["portfolio", "services", "pricing", "faq"]; // tiles
 /* Wide container helper */
 const CONTAINER = "mx-auto w-full max-w-[1800px] px-4 xl:px-8";
 
-
 // --- Category tile covers (optional explicit picks; case-insensitive) ---
-// Put just the filename that lives inside the category folder.
-// e.g. "Fashion/lookbook_cover.jpg" => "lookbook_cover.jpg"
 const TILE_COVERS = {
   // Events: "00_cover.jpg",
   // Fashion: "lookbook_cover.jpg",
 };
 
-// Choose cover in this order:
-// 1) explicit mapping above (case-insensitive)
-// 2) filename contains "cover" / "tile" / "hero" / "thumb"  (case-insensitive)
-// 3) filename starts with leading zeros (e.g. "00_...jpg")
-// 4) first image
+// Choose tile cover: explicit > token > leading zeros > first image
 function pickCoverForCategory(images = [], label = "") {
   if (!images?.length) return "";
-
-  // 1) explicit pick (case-insensitive)
   const want = TILE_COVERS[label];
   if (want) {
     const wantLc = want.toLowerCase().trim();
-    const match = images.find(it => (it.name || "").toLowerCase() === wantLc);
+    const match = images.find((it) => (it.name || "").toLowerCase() === wantLc);
     if (match) return match.url;
   }
-
-  // 2) token in filename
-  const byToken = images.find(it =>
+  const byToken = images.find((it) =>
     /(^|[-_])(cover|tile|hero|thumb)([-_]|\.|$)/i.test(it.name || "")
   );
   if (byToken) return byToken.url;
-
-  // 3) leading zeros
-  const byLeadingZero = images.find(it => /^0+/.test(it.name || ""));
+  const byLeadingZero = images.find((it) => /^0+/.test(it.name || ""));
   if (byLeadingZero) return byLeadingZero.url;
-
-  // 4) fallback
   return images[0]?.url || "";
 }
-
 
 /* ===================== Load Fonts (Inter + Playfair Display) ===================== */
 function HeadFonts() {
@@ -375,8 +358,7 @@ function Icon({ name, className = "h-4 w-4" }) {
 
 /* ===================== Intro Overlay ===================== */
 function IntroOverlay({ onClose }) {
-  // Phases: 1) typeName → 2) typeBrand → 3) revealImg → 4) titles
-  const [phase, setPhase] = useState("typeName");
+  const [phase, setPhase] = useState("typeName"); // typeName → typeBrand → revealImg → titles
   const NAME = "PRADEEP MOORTHY";
   const BRAND = "PRADHU PHOTOGRAPHY";
   const [typed, setTyped] = useState("");
@@ -387,18 +369,13 @@ function IntroOverlay({ onClose }) {
   const rippleLayerRef = useRef(null);
 
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Enter") onClose();
-    };
+    const onKey = (e) => { if (e.key === "Enter") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const onAnyClick = (e) => makeRipple(e.clientX, e.clientY, true);
-  const onPressEnterButton = (e) => {
-    e.stopPropagation();
-    onClose();
-  };
+  const onPressEnterButton = (e) => { e.stopPropagation(); onClose(); };
 
   function makeRipple(x, y, withFlash = false) {
     const host = rippleLayerRef.current;
@@ -419,11 +396,9 @@ function IntroOverlay({ onClose }) {
       host.appendChild(flash);
       setTimeout(() => flash.remove(), 360);
     }
-
     setTimeout(() => ripple.remove(), 800);
   }
 
-  // Typing logic
   useEffect(() => {
     const str = phase === "typeName" ? NAME : phase === "typeBrand" ? BRAND : "";
     if (!str) return;
@@ -452,14 +427,12 @@ function IntroOverlay({ onClose }) {
     return () => clearInterval(typingRef.current);
   }, [phase]);
 
-  // after image reveal, move to titles
   useEffect(() => {
     if (phase !== "revealImg") return;
     const t = setTimeout(() => setPhase("titles"), 1400);
     return () => clearTimeout(t);
   }, [phase]);
 
-  // impact ripples when titles overshoot
   const impactRipple = (delayMs = 0) => {
     setTimeout(() => {
       const img = imgRef.current;
@@ -489,9 +462,7 @@ function IntroOverlay({ onClose }) {
           ].join(" ")}
         >
           <span>{text}</span>
-          {step === 0 ? (
-            <span className="cin-caret w-[0.5ch] inline-block align-bottom" />
-          ) : null}
+          {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
         </div>
       </div>
     </div>
@@ -506,11 +477,9 @@ function IntroOverlay({ onClose }) {
       onClick={onAnyClick}
     >
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
-
       {phase === "typeName" && renderTyping(typed)}
       {phase === "typeBrand" && renderTyping(typed)}
 
-      {/* Layout for revealImg/titles */}
       <div
         className={[
           "h-full w-full grid items-center justify-center p-6",
@@ -518,7 +487,6 @@ function IntroOverlay({ onClose }) {
           phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100",
         ].join(" ")}
       >
-        {/* Left image */}
         <div className="relative cin-image-holder">
           <img
             ref={imgRef}
@@ -533,19 +501,13 @@ function IntroOverlay({ onClose }) {
           <div className="pointer-events-none absolute inset-0 cin-vignette" />
         </div>
 
-        {/* Right titles */}
         <div
           className={[
             "flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
-          <div
-            className={[
-              "text-[12px] tracking-[0.25em] opacity-80",
-              phase === "titles" ? "cin-overshoot-in" : "",
-            ].join(" ")}
-          >
+          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>
             VISUAL & HONEST STORIES
           </div>
 
@@ -598,7 +560,6 @@ async function ghListFolder(owner, repo, path, ref) {
   const nocache =
     new URLSearchParams(window.location.search).get("refresh") === "1";
 
-  // Cache first
   try {
     const ts = Number(sessionStorage.getItem(tkey) || 0);
     if (!nocache && ts && now - ts < GH_CACHE_TTL_MS) {
@@ -607,12 +568,11 @@ async function ghListFolder(owner, repo, path, ref) {
     }
   } catch {}
 
-  // 1) Try manifest
   try {
     if (MEDIA_MANIFEST_URL) {
       const mRes = await fetch(MEDIA_MANIFEST_URL, { cache: "no-store" });
       if (mRes.ok) {
-        const manifest = await mRes.json(); // { "Events": ["Events/..", ...], ... }
+        const manifest = await mRes.json();
         const list = (manifest[path] || [])
           .filter(Boolean)
           .map((fullPath) => ({
@@ -630,17 +590,12 @@ async function ghListFolder(owner, repo, path, ref) {
         }
       }
     }
-  } catch {
-    // fallthrough to API
-  }
+  } catch {}
 
-  // 2) Contents API fallback (in case manifest missing)
   const url = `${GH_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(
     repo
   )}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
-  const res = await fetch(url, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
+  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (!res.ok) {
     if (res.status === 403) {
       console.warn("GitHub rate limit hit. Manifest recommended.");
@@ -651,9 +606,7 @@ async function ghListFolder(owner, repo, path, ref) {
     throw new Error(`GitHub API ${res.status}: ${text}`);
   }
   const json = await res.json();
-  const files = Array.isArray(json)
-    ? json.filter((it) => it.type === "file")
-    : [];
+  const files = Array.isArray(json) ? json.filter((it) => it.type === "file") : [];
   const imgs = files
     .filter((f) => isImageName(f.name))
     .map((f) => ({ name: f.name, url: f.download_url, sha: f.sha, size: f.size }));
@@ -680,12 +633,10 @@ function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-[2]">
         <div className={`${CONTAINER} pb-10 md:pb-14 text-white`}>
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
-            Collect the Treasure.{" "}
-            <span className="opacity-90">ONE PIECE at a time.</span>
+            Collect the Treasure. <span className="opacity-90">ONE PIECE at a time.</span>
           </h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
-            Fashion · Portraits · Candids · Portfolio · Professional headshots ·
-            Events .
+            Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
           </p>
         </div>
       </div>
@@ -719,21 +670,14 @@ function FaqSection({ T, showTitle = true }) {
   return (
     <section id="faq" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           FAQ
         </h2>
       )}
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         {items.map((item) => (
-          <details
-            key={item.q}
-            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-          >
-            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>
-              {item.q}
-            </summary>
+          <details key={item.q} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
+            <summary className={`cursor-pointer font-medium ${T.navTextStrong}`}>{item.q}</summary>
             <p className={`mt-2 text-sm ${T.muted}`}>{item.a}</p>
           </details>
         ))}
@@ -747,9 +691,7 @@ function ServicesSection({ T, showTitle = true }) {
   return (
     <section id="services" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Services
         </h2>
       )}
@@ -855,9 +797,7 @@ function PricingSection({ T, showTitle = true }) {
   return (
     <section id="pricing" className="py-2">
       {showTitle && (
-        <h2
-          className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-        >
+        <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           Pricing (indicative)
         </h2>
       )}
@@ -867,10 +807,7 @@ function PricingSection({ T, showTitle = true }) {
 
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {tiers.map((t) => (
-          <article
-            key={t.name}
-            className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-          >
+          <article key={t.name} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
             <div className="flex items-baseline justify-between">
               <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
               <span className="text-sm opacity-80">{t.price}</span>
@@ -942,25 +879,20 @@ function Input({
 
 /* ===================== Portfolio ===================== */
 
-/** Helper: compute left/right "edge spacers" so first/last can center */
+// (Optional utility, kept if needed later)
 function useEdgeSpacers(containerRef, slideSelector) {
   const [spacer, setSpacer] = useState(0);
-
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-
     const compute = () => {
       const slide = root.querySelector(slideSelector);
       if (!slide) return setSpacer(0);
       const cw = root.clientWidth;
       const sw = slide.clientWidth || 0;
-      const s = Math.max(0, (cw - sw) / 2);
-      setSpacer(s);
+      setSpacer(Math.max(0, (cw - sw) / 2));
     };
-
     const rafCompute = () => requestAnimationFrame(compute);
-
     compute();
     const ro = new ResizeObserver(rafCompute);
     ro.observe(root);
@@ -970,27 +902,23 @@ function useEdgeSpacers(containerRef, slideSelector) {
       window.removeEventListener("resize", rafCompute);
     };
   }, [containerRef, slideSelector]);
-
   return spacer;
 }
 
-/* Landing (tiles) */
-// ==== Toggle either/both ====
-// ==== Toggles (keep both if you like) ====
-// You can keep these toggles at top-level or inline inside the component.
+// Toggles for landing UI
 const SHOW_ARROW_NAV = true;
-const SHOW_CHIP_BAR  = true;
+const SHOW_CHIP_BAR = true;
 
 function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   const [hoverIdx, setHoverIdx] = useState(-1);
-  const [active, setActive] = useState(0);        // centered tile index
+  const [active, setActive] = useState(0);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
-  const [edge, setEdge] = useState(null);         // 'left' | 'right' | null
+  const [edge, setEdge] = useState(null); // 'left' | 'right' | null
   const trackRef = useRef(null);
   const wrapRef = useRef(null);
 
-  // Center the given initial index when we land on this view
+  // Center the given initial index when landing
   useEffect(() => {
     if (!trackRef.current) return;
     const idx = Math.min(cats.length - 1, Math.max(0, initialIdx));
@@ -1001,7 +929,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
     });
   }, [initialIdx, cats.length]);
 
-  // Track which tile is visually centered and whether we can scroll left/right
+  // Track centered tile & scrollability
   useEffect(() => {
     const root = trackRef.current;
     if (!root) return;
@@ -1011,11 +939,15 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
       if (!slides.length) return;
 
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0, bestDist = Infinity;
+      let best = 0,
+        bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) { bestDist = d; best = i; }
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
       });
       setActive(best);
 
@@ -1042,8 +974,8 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
 
   const go = (dir) => scrollToIdx(active + dir);
 
-  // Reveal arrows only when the pointer is near the left/right edge
-  const EDGE_ZONE = 88; // px from edge
+  // Edge-hover reveal for arrows
+  const EDGE_ZONE = 88;
   const onPointerMove = (e) => {
     const host = wrapRef.current;
     if (!host) return;
@@ -1055,7 +987,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   };
   const onPointerLeave = () => setEdge(null);
 
-  const showLeft  = SHOW_ARROW_NAV && edge === "left"  && canLeft;
+  const showLeft = SHOW_ARROW_NAV && edge === "left" && canLeft;
   const showRight = SHOW_ARROW_NAV && edge === "right" && canRight;
 
   return (
@@ -1067,7 +999,6 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
         <p className={`mt-2 ${T.muted}`}>Hover near the edges for arrows, or use chips to jump.</p>
       </header>
 
-      {/* Chip bar (single line, optional) */}
       {SHOW_CHIP_BAR && (
         <nav
           aria-label="Categories"
@@ -1094,13 +1025,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
         </nav>
       )}
 
-      <div
-        ref={wrapRef}
-        className="relative"
-        onMouseMove={onPointerMove}
-        onMouseLeave={onPointerLeave}
-      >
-        {/* Edge-hover arrow nav */}
+      <div ref={wrapRef} className="relative" onMouseMove={onPointerMove} onMouseLeave={onPointerLeave}>
         {SHOW_ARROW_NAV && (
           <>
             <button
@@ -1135,7 +1060,6 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
           </>
         )}
 
-        {/* The horizontal deck */}
         <div
           ref={trackRef}
           className="
@@ -1148,7 +1072,6 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
           aria-label="Category cards"
           tabIndex={0}
         >
-          {/* Left spacer so the first tile can be centered */}
           <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
 
           {cats.map((c, i) => {
@@ -1173,7 +1096,8 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
                   className={[
                     "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
                     isActive ? "ring-2 ring-white/80" : "",
-                    T.cardBorder, T.cardBg,
+                    T.cardBorder,
+                    T.cardBg,
                   ].join(" ")}
                   style={{ transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})` }}
                   aria-label={`Open ${c.label}`}
@@ -1204,7 +1128,6 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
             );
           })}
 
-          {/* Right spacer so the last tile can be centered */}
           <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
         </div>
       </div>
@@ -1212,32 +1135,8 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   );
 }
 
-
-
-
-
-/* Page (horizontal carousel) — transform-free & edge-centered */
-// === replace your existing PortfolioPage with this ===
+/* Page (horizontal carousel) — with floating quick-exit pill */
 function PortfolioPage({ T, cat, state, onBack }) {
-  const items = state.images || [];
-  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-
-  const containerRef = useRef(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1); // -1 = closed
-   
-
-
-  // Track which slide is centered
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-
-    const update = () => {
-      const slides = Array.from(root.querySelectorAll("[data-idx]"));
-      if (!slides.length) return;
-
-      const center = root.scrollLeft + root.cfunction PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
@@ -1255,12 +1154,16 @@ function PortfolioPage({ T, cat, state, onBack }) {
       if (!slides.length) return;
 
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0, bestDist = Infinity;
+      let best = 0,
+        bestDist = Infinity;
 
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) { bestDist = d; best = i; }
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
       });
       setActiveIndex(best);
     };
@@ -1282,9 +1185,9 @@ function PortfolioPage({ T, cat, state, onBack }) {
       el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     };
     const onKey = (e) => {
-      if (lbIdx >= 0) return; // don't move the carousel under the lightbox
+      if (lbIdx >= 0) return;
       if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft")  go(-1);
+      if (e.key === "ArrowLeft") go(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1295,7 +1198,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
-  // ------ Lightbox controls ------
+  // Lightbox controls
   const navLightbox = (dir) => {
     setLbIdx((i) => {
       if (i < 0) return i;
@@ -1313,13 +1216,22 @@ function PortfolioPage({ T, cat, state, onBack }) {
     }
   };
 
-  // Keyboard navigation inside the lightbox (Esc/←/→)
+  // Keyboard inside lightbox
   useEffect(() => {
     if (lbIdx < 0) return;
     const onKey = (e) => {
-      if (e.key === "Escape")     { e.preventDefault(); closeLbAndSync(); }
-      if (e.key === "ArrowRight") { e.preventDefault(); navLightbox(1); }
-      if (e.key === "ArrowLeft")  { e.preventDefault(); navLightbox(-1); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeLbAndSync();
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        navLightbox(1);
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        navLightbox(-1);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1342,7 +1254,9 @@ function PortfolioPage({ T, cat, state, onBack }) {
       {/* Sticky breadcrumb + title */}
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+            Portfolio
+          </button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
@@ -1383,10 +1297,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
             "
           >
             {/* Spacer so first image can center with empty left */}
-            <div
-              className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]"
-              aria-hidden="true"
-            />
+            <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
 
             {items.map((it, i) => (
               <figure
@@ -1414,10 +1325,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
             ))}
 
             {/* Spacer so last image can center with empty right */}
-            <div
-              className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]"
-              aria-hidden="true"
-            />
+            <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
           </div>
 
           {/* Thumbnails */}
@@ -1426,10 +1334,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
               {items.map((it, i) => (
                 <button
                   key={`thumb-${i}`}
-                  onClick={() => {
-                    const el = containerRef.current?.querySelector(`[data-idx="${i}"]`);
-                    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-                  }}
+                  onClick={() => goTo(i)}
                   aria-label={`Go to image ${i + 1}`}
                   className={`
                     h-14 w-10 rounded-md overflow-hidden border transition
@@ -1454,7 +1359,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
               <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); navLightbox(-1); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navLightbox(-1);
+                  }}
                   className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
                   aria-label="Previous image"
                 >
@@ -1465,7 +1373,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
 
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); navLightbox(1); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navLightbox(1);
+                  }}
                   className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
                   aria-label="Next image"
                 >
@@ -1479,7 +1390,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 src={items[lbIdx].url}
                 alt={items[lbIdx].name}
                 className="max-h-[92vh] max-w-[92vw] object-contain cursor-zoom-out"
-                onClick={(e) => { e.stopPropagation(); closeLbAndSync(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeLbAndSync();
+                }}
               />
             </div>
           )}
@@ -1490,7 +1404,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
     </section>
   );
 }
-
 
 /* Wrapper (hash-driven view switch) */
 function Portfolio({ T }) {
@@ -1504,12 +1417,16 @@ function Portfolio({ T }) {
   const openCat = (label) => {
     const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
     if (idx < 0) return;
+    try {
+      sessionStorage.setItem("pradhu:lastCat", String(idx));
+    } catch {}
     setActiveIdx(idx);
     setView("page");
     setHash(`#portfolio/${encodeURIComponent(label)}`);
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
   const goLanding = () => {
     setView("landing");
     setActiveIdx(-1);
@@ -1540,19 +1457,10 @@ function Portfolio({ T }) {
       const results = await Promise.all(
         GH_CATEGORIES.map(async (cat) => {
           try {
-            const list = await ghListFolder(
-              GH_OWNER,
-              GH_REPO,
-              cat.path,
-              GH_BRANCH
-            );
+            const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
             return { loading: false, error: "", images: list };
           } catch (e) {
-            return {
-              loading: false,
-              error: e?.message || "Failed to load",
-              images: [],
-            };
+            return { loading: false, error: e?.message || "Failed to load", images: [] };
           }
         })
       );
@@ -1568,12 +1476,23 @@ function Portfolio({ T }) {
     const st = states[activeIdx] || { loading: true, error: "", images: [] };
     return <PortfolioPage T={T} cat={cat} state={st} onBack={goLanding} />;
   }
+
+  const lastIdx = (() => {
+    try {
+      const n = Number(sessionStorage.getItem("pradhu:lastCat") || 0);
+      return Number.isFinite(n) ? n : 0;
+    } catch {
+      return 0;
+    }
+  })();
+
   return (
     <PortfolioLanding
       T={T}
       cats={GH_CATEGORIES}
       states={states}
       openCat={openCat}
+      initialIdx={lastIdx}
     />
   );
 }
@@ -1588,10 +1507,7 @@ function SectionTiles({ openId, setOpenId, T }) {
   ];
   return (
     <div id="tiles" className={`${CONTAINER} pt-10`}>
-      <div
-        className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2"
-        style={{ scrollbarWidth: "none" }}
-      >
+      <div className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2" style={{ scrollbarWidth: "none" }}>
         {tiles.map((t) => {
           const active = openId === t.id;
           return (
@@ -1609,12 +1525,7 @@ function SectionTiles({ openId, setOpenId, T }) {
               aria-controls={`section-${t.id}`}
               aria-expanded={active}
             >
-              <Icon
-                name={t.icon}
-                className={`h-4 w-4 ${
-                  active ? "opacity-100" : "opacity-60"
-                }`}
-              />
+              <Icon name={t.icon} className={`h-4 w-4 ${active ? "opacity-100" : "opacity-60"}`} />
               <span className="text-sm">{t.label}</span>
             </button>
           );
@@ -1664,8 +1575,7 @@ function BookingSection({ T }) {
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
-    if (form.date && form.date < minDateStr)
-      missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
+    if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
     if (missing.length) {
       setNote(`Please fill: ${missing.join(", ")}`);
       return;
@@ -1701,11 +1611,8 @@ function BookingSection({ T }) {
     <section id="booking" className={`${T.sectionAltBg} border-t ${T.footerBorder}`}>
       <div className={`${CONTAINER} py-16`}>
         <div className="grid md:grid-cols-2 gap-8 items-start">
-          {/* LEFT: About */}
           <div id="about">
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
               About PRADHU
             </h2>
             <p className={`mt-3 ${T.muted}`}>
@@ -1761,39 +1668,16 @@ function BookingSection({ T }) {
             </div>
           </div>
 
-          {/* RIGHT: Enquiry */}
           <div>
-            <h2
-              className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}
-            >
+            <h2 className={`text-3xl md:text-4xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
               Enquire / Book
             </h2>
-            <p className={`mt-2 ${T.muted}`}>
-              Share details and I’ll reply with availability and a quote.
-            </p>
+            <p className={`mt-2 ${T.muted}`}>Share details and I’ll reply with availability and a quote.</p>
 
-            <form
-              onSubmit={onSubmit}
-              className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}
-            >
+            <form onSubmit={onSubmit} className={`mt-6 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
               <div className="grid grid-cols-1 gap-4">
-                <Input
-                  T={T}
-                  label="Name"
-                  name="name"
-                  value={form.name}
-                  onChange={onChange}
-                  required
-                />
-                <Input
-                  T={T}
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={onChange}
-                  required
-                />
+                <Input T={T} label="Name" name="name" value={form.name} onChange={onChange} required />
+                <Input T={T} label="Email" name="email" type="email" value={form.email} onChange={onChange} required />
                 <Input
                   T={T}
                   label="Phone"
@@ -1824,9 +1708,7 @@ function BookingSection({ T }) {
                     }}
                     className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
                   />
-                  <p className="text-xs opacity-70 mt-1">
-                    Earliest selectable: {fmtHuman(minDateStr)}
-                  </p>
+                  <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
                 </div>
 
                 <div>
@@ -1850,13 +1732,11 @@ function BookingSection({ T }) {
                       value={form.service}
                       onChange={onChange}
                     >
-                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map(
-                        (s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        )
-                      )}
+                      {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -1910,9 +1790,7 @@ export default function App() {
   const [showIntro, setShowIntro] = useState(() => {
     if (!INTRO_ENABLED) return false;
     const url = new URL(window.location.href);
-    const forced =
-      url.searchParams.get(INTRO_FORCE_QUERY) === "1" ||
-      url.hash === INTRO_FORCE_HASH;
+    const forced = url.searchParams.get(INTRO_FORCE_QUERY) === "1" || url.hash === INTRO_FORCE_HASH;
     if (forced) return true;
     if (!INTRO_REMEMBER) return true;
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
@@ -1984,9 +1862,7 @@ export default function App() {
 
   return (
     <main
-      className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${
-        theme === "light" ? "bg-dots-light" : "bg-dots-dark"
-      }`}
+      className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${theme === "light" ? "bg-dots-light" : "bg-dots-dark"}`}
     >
       <HeadFonts />
       {showIntro && <IntroOverlay onClose={closeIntro} />}
@@ -1994,7 +1870,6 @@ export default function App() {
       {/* NAVBAR */}
       <header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
         <nav className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}>
-          {/* Brand */}
           <div className="min-w-0">
             <p
               className={`font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none ${T.navTextStrong}
@@ -2004,7 +1879,6 @@ export default function App() {
             </p>
           </div>
 
-          {/* Desktop nav */}
           <ul className="hidden lg:flex items-center gap-2 text-sm">
             {NAV_ITEMS.map(({ label, id, icon }) => (
               <li key={id}>
@@ -2023,7 +1897,6 @@ export default function App() {
             ))}
           </ul>
 
-          {/* Right controls */}
           <div className="flex items-center gap-2">
             <ThemeSlider theme={theme} setTheme={setTheme} />
             <button
@@ -2037,7 +1910,6 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Mobile sheet */}
         {menuOpen && (
           <div id="mobile-menu" className={`lg:hidden border-t ${T.navBorder} ${T.sectionAltBg} w-full`}>
             <div className={`${CONTAINER} px-2 py-3`}>
@@ -2091,9 +1963,7 @@ export default function App() {
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
         <div className={`${CONTAINER} py-10 text-sm`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <p className={T.muted}>
-              © {new Date().getFullYear()} PRADHU — All rights reserved.
-            </p>
+            <p className={T.muted}>© {new Date().getFullYear()} PRADHU — All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -2111,18 +1981,11 @@ function ThemeSlider({ theme, setTheme }) {
     if (e.key === "ArrowRight") setDark();
   };
   return (
-    <div
-      className="relative h-9 w-[150px] select-none"
-      role="tablist"
-      aria-label="Theme"
-      onKeyDown={onKeyDown}
-    >
+    <div className="relative h-9 w-[150px] select-none" role="tablist" aria-label="Theme" onKeyDown={onKeyDown}>
       <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
       <div
         className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
-          isDark
-            ? "translate-x-full bg-neutral-900"
-            : "translate-x-0 bg-white border border-neutral-300"
+          isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"
         }`}
         aria-hidden="true"
       />
@@ -2135,17 +1998,8 @@ function ThemeSlider({ theme, setTheme }) {
           onClick={setLight}
           className="flex items-center justify-center gap-1.5 px-3 h-full"
         >
-          <Icon
-            name="sun"
-            className={`h-4 w-4 ${
-              isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"
-            }`}
-          />
-          <span
-            className={`text-xs ${
-              isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"
-            }`}
-          >
+          <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
+          <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>
             Light
           </span>
         </button>
@@ -2157,19 +2011,8 @@ function ThemeSlider({ theme, setTheme }) {
           onClick={setDark}
           className="flex items-center justify-center gap-1.5 px-3 h-full"
         >
-          <Icon
-            name="moon"
-            className={`h-4 w-4 ${
-              isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"
-            }`}
-          />
-          <span
-            className={`text-xs ${
-              isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"
-            }`}
-          >
-            Dark
-          </span>
+          <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
+          <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>Dark</span>
         </button>
       </div>
     </div>
