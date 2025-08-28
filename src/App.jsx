@@ -1226,17 +1226,24 @@ function PortfolioPage({ T, cat, state, onBack }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lbIdx, setLbIdx] = useState(-1); // -1 = closed
    
-{/* Floating quick-exit button */}
-<div className="fixed left-3 md:left-4 top-[calc(72px+10px)] z-20">
-  <button
-    type="button"
-    onClick={onBack}
-    aria-label="Back to categories"
-    className="rounded-full px-3 py-1.5 text-sm border border-white/30 bg-black/30 text-white backdrop-blur-sm hover:bg-black/50"
-  >
-    ← All categories
-  </button>
-</div>
+
+
+  // Track which slide is centered
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const update = () => {
+      const slides = Array.from(root.querySelectorAll("[data-idx]"));
+      if (!slides.length) return;
+
+      const center = root.scrollLeft + root.cfunction PortfolioPage({ T, cat, state, onBack }) {
+  const items = state.images || [];
+  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
+
+  const containerRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [lbIdx, setLbIdx] = useState(-1); // -1 = closed
 
   // Track which slide is centered
   useEffect(() => {
@@ -1297,7 +1304,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
     });
   };
 
-  // Close lightbox and sync background carousel to the same image
   const closeLbAndSync = () => {
     const idx = lbIdx;
     setLbIdx(-1);
@@ -1321,140 +1327,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
 
   return (
     <section className="py-2" id="portfolio">
-      {/* Sticky breadcrumb + title */}
-      <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
-        <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
-          <span className={`mx-2 ${T.muted2}`}>/</span>
-          <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
-        </div>
-        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
-          {cat.label}
-        </h2>
-        {blurb ? <p className={`mt-1 ${T.muted}`}>{blurb}</p> : null}
-      </div>
-
-      {/* Right side counter */}
-      <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none">
-        {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
-      </div>
-
-      {/* Horizontal carousel */}
-      {state.error ? (
-        <div className="text-red-500">{String(state.error)}</div>
-      ) : state.loading ? (
-        <div className={`${T.muted2}`}>Loading…</div>
-      ) : items.length ? (
-        <>
-          <div
-            ref={containerRef}
-            role="region"
-            aria-roledescription="carousel"
-            aria-label={`${cat.label} images`}
-            aria-live="polite"
-            tabIndex={0}
-            className="
-              mx-auto max-w-[1600px]
-              overflow-x-auto
-              snap-x snap-mandatory
-              flex items-stretch gap-4 sm:gap-5 md:gap-6
-              px-2 sm:px-3 md:px-4
-              pb-6
-              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-              select-none
-            "
-          >
-            {/* Spacer so first image can cfunction PortfolioPage({ T, cat, state, onBack }) {
-  const items = state.images || [];
-  const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-
-  const containerRef = useRef(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1); // -1 = closed
-
-  // Track which slide is centered
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-
-    const update = () => {
-      const slides = Array.from(root.querySelectorAll("[data-idx]"));
-      if (!slides.length) return;
-
-      const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0, bestDist = Infinity;
-
-      slides.forEach((el, i) => {
-        const mid = el.offsetLeft + el.offsetWidth / 2;
-        const d = Math.abs(mid - center);
-        if (d < bestDist) { bestDist = d; best = i; }
-      });
-      setActiveIndex(best);
-    };
-
-    update();
-    root.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      root.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-
-  // Keyboard for page carousel (disabled while lightbox is open)
-  useEffect(() => {
-    const go = (dir) => {
-      const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
-      const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-      el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    };
-    const onKey = (e) => {
-      if (lbIdx >= 0) return;
-      if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft")  go(-1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, items.length, lbIdx]);
-
-  const goTo = (idx) => {
-    const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  };
-
-  // ------ Lightbox controls ------
-  const navLightbox = (dir) => {
-    setLbIdx((i) => {
-      if (i < 0) return i;
-      const next = Math.min(items.length - 1, Math.max(0, i + dir));
-      return next;
-    });
-  };
-
-  const closeLbAndSync = () => {
-    const idx = lbIdx;
-    setLbIdx(-1);
-    if (idx >= 0) {
-      const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
-      el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    }
-  };
-
-  // Keyboard for lightbox
-  useEffect(() => {
-    if (lbIdx < 0) return;
-    const onKey = (e) => {
-      if (e.key === "Escape")     { e.preventDefault(); closeLbAndSync(); }
-      if (e.key === "ArrowRight") { e.preventDefault(); navLightbox(1); }
-      if (e.key === "ArrowLeft")  { e.preventDefault(); navLightbox(-1); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lbIdx, items.length]);
-
-  return (
-    <section className="py-2" id="portfolio">
-      {/* Floating quick-exit button (now INSIDE the return + higher z-index) */}
+      {/* Floating quick-exit button */}
       <div className="fixed left-3 md:left-4 top-[calc(72px+10px)] z-[60]">
         <button
           type="button"
