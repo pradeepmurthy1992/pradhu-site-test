@@ -1474,16 +1474,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
           {items.map((it, i) => (
             <article key={it.sha || i} ref={registerVItem} data-idx={i} className="snap-start">
               <div className={`rounded-2xl border shadow-sm ${T.cardBg} ${T.cardBorder}`}>
-                {/* optional mini header */}
-                <div className="flex items-center justify-between px-4 pt-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="inline-flex h-7 w-7 rounded-full bg-neutral-300/40" />
-                    <span className={`${T.navTextStrong}`}>{cat.label}</span>
-                  </div>
-                  <span className={`text-[11px] ${T.muted2}`}>{i + 1} / {items.length}</span>
-                </div>
-
-                <div className="mt-2">
+                 <div className="mt-2">
                   <button
                     onClick={() => { setActiveIndex(i); setLbIdx(i); }}
                     className="block w-full"
