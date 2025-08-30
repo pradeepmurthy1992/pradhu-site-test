@@ -1406,12 +1406,38 @@ function PortfolioPage({ T, cat, state, onBack }) {
       <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none z-[60]">
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
-{/* Mobile layout switch (auto-cycles V → H → G → M) */}
-<MobileLayoutFab
-  visible={lbIdx < 0}
-  layout={layout}
-  setLayout={setLayout}
-/>
+{/* Mobile-only FAB to cycle layouts */}
+{lbIdx < 0 && (
+  <div className="sm:hidden fixed right-4 bottom-20 z-[60]">
+    <button
+      type="button"
+      onClick={() => {
+        const order = ["vertical", "carousel", "grid", "masonry"];
+        const i = order.indexOf(layout);
+        const next = order[(i + 1) % order.length];
+        setLayout(next);
+        try { window.navigator.vibrate?.(15); } catch {}
+      }}
+      aria-label={`Change layout (current: ${layout})`}
+      className="
+        h-12 w-12 rounded-full
+        bg-black/70 text-white
+        border border-white/20
+        shadow-lg backdrop-blur
+        flex items-center justify-center
+        active:scale-95 transition
+      "
+    >
+      {layout === "vertical" ? "▥" :
+       layout === "carousel" ? "▭" :
+       layout === "grid" ? "▦" : "▤"}
+    </button>
+    <div className="mt-1 text-[10px] px-2 py-0.5 rounded bg-black/55 text-white/90">
+      {layout.charAt(0).toUpperCase() + layout.slice(1)}
+    </div>
+  </div>
+)}
+
 
       {/* Content */}
       {state.error ? (
