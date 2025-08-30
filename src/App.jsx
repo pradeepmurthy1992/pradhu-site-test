@@ -1315,41 +1315,55 @@ function PortfolioPage({ T, cat, state, onBack }) {
   };
 
   useEffect(() => {
-    if (layout !== "vertical") return;
-    const root = vWrapRef.current;
-    if (!root) return;
+  if (layout !== "vertical") return;
+  const root = vWrapRef.current;
+  if (!root) return;
 
-    const snapLine = () => root.getBoundingClientRect().top + window.innerHeight * 0.2;
+  // compute a snap/reference line inside the inner scroller
+  const snapLine = () => {
+    const r = root.getBoundingClientRect();
+    return r.top + root.clientHeight * 0.2; // 20% from top of the inner feed
+  };
 
-    let ticking = false;
-    const handle = () => {
-      ticking = false;
-      const line = snapLine();
-      let best = 0, bestDist = Infinity;
-      vItemRefs.current.forEach((el, i) => {
-        const r = el.getBoundingClientRect();
-        const d = Math.abs(r.top - line);
-        if (d < bestDist) { best = i; bestDist = d; }
-      });
-      setActiveIndex(best);
-    };
+  let ticking = false;
+  const handle = () => {
+    ticking = false;
+    const line = snapLine();
+    let best = 0, bestDist = Infinity;
+    vItemRefs.current.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      const d = Math.abs(r.top - line);
+      if (d < bestDist) { best = i; bestDist = d; }
+    });
+    setActiveIndex(best);
+  };
 
-    const onScroll = () => {
-      if (!ticking) { ticking = true; requestAnimationFrame(handle); }
-    };
+  const onScroll = () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(handle); }
+  };
 
-    const io = new IntersectionObserver(onScroll, { root: null, threshold: [0, 0.5, 1] });
-    vItemRefs.current.forEach((el) => io.observe(el));
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    handle();
+  // IMPORTANT: use the feed as the IO "root"
+  const io = new IntersectionObserver(onScroll, {
+    root,               // <-- was null (viewport); must be the inner scroller
+    threshold: [0, 0.5, 1],
+  });
 
-    return () => {
-      io.disconnect();
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [layout, items.length]);
+  // watch each item so onScroll fires as they enter/leave the feed
+  vItemRefs.current.forEach((el) => io.observe(el));
+
+  // also listen to the feed’s own scroll/resize
+  root.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+
+  handle();
+
+  return () => {
+    io.disconnect();
+    root.removeEventListener("scroll", onScroll);
+    window.removeEventListener("resize", onScroll);
+  };
+}, [layout, items.length]);
+
 
   return (
     <section className="py-2" id="portfolio">
