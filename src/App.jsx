@@ -1200,23 +1200,28 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
 
 /* Page (horizontal carousel) — with floating quick-exit pill */
 /* ===================== Portfolio Page (adds Vertical feed) ===================== */
+/* ===================== Portfolio Page (Vertical default + all layouts) ===================== */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
-  // --- Shared state ---
-  const containerRef = useRef(null);        // for horizontal carousel
+  // --- Refs / shared state ---
+  const containerRef = useRef(null);        // horizontal carousel
   const [activeIndex, setActiveIndex] = useState(0);
   const [lbIdx, setLbIdx] = useState(-1);   // -1 = lightbox closed
 
-  // --- Layout mode: 'carousel' | 'grid' | 'masonry' | 'vertical'
+  // --- Layout mode: 'carousel' | 'grid' | 'masonry' | 'vertical' (DEFAULT vertical) ---
   const LAYOUTS = ["carousel", "grid", "masonry", "vertical"];
   const [layout, setLayout] = useState(() => {
     const u = new URL(window.location.href);
-    const q = (u.searchParams.get("layout") || "").toLowerCase();
-    return LAYOUTS.includes(q) ? q : "carousel";
+    const q =
+      (u.searchParams.get("layout") ||
+        sessionStorage.getItem("pradhu:layout") ||
+        "").toLowerCase();
+    return LAYOUTS.includes(q) ? q : "vertical";
   });
   useEffect(() => {
+    try { sessionStorage.setItem("pradhu:layout", layout); } catch {}
     const u = new URL(window.location.href);
     u.searchParams.set("layout", layout);
     window.history.replaceState(null, "", u.toString());
@@ -1231,7 +1236,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
     const update = () => {
       const slides = Array.from(root.querySelectorAll("[data-idx]"));
       if (!slides.length) return;
-
       const center = root.scrollLeft + root.clientWidth / 2;
       let best = 0, bestDist = Infinity;
       slides.forEach((el, i) => {
@@ -1251,7 +1255,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
   }, [layout]);
 
-  // --- Keyboard navigation (works for both horizontal & vertical) ---
+  // --- Keyboard: layout toggles + nav (disabled when lightbox is open) ---
   useEffect(() => {
     const goHoriz = (dir) => {
       const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
@@ -1259,13 +1263,22 @@ function PortfolioPage({ T, cat, state, onBack }) {
       el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     };
     const onKey = (e) => {
-      if (lbIdx >= 0) return; // disabled when lightbox open
+      if (lbIdx >= 0) return;
+
+      // Quick layout toggles
+      const k = e.key.toLowerCase();
+      if (k === "v") return setLayout("vertical");
+      if (k === "h") return setLayout("carousel");
+      if (k === "g") return setLayout("grid");
+      if (k === "m") return setLayout("masonry");
+
+      // Navigation
       if (layout === "vertical") {
         if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); vertGo(1); }
         if (e.key === "ArrowUp"   || e.key === "PageUp")   { e.preventDefault(); vertGo(-1); }
         if (e.key === "Home") vertGoTo(0);
         if (e.key === "End")  vertGoTo(items.length - 1);
-      } else {
+      } else if (layout === "carousel") {
         if (e.key === "ArrowRight") goHoriz(1);
         if (e.key === "ArrowLeft")  goHoriz(-1);
         if (e.key === "Home")       goHoriz(-999);
@@ -1276,7 +1289,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [activeIndex, items.length, lbIdx, layout]);
 
-  // --- Helpers for horizontal carousel direct jump from thumbs ---
+  // --- Horizontal helper (thumbs jump) ---
   const goTo = (idx) => {
     const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
     el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
@@ -1299,75 +1312,53 @@ function PortfolioPage({ T, cat, state, onBack }) {
     }
   };
 
-  // --- Vertical feed: refs + tracking (Insta-style) ---
+  // --- Vertical feed plumbing (Insta-style) ---
   const vWrapRef = useRef(null);
   const vItemRefs = useRef([]);
   vItemRefs.current = [];
   const registerVItem = (el) => { if (el) vItemRefs.current.push(el); };
 
-  const vertGoTo = (idx) => {
-    const el = vItemRefs.current[idx];
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-  const vertGo = (dir) => {
-    const next = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
-    vertGoTo(next);
-  };
+  const vertGoTo = (idx) => vItemRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const vertGo = (dir) => vertGoTo(Math.min(items.length - 1, Math.max(0, activeIndex + dir)));
 
   useEffect(() => {
-  if (layout !== "vertical") return;
-  const root = vWrapRef.current;
-  if (!root) return;
+    if (layout !== "vertical") return;
+    const root = vWrapRef.current;
+    if (!root) return;
 
-  // compute a snap/reference line inside the inner scroller
-  const snapLine = () => {
-    const r = root.getBoundingClientRect();
-    return r.top + root.clientHeight * 0.2; // 20% from top of the inner feed
-  };
+    const snapLine = () => root.getBoundingClientRect().top + window.innerHeight * 0.2;
 
-  let ticking = false;
-  const handle = () => {
-    ticking = false;
-    const line = snapLine();
-    let best = 0, bestDist = Infinity;
-    vItemRefs.current.forEach((el, i) => {
-      const r = el.getBoundingClientRect();
-      const d = Math.abs(r.top - line);
-      if (d < bestDist) { best = i; bestDist = d; }
-    });
-    setActiveIndex(best);
-  };
+    let ticking = false;
+    const handle = () => {
+      ticking = false;
+      const line = snapLine();
+      let best = 0, bestDist = Infinity;
+      vItemRefs.current.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const d = Math.abs(r.top - line);
+        if (d < bestDist) { best = i; bestDist = d; }
+      });
+      setActiveIndex(best);
+    };
 
-  const onScroll = () => {
-    if (!ticking) { ticking = true; requestAnimationFrame(handle); }
-  };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(handle); } };
 
-  // IMPORTANT: use the feed as the IO "root"
-  const io = new IntersectionObserver(onScroll, {
-    root,               // <-- was null (viewport); must be the inner scroller
-    threshold: [0, 0.5, 1],
-  });
+    const io = new IntersectionObserver(onScroll, { root: null, threshold: [0, 0.5, 1] });
+    vItemRefs.current.forEach((el) => io.observe(el));
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    handle();
 
-  // watch each item so onScroll fires as they enter/leave the feed
-  vItemRefs.current.forEach((el) => io.observe(el));
-
-  // also listen to the feed’s own scroll/resize
-  root.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll);
-
-  handle();
-
-  return () => {
-    io.disconnect();
-    root.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", onScroll);
-  };
-}, [layout, items.length]);
-
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [layout, items.length]);
 
   return (
     <section className="py-2" id="portfolio">
-      {/* Floating quick-exit button */}
+      {/* Back pill */}
       <div className="fixed left-3 md:left-4 top-[calc(72px+10px)] z-[60]">
         <button
           type="button"
@@ -1379,12 +1370,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
         </button>
       </div>
 
-      {/* Sticky breadcrumb + title */}
+      {/* Header */}
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
-            Portfolio
-          </button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
@@ -1394,7 +1383,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {blurb ? <p className={`mt-1 ${T.muted}`}>{blurb}</p> : null}
       </div>
 
-      {/* Layout picker */}
+      {/* Layout switcher */}
       <div className="mb-4 flex items-center gap-2">
         <span className="text-xs opacity-70">Layout:</span>
         {LAYOUTS.map((k) => (
@@ -1403,23 +1392,28 @@ function PortfolioPage({ T, cat, state, onBack }) {
             onClick={() => setLayout(k)}
             className={[
               "text-xs rounded-full border px-3 py-1 transition",
-              layout === k
-                ? "bg-black text-white border-black"
-                : "border-neutral-300 hover:bg-neutral-100"
+              layout === k ? "bg-black text-white border-black" : "border-neutral-300 hover:bg-neutral-100"
             ].join(" ")}
             aria-pressed={layout === k}
           >
             {k.charAt(0).toUpperCase() + k.slice(1)}
           </button>
         ))}
+        <span className="text-[11px] opacity-60 ml-1">(H/V/G/M keys)</span>
       </div>
 
-      {/* Right side counter (works for all layouts) */}
+      {/* Counter */}
       <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none z-[60]">
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
+{/* Mobile layout switch (auto-cycles V → H → G → M) */}
+<MobileLayoutFab
+  visible={lbIdx < 0}
+  layout={layout}
+  setLayout={setLayout}
+/>
 
-      {/* ======== GALLERY CONDITIONAL ======== */}
+      {/* Content */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
@@ -1427,7 +1421,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       ) : !items.length ? (
         <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
       ) : layout === "vertical" ? (
-        /* ===== VERTICAL (Insta-style) ===== */
+        /* ===== VERTICAL (Insta-style feed) ===== */
         <div
           ref={vWrapRef}
           className="
@@ -1443,7 +1437,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
           {items.map((it, i) => (
             <article key={it.sha || i} ref={registerVItem} data-idx={i} className="snap-start">
               <div className={`rounded-2xl border shadow-sm ${T.cardBg} ${T.cardBorder}`}>
-                {/* optional mini header */}
                 <div className="flex items-center justify-between px-4 pt-3">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="inline-flex h-7 w-7 rounded-full bg-neutral-300/40" />
@@ -1477,7 +1470,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
           ))}
         </div>
       ) : layout === "carousel" ? (
-        /* ===== HORIZONTAL CAROUSEL (original) ===== */
+        /* ===== HORIZONTAL CAROUSEL ===== */
         <>
           <div
             ref={containerRef}
@@ -1497,7 +1490,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
               select-none
             "
           >
-            {/* Spacer so first image can center with empty left */}
             <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
             {items.map((it, i) => (
               <figure
@@ -1521,7 +1513,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 </div>
               </figure>
             ))}
-            {/* Spacer so last image can center with empty right */}
             <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
           </div>
 
@@ -1562,7 +1553,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
           </div>
         </div>
       ) : (
-        /* ===== MASONRY (CSS columns quick version) ===== */
+        /* ===== MASONRY (CSS columns) ===== */
         <div className="mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4">
           <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4 md:gap-5 [column-fill:_balance]">
             {items.map((it, i) => (
@@ -1579,7 +1570,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
         </div>
       )}
 
-      {/* ===== Lightbox (unchanged) ===== */}
+      {/* Lightbox (shared) */}
       {lbIdx >= 0 && (
         <div
           className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
@@ -1621,6 +1612,48 @@ function PortfolioPage({ T, cat, state, onBack }) {
         </div>
       )}
     </section>
+  );
+}
+function MobileLayoutFab({ visible, layout, setLayout }) {
+  // cycle order: vertical → carousel → grid → masonry
+  const order = ["vertical", "carousel", "grid", "masonry"];
+  const nextLayout = () => {
+    const i = order.indexOf(layout);
+    const n = order[(i + 1) % order.length];
+    setLayout(n);
+    // haptic hint (iOS/Android) – ignored on web that doesn’t support it
+    try { window.navigator.vibrate?.(10); } catch {}
+  };
+
+  // icon glyph per layout (simple emoji to avoid extra assets)
+  const glyph =
+    layout === "vertical" ? "▥" :
+    layout === "carousel" ? "▭" :
+    layout === "grid" ? "▦" : "▤";
+
+  if (!visible) return null;
+
+  return (
+    <div className="sm:hidden fixed right-4 bottom-20 z-[60]">
+      <button
+        type="button"
+        onClick={nextLayout}
+        aria-label={`Change layout (current: ${layout})`}
+        className="
+          h-12 w-12 rounded-full
+          bg-black/70 text-white
+          border border-white/20
+          shadow-lg backdrop-blur
+          flex items-center justify-center
+          active:scale-95 transition
+        "
+      >
+        <span className="text-xl leading-none">{glyph}</span>
+      </button>
+      <div className="mt-2 px-2 py-1 text-[10px] rounded-lg bg-black/55 text-white/90">
+        {layout.charAt(0).toUpperCase() + layout.slice(1)}
+      </div>
+    </div>
   );
 }
 
