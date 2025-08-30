@@ -1487,10 +1487,11 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 </div>
 
                 {(it.caption || it.name) && (
-                  <div className="px-4 py-3">
-                    <p className={`text-sm ${T.muted}`}>{it.caption || it.name}</p>
-                  </div>
-                )}
+  <div className="px-4 py-3">
+    <p className={`text-sm ${T.muted}`}>{it.caption || it.name}</p>
+  </div>
+)}
+
               </div>
             </article>
           ))}
