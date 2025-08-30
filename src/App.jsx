@@ -23,8 +23,8 @@ const INTRO_FORCE_QUERY = "intro"; // use ?intro=1
 const INTRO_FORCE_HASH = "#intro";
 
 const HERO_BG_URL =
-  // FIX #2a: ensure correct filename (avoid double dot)
-   "https://github.com/pradeepmurthy1992/pradhu-site-test/blob/212bc1f22bc6a32b70ae87d0bb104c38f7c3848e/baseimg/02.jpg"
+  "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/212bc1f22bc6a32b70ae87d0bb104c38f7c3848e/baseimg/02.jpg";
+
 
 /* Manifest-first: avoids GitHub API rate limits */
 const MEDIA_MANIFEST_URL =
@@ -1199,16 +1199,32 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
 }
 
 /* Page (horizontal carousel) — with floating quick-exit pill */
+/* ===================== Portfolio Page (adds Vertical feed) ===================== */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
-  const containerRef = useRef(null);
+  // --- Shared state ---
+  const containerRef = useRef(null);        // for horizontal carousel
   const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1); // -1 = closed
+  const [lbIdx, setLbIdx] = useState(-1);   // -1 = lightbox closed
 
-  // Track which slide is centered
+  // --- Layout mode: 'carousel' | 'grid' | 'masonry' | 'vertical'
+  const LAYOUTS = ["carousel", "grid", "masonry", "vertical"];
+  const [layout, setLayout] = useState(() => {
+    const u = new URL(window.location.href);
+    const q = (u.searchParams.get("layout") || "").toLowerCase();
+    return LAYOUTS.includes(q) ? q : "carousel";
+  });
   useEffect(() => {
+    const u = new URL(window.location.href);
+    u.searchParams.set("layout", layout);
+    window.history.replaceState(null, "", u.toString());
+  }, [layout]);
+
+  // --- Track centered tile for horizontal carousel ---
+  useEffect(() => {
+    if (layout !== "carousel") return;
     const root = containerRef.current;
     if (!root) return;
 
@@ -1217,16 +1233,11 @@ function PortfolioPage({ T, cat, state, onBack }) {
       if (!slides.length) return;
 
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0,
-        bestDist = Infinity;
-
+      let best = 0, bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) {
-          bestDist = d;
-          best = i;
-        }
+        if (d < bestDist) { bestDist = d; best = i; }
       });
       setActiveIndex(best);
     };
@@ -1238,30 +1249,40 @@ function PortfolioPage({ T, cat, state, onBack }) {
       root.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, []);
+  }, [layout]);
 
-  // Keyboard for page carousel (disabled while lightbox is open)
+  // --- Keyboard navigation (works for both horizontal & vertical) ---
   useEffect(() => {
-    const go = (dir) => {
+    const goHoriz = (dir) => {
       const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
       const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
       el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     };
     const onKey = (e) => {
-      if (lbIdx >= 0) return;
-      if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft") go(-1);
+      if (lbIdx >= 0) return; // disabled when lightbox open
+      if (layout === "vertical") {
+        if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); vertGo(1); }
+        if (e.key === "ArrowUp"   || e.key === "PageUp")   { e.preventDefault(); vertGo(-1); }
+        if (e.key === "Home") vertGoTo(0);
+        if (e.key === "End")  vertGoTo(items.length - 1);
+      } else {
+        if (e.key === "ArrowRight") goHoriz(1);
+        if (e.key === "ArrowLeft")  goHoriz(-1);
+        if (e.key === "Home")       goHoriz(-999);
+        if (e.key === "End")        goHoriz(+999);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, items.length, lbIdx]);
+  }, [activeIndex, items.length, lbIdx, layout]);
 
+  // --- Helpers for horizontal carousel direct jump from thumbs ---
   const goTo = (idx) => {
     const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
     el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
-  // Lightbox controls
+  // --- Lightbox controls (unchanged) ---
   const navLightbox = (dir) => {
     setLbIdx((i) => {
       if (i < 0) return i;
@@ -1269,36 +1290,66 @@ function PortfolioPage({ T, cat, state, onBack }) {
       return next;
     });
   };
-
   const closeLbAndSync = () => {
     const idx = lbIdx;
     setLbIdx(-1);
-    if (idx >= 0) {
+    if (layout === "carousel" && idx >= 0) {
       const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
       el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
   };
 
-  // Keyboard inside lightbox
+  // --- Vertical feed: refs + tracking (Insta-style) ---
+  const vWrapRef = useRef(null);
+  const vItemRefs = useRef([]);
+  vItemRefs.current = [];
+  const registerVItem = (el) => { if (el) vItemRefs.current.push(el); };
+
+  const vertGoTo = (idx) => {
+    const el = vItemRefs.current[idx];
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const vertGo = (dir) => {
+    const next = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
+    vertGoTo(next);
+  };
+
   useEffect(() => {
-    if (lbIdx < 0) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeLbAndSync();
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        navLightbox(1);
-      }
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        navLightbox(-1);
-      }
+    if (layout !== "vertical") return;
+    const root = vWrapRef.current;
+    if (!root) return;
+
+    const snapLine = () => root.getBoundingClientRect().top + window.innerHeight * 0.2;
+
+    let ticking = false;
+    const handle = () => {
+      ticking = false;
+      const line = snapLine();
+      let best = 0, bestDist = Infinity;
+      vItemRefs.current.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const d = Math.abs(r.top - line);
+        if (d < bestDist) { best = i; bestDist = d; }
+      });
+      setActiveIndex(best);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lbIdx, items.length]);
+
+    const onScroll = () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(handle); }
+    };
+
+    const io = new IntersectionObserver(onScroll, { root: null, threshold: [0, 0.5, 1] });
+    vItemRefs.current.forEach((el) => io.observe(el));
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    handle();
+
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [layout, items.length]);
 
   return (
     <section className="py-2" id="portfolio">
@@ -1310,7 +1361,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
           aria-label="Back to categories"
           className="rounded-full px-3 py-1.5 text-sm border border-white/30 bg-black/30 text-white backdrop-blur-sm hover:bg-black/50"
         >
-            ← All categories
+          ← All categories
         </button>
       </div>
 
@@ -1329,17 +1380,90 @@ function PortfolioPage({ T, cat, state, onBack }) {
         {blurb ? <p className={`mt-1 ${T.muted}`}>{blurb}</p> : null}
       </div>
 
-      {/* Right side counter */}
+      {/* Layout picker */}
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs opacity-70">Layout:</span>
+        {LAYOUTS.map((k) => (
+          <button
+            key={k}
+            onClick={() => setLayout(k)}
+            className={[
+              "text-xs rounded-full border px-3 py-1 transition",
+              layout === k
+                ? "bg-black text-white border-black"
+                : "border-neutral-300 hover:bg-neutral-100"
+            ].join(" ")}
+            aria-pressed={layout === k}
+          >
+            {k.charAt(0).toUpperCase() + k.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Right side counter (works for all layouts) */}
       <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none z-[60]">
         {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
       </div>
 
-      {/* Horizontal carousel */}
+      {/* ======== GALLERY CONDITIONAL ======== */}
       {state.error ? (
         <div className="text-red-500">{String(state.error)}</div>
       ) : state.loading ? (
         <div className={`${T.muted2}`}>Loading…</div>
-      ) : items.length ? (
+      ) : !items.length ? (
+        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
+      ) : layout === "vertical" ? (
+        /* ===== VERTICAL (Insta-style) ===== */
+        <div
+          ref={vWrapRef}
+          className="
+            mx-auto max-w-[980px]
+            px-2 sm:px-3 md:px-4
+            space-y-6 sm:space-y-8
+            overflow-y-auto
+            scroll-smooth
+            snap-y snap-mandatory
+          "
+          style={{ maxHeight: "calc(100vh - 110px)" }}
+        >
+          {items.map((it, i) => (
+            <article key={it.sha || i} ref={registerVItem} data-idx={i} className="snap-start">
+              <div className={`rounded-2xl border shadow-sm ${T.cardBg} ${T.cardBorder}`}>
+                {/* optional mini header */}
+                <div className="flex items-center justify-between px-4 pt-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="inline-flex h-7 w-7 rounded-full bg-neutral-300/40" />
+                    <span className={`${T.navTextStrong}`}>{cat.label}</span>
+                  </div>
+                  <span className={`text-[11px] ${T.muted2}`}>{i + 1} / {items.length}</span>
+                </div>
+
+                <div className="mt-2">
+                  <button
+                    onClick={() => { setActiveIndex(i); setLbIdx(i); }}
+                    className="block w-full"
+                    aria-label={`Open image ${i + 1}`}
+                  >
+                    <img
+                      src={it.url}
+                      alt={`${cat.label} — ${it.name}`}
+                      loading="lazy"
+                      className="w-full h-auto max-h-[88vh] object-contain bg-black/5"
+                    />
+                  </button>
+                </div>
+
+                {(it.caption || it.name) && (
+                  <div className="px-4 py-3">
+                    <p className={`text-sm ${T.muted}`}>{it.caption || it.name}</p>
+                  </div>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : layout === "carousel" ? (
+        /* ===== HORIZONTAL CAROUSEL (original) ===== */
         <>
           <div
             ref={containerRef}
@@ -1361,7 +1485,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
           >
             {/* Spacer so first image can center with empty left */}
             <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
-
             {items.map((it, i) => (
               <figure
                 key={it.sha || i}
@@ -1384,7 +1507,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 </div>
               </figure>
             ))}
-
             {/* Spacer so last image can center with empty right */}
             <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
           </div>
@@ -1407,60 +1529,82 @@ function PortfolioPage({ T, cat, state, onBack }) {
               ))}
             </div>
           </div>
-
-          {/* Lightbox */}
-          {lbIdx >= 0 && (
-            <div
-              className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Image viewer"
-              onClick={closeLbAndSync}
-            >
-              <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navLightbox(-1);
-                  }}
-                  className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
-                  aria-label="Previous image"
-                >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navLightbox(1);
-                  }}
-                  className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
-                  aria-label="Next image"
-                >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 6l6 6-6 6" />
-                  </svg>
-                </button>
-              </div>
-
-              <img
-                src={items[lbIdx].url}
-                alt={items[lbIdx].name}
-                className="max-h-[92vh] max-w-[92vw] object-contain cursor-zoom-out"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeLbAndSync();
-                }}
-              />
-            </div>
-          )}
         </>
+      ) : layout === "grid" ? (
+        /* ===== SIMPLE GRID ===== */
+        <div className="mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+            {items.map((it, i) => (
+              <button
+                key={it.sha || i}
+                onClick={() => { setActiveIndex(i); setLbIdx(i); }}
+                className="group block w-full rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition"
+              >
+                <div className="h-44 sm:h-52 md:h-60">
+                  <img src={it.url} alt={`${cat.label} — ${it.name}`} className="h-full w-full object-cover" loading="lazy" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       ) : (
-        <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
+        /* ===== MASONRY (CSS columns quick version) ===== */
+        <div className="mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4 md:gap-5 [column-fill:_balance]">
+            {items.map((it, i) => (
+              <button
+                key={it.sha || i}
+                onClick={() => { setActiveIndex(i); setLbIdx(i); }}
+                className="mb-3 sm:mb-4 md:mb-5 w-full overflow-hidden rounded-2xl border shadow-sm hover:shadow-md transition"
+                style={{ breakInside: "avoid" }}
+              >
+                <img src={it.url} alt={`${cat.label} — ${it.name}`} className="w-full h-auto block" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Lightbox (unchanged) ===== */}
+      {lbIdx >= 0 && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image viewer"
+          onClick={closeLbAndSync}
+        >
+          <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navLightbox(-1); }}
+              className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
+              aria-label="Previous image"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navLightbox(1); }}
+              className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
+              aria-label="Next image"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+
+          <img
+            src={items[lbIdx].url}
+            alt={items[lbIdx].name}
+            className="max-h-[92vh] max-w-[92vw] object-contain cursor-zoom-out"
+            onClick={(e) => { e.stopPropagation(); closeLbAndSync(); }}
+          />
+        </div>
       )}
     </section>
   );
