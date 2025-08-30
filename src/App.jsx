@@ -1574,23 +1574,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
             </div>
           </div>
         </>
-      ) : layout === "grid" ? (
-        /* ===== SIMPLE GRID ===== */
-        <div className="mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-            {items.map((it, i) => (
-              <button
-                key={it.sha || i}
-                onClick={() => { setActiveIndex(i); setLbIdx(i); }}
-                className="group block w-full rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition"
-              >
-                <div className="h-44 sm:h-52 md:h-60">
-                  <img src={it.url} alt={cat.label} className="h-full w-full object-cover" loading="lazy" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
       ) : (
         /* ===== MASONRY (CSS columns) ===== */
         <div className="mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4">
