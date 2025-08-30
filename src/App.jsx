@@ -24,7 +24,7 @@ const INTRO_FORCE_HASH = "#intro";
 
 const HERO_BG_URL =
   // FIX #2a: ensure correct filename (avoid double dot)
-   "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/blob/abcb574b204ab8360d2641919f258608f372f737/baseimg/02.jpg"
+   "https://github.com/pradeepmurthy1992/pradhu-site-test/blob/212bc1f22bc6a32b70ae87d0bb104c38f7c3848e/baseimg/02.jpg"
 
 /* Manifest-first: avoids GitHub API rate limits */
 const MEDIA_MANIFEST_URL =
