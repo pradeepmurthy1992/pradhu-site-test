@@ -3,6 +3,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 /* ============================================================
    PRADHU — Dual Theme (Light/Dark) + Cinematic Intro + Portfolio
    (manifest-first image loading + centered edge handling)
+   v2025-08-30: Fixes 1,2,3,5
+   - #1 Pricing Turnaround: valid UL markup
+   - #2 Booking: email/phone validation + WhatsApp CTA
+   - #3 Intro overlay: focus trap + a11y polish
+   - #5 Portfolio: empty/failed media notice banner
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -18,7 +23,9 @@ const INTRO_FORCE_QUERY = "intro"; // use ?intro=1
 const INTRO_FORCE_HASH = "#intro";
 
 const HERO_BG_URL =
-  "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/5a13fa5f50b380a30762e6d0f3d74ab44eb505a5/baseimg/02..jpg";
+  // FIX #2a: ensure correct filename (avoid double dot)
+  "https://raw.githubusercontent.com/pradeepmurthy1992/pradeepmurthy1992.github.io-assets/main/baseimg/02.jpg" ||
+  "https://raw.githubusercontent.com/pradeepmurthy1992/pradhu-site-test/5a13fa5f50b380a30762e6d0f3d74ab44eb505a5/baseimg/02.jpg";
 
 /* Manifest-first: avoids GitHub API rate limits */
 const MEDIA_MANIFEST_URL =
@@ -356,7 +363,7 @@ function Icon({ name, className = "h-4 w-4" }) {
   }
 }
 
-/* ===================== Intro Overlay ===================== */
+/* ===================== Intro Overlay (Fix #3: focus trap + aria-modal) ===================== */
 function IntroOverlay({ onClose }) {
   const [phase, setPhase] = useState("typeName"); // typeName → typeBrand → revealImg → titles
   const NAME = "PRADEEP MOORTHY";
@@ -368,14 +375,48 @@ function IntroOverlay({ onClose }) {
   const imgRef = useRef(null);
   const rippleLayerRef = useRef(null);
 
+  const dialogRef = useRef(null);
+  const enterBtnRef = useRef(null);
+
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Enter") onClose(); };
+    // focus the dialog (for SR) and the first button
+    enterBtnRef.current?.focus({ preventScroll: true });
+    const onKey = (e) => {
+      if (e.key === "Enter") onClose();
+      // Trap focus with Tab
+      if (e.key === "Tab") {
+        const focusable = dialogRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || !focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const onAnyClick = (e) => makeRipple(e.clientX, e.clientY, true);
-  const onPressEnterButton = (e) => { e.stopPropagation(); onClose(); };
+  const onPressEnterButton = (e) => {
+    e.stopPropagation();
+    onClose();
+  };
 
   function makeRipple(x, y, withFlash = false) {
     const host = rippleLayerRef.current;
@@ -462,7 +503,9 @@ function IntroOverlay({ onClose }) {
           ].join(" ")}
         >
           <span>{text}</span>
-          {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
+          {step === 0 ? (
+            <span className="cin-caret w-[0.5ch] inline-block align-bottom" />
+          ) : null}
         </div>
       </div>
     </div>
@@ -470,10 +513,12 @@ function IntroOverlay({ onClose }) {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 bg-black text-white"
       style={{ zIndex: 9999 }}
       role="dialog"
       aria-label="Intro overlay"
+      aria-modal="true"
       onClick={onAnyClick}
     >
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
@@ -507,7 +552,12 @@ function IntroOverlay({ onClose }) {
             phase === "titles" ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
-          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>
+          <div
+            className={[
+              "text-[12px] tracking-[0.25em] opacity-80",
+              phase === "titles" ? "cin-overshoot-in" : "",
+            ].join(" ")}
+          >
             VISUAL & HONEST STORIES
           </div>
 
@@ -532,6 +582,7 @@ function IntroOverlay({ onClose }) {
           </div>
 
           <button
+            ref={enterBtnRef}
             onClick={onPressEnterButton}
             className={[
               "rounded-full border border-white/40 px-5 py-2 text-sm",
@@ -825,13 +876,14 @@ function PricingSection({ T, showTitle = true }) {
       </div>
 
       <div className="mt-6 grid md:grid-cols-2 gap-6">
+        {/* FIX #1: p→ul with list items */}
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
           <h4 className={`font-medium ${T.navTextStrong}`}>Turnaround</h4>
-          <p className={`mt-2 text-sm ${T.muted}`}>
+          <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>Portraits / Fashion : 7–12 days. Weddings/events: full gallery in ~3–4 weeks.</li>
             <li>Entire shoot pics will be shared in 3 - 5 days</li>
             <li>Editing timeline starts post the shortlisting of images</li>
-          </p>
+          </ul>
         </div>
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
           <h4 className={`font-medium ${T.navTextStrong}`}>Booking & Policy</h4>
@@ -918,6 +970,11 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   const trackRef = useRef(null);
   const wrapRef = useRef(null);
 
+  // FIX #5: compute global failed/empty state
+  const allLoaded = states.every((s) => !s.loading);
+  const anyImages = states.some((s) => (s.images?.length || 0) > 0);
+  const showMediaBanner = allLoaded && !anyImages;
+
   // Center the given initial index when landing
   useEffect(() => {
     if (!trackRef.current) return;
@@ -997,6 +1054,13 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
           Portfolio
         </h2>
         <p className={`mt-2 ${T.muted}`}>Hover near the edges for arrows, or use chips to jump.</p>
+
+        {showMediaBanner && (
+          <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm p-3">
+            Couldn’t load images right now. If this is a new deploy, ensure your
+            <span className="font-medium"> manifest.json</span> contains category paths, or try a refresh (<code>?refresh=1</code>).
+          </div>
+        )}
       </header>
 
       {SHOW_CHIP_BAR && (
@@ -1247,7 +1311,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
           aria-label="Back to categories"
           className="rounded-full px-3 py-1.5 text-sm border border-white/30 bg-black/30 text-white backdrop-blur-sm hover:bg-black/50"
         >
-          ← All categories
+            ← All categories
         </button>
       </div>
 
@@ -1313,8 +1377,6 @@ function PortfolioPage({ T, cat, state, onBack }) {
                 <div className={`rounded-2xl ${i === activeIndex ? "shadow-lg" : "shadow-sm"}`}>
                   <img
                     src={it.url}
-                    srcSet={`${it.url} 1600w, ${it.url} 1200w, ${it.url} 800w`}
-                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 72vw, 58vw"
                     alt={`${cat.label} — ${it.name}`}
                     className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
@@ -1415,14 +1477,15 @@ function Portfolio({ T }) {
   const [activeIdx, setActiveIdx] = useState(-1);
 
   const openCat = (label) => {
-    const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
+    // normalize label from hash (case-insensitive)
+    const idx = GH_CATEGORIES.findIndex((c) => c.label.toLowerCase() === label.toLowerCase());
     if (idx < 0) return;
     try {
       sessionStorage.setItem("pradhu:lastCat", String(idx));
     } catch {}
     setActiveIdx(idx);
     setView("page");
-    setHash(`#portfolio/${encodeURIComponent(label)}`);
+    setHash(`#portfolio/${encodeURIComponent(GH_CATEGORIES[idx].label)}`);
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -1439,7 +1502,7 @@ function Portfolio({ T }) {
     const seg = hash.split("/");
     if (seg.length >= 2 && seg[1]) {
       const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
-      const idx = GH_CATEGORIES.findIndex((c) => c.label === label);
+      const idx = GH_CATEGORIES.findIndex((c) => c.label.toLowerCase() === label.toLowerCase());
       if (idx >= 0) {
         setActiveIdx(idx);
         setView("page");
@@ -1547,7 +1610,8 @@ function BookingSection({ T }) {
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState({ kind: "", text: "" }); // {kind: 'error'|'info'|'success', text}
+  const [whatsCTA, setWhatsCTA] = useState(""); // FIX #2: success CTA
 
   const minDateStr = useMemo(() => {
     const d = new Date();
@@ -1566,18 +1630,44 @@ function BookingSection({ T }) {
     });
   };
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    setWhatsCTA("");
+    setNote({ kind: "", text: "" });
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // simple validators for India context
+  const isValidEmail = (v) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  const normalizePhone = (v) => v.replace(/[^\d]/g, "");
+  const isValidINPhone = (v) => {
+    const d = normalizePhone(v);
+    // accept 10-digit starting 6-9 or prefixed by 0/91
+    if (/^(?:\+?91)?[6-9]\d{9}$/.test(d)) return true;
+    if (/^0[6-9]\d{9}$/.test(d)) return true;
+    return false;
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setNote("");
+    setNote({ kind: "", text: "" });
+    setWhatsCTA("");
+
     const missing = [];
     if (!form.name.trim()) missing.push("Name");
     if (!form.email.trim()) missing.push("Email");
     if (!form.phone.trim()) missing.push("Phone");
     if (form.date && form.date < minDateStr) missing.push(`Preferred Date (≥ ${fmtHuman(minDateStr)})`);
     if (missing.length) {
-      setNote(`Please fill: ${missing.join(", ")}`);
+      setNote({ kind: "error", text: `Please fill: ${missing.join(", ")}` });
+      return;
+    }
+    if (!isValidEmail(form.email)) {
+      setNote({ kind: "error", text: "Please enter a valid email address." });
+      return;
+    }
+    if (!isValidINPhone(form.phone)) {
+      setNote({ kind: "error", text: "Please enter a valid 10-digit Indian mobile (with or without +91)." });
       return;
     }
 
@@ -1589,6 +1679,21 @@ function BookingSection({ T }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, source: "website" }),
       });
+
+      // success UI
+      const cleanPhone = normalizePhone(form.phone);
+      const waText = encodeURIComponent(
+        `Hi Pradhu! This is ${form.name}. I just sent an enquiry from your website.\nService: ${form.service}\nCity: ${form.city}\nPreferred date: ${form.date ? fmtHuman(form.date) : "TBD"}\nDetails: ${form.message || "—"}`
+      );
+      const waHref =
+        WHATSAPP_NUMBER.includes("X")
+          ? ""
+          : `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}`;
+
+      setNote({ kind: "success", text: "Thanks! Your enquiry was submitted. I’ll reply shortly." });
+      setWhatsCTA(waHref);
+
+      // reset form
       setForm({
         name: "",
         email: "",
@@ -1598,10 +1703,9 @@ function BookingSection({ T }) {
         date: "",
         message: "",
       });
-      setNote("Thanks! Your enquiry was submitted. I’ll reply shortly.");
     } catch (err) {
       console.error(err);
-      setNote("Couldn’t submit right now. Please try again.");
+      setNote({ kind: "error", text: "Couldn’t submit right now. Please try again." });
     } finally {
       setSubmitting(false);
     }
@@ -1702,7 +1806,7 @@ function BookingSection({ T }) {
                       let v = e.target.value;
                       if (v && v < minDateStr) {
                         v = minDateStr;
-                        setNote(`Earliest available date is ${fmtHuman(minDateStr)}.`);
+                        setNote({ kind: "info", text: `Earliest available date is ${fmtHuman(minDateStr)}.` });
                       }
                       setForm({ ...form, date: v });
                     }}
@@ -1756,7 +1860,7 @@ function BookingSection({ T }) {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="submit"
                     disabled={submitting}
@@ -1764,7 +1868,34 @@ function BookingSection({ T }) {
                   >
                     {submitting ? "Submitting…" : "Send Enquiry"}
                   </button>
-                  {note && <span className="text-sm opacity-80">{note}</span>}
+
+                  {/* Note / validations */}
+                  {note.text ? (
+                    <span
+                      className={`text-sm ${
+                        note.kind === "error"
+                          ? "text-red-600"
+                          : note.kind === "success"
+                          ? "text-emerald-600"
+                          : "opacity-80"
+                      }`}
+                    >
+                      {note.text}
+                    </span>
+                  ) : null}
+
+                  {/* FIX #2: WhatsApp CTA on success */}
+                  {whatsCTA && (
+                    <a
+                      href={whatsCTA}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
+                    >
+                      <Icon name="whatsapp" className="h-4 w-4" />
+                      Continue on WhatsApp
+                    </a>
+                  )}
                 </div>
               </div>
             </form>
@@ -1862,6 +1993,8 @@ export default function App() {
 
   return (
     <main
+      // When intro is visible, hide background for SR users
+      aria-hidden={showIntro ? "true" : undefined}
       className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${theme === "light" ? "bg-dots-light" : "bg-dots-dark"}`}
     >
       <HeadFonts />
