@@ -8,6 +8,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
    - #2 Booking: email/phone validation + WhatsApp CTA
    - #3 Intro overlay: focus trap + a11y polish
    - #5 Portfolio: empty/failed media notice banner
+
+   v2025-09-03: Point #1 complete + Analytics hooks
+   - Hero primary CTA (Book a Shoot) + subtle WhatsApp/Call
+   - Global Sticky CTA (desktop pill + mobile bottom bar)
+   - GA4 trackEvent helper
+   - UTMs on WhatsApp CTAs (hero/sticky/booking-success/about)
 ============================================================ */
 
 /* ===================== CONFIG ===================== */
@@ -130,7 +136,7 @@ const SERVICE_CITIES =
 const IG_USERNAME = "pradhu_photography";
 
 /* Enquiry (not exposed in UI) */
-const WHATSAPP_NUMBER = "91XXXXXXXXXX";
+const WHATSAPP_NUMBER = "919322584410";
 
 /* Google Sheets Web App endpoint */
 const SHEET_WEB_APP =
@@ -182,6 +188,13 @@ function HeadFonts() {
     return () => document.head.removeChild(link);
   }, []);
   return null;
+}
+
+/* ===================== GA4 Helper ===================== */
+function trackEvent(name, params = {}) {
+  try {
+    window.gtag?.("event", name, params);
+  } catch {}
 }
 
 /* ===================== THEME TOKENS ===================== */
@@ -669,6 +682,14 @@ async function ghListFolder(owner, repo, path, ref) {
 
 /* ===================== Hero ===================== */
 function Hero() {
+  const waText = encodeURIComponent(
+    "Hi! I’d like to book a shoot via your website (Hero CTA)."
+  );
+  const waHref =
+    WHATSAPP_NUMBER && !WHATSAPP_NUMBER.includes("X")
+      ? `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}&utm_source=site&utm_medium=hero_cta&utm_campaign=booking`
+      : "";
+
   return (
     <section id="home" className="relative min-h-[68vh] md:min-h-[78vh]">
       <img
@@ -688,6 +709,42 @@ function Hero() {
           <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
             Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
           </p>
+
+          {/* Primary CTA row */}
+          <div className="mt-5 flex items-center gap-3">
+            <button
+              onClick={() => {
+                document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                trackEvent("cta_click", { location: "hero", cta: "book" });
+              }}
+              className="rounded-xl bg-white text-black px-5 py-2.5 font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white/70"
+              aria-label="Book a shoot"
+            >
+              Book a Shoot
+            </button>
+
+            {waHref && (
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+                aria-label="Chat on WhatsApp"
+                onClick={() => trackEvent("cta_click", { location: "hero", cta: "whatsapp" })}
+              >
+                WhatsApp
+              </a>
+            )}
+
+            <a
+              href="tel:+919322584410" // TODO: replace with your real phone
+              className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+              aria-label="Call Pradhu"
+              onClick={() => trackEvent("cta_click", { location: "hero", cta: "call" })}
+            >
+              Call
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -790,7 +847,7 @@ function ServicesSection({ T, showTitle = true }) {
           <li>Rush teasers / same-day selects</li>
           <li>Prints, albums and frames</li>
         </ul>
-        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`}>
+        <a href="#booking" className={`${T.link} text-sm mt-3 inline-block`} onClick={() => trackEvent("nav_click", { to: "booking_from_services" })}>
           Enquire for availability →
         </a>
       </div>
@@ -867,7 +924,7 @@ function PricingSection({ T, showTitle = true }) {
                 <li key={line}>{line}</li>
               ))}
             </ul>
-            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`}>
+            <a href="#booking" className={`${T.link} text-sm mt-4 inline-block`} onClick={() => trackEvent("nav_click", { to: "booking_from_pricing" })}>
               Request a quote →
             </a>
           </article>
@@ -1078,6 +1135,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
                       isActive ? T.chipActive : T.chipInactive
                     }`}
                     aria-current={isActive ? "true" : undefined}
+                    onMouseDown={() => trackEvent("portfolio_chip_click", { category: c.label })}
                   >
                     {c.label}
                   </button>
@@ -1155,7 +1213,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
               >
                 <button
                   type="button"
-                  onClick={() => openCat(c.label)}
+                  onClick={() => { openCat(c.label); trackEvent("portfolio_card_open", { category: c.label }); }}
                   className={[
                     "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
                     isActive ? "ring-2 ring-white/80" : "",
@@ -1402,7 +1460,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       <div className="fixed left-3 md:left-4 top-[calc(72px+10px)] z-[60]">
         <button
           type="button"
-          onClick={onBack}
+          onClick={() => { onBack(); trackEvent("portfolio_back_to_categories", { category: cat.label }); }}
           aria-label="Back to categories"
           className="rounded-full px-3 py-1.5 text-sm border border-white/30 bg-black/30 text-white backdrop-blur-sm hover:bg-black/50"
         >
@@ -1413,7 +1471,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       {/* Sticky breadcrumb + title */}
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>
+          <button className={`${T.linkSubtle} text-sm`} onClick={() => { onBack(); trackEvent("breadcrumb_back", { from: cat.label }); }}>
             Portfolio
           </button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
@@ -1428,10 +1486,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
       {/* Layout picker (desktop + mobile chips already in your app) */}
       <div className="mb-4 flex items-center gap-2">
         <span className="text-xs opacity-70">Layout:</span>
-        {LAYOUTS.map((k) => (
+        {["carousel", "masonry", "vertical"].map((k) => (
           <button
             key={k}
-            onClick={() => setLayout(k)}
+            onClick={() => { setLayout(k); trackEvent("layout_change", { category: cat.label, layout: k }); }}
             className={[
               "text-xs rounded-full border px-3 py-1 transition",
               layout === k
@@ -1476,7 +1534,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
               <div className={`rounded-2xl border shadow-sm ${T.cardBg} ${T.cardBorder}`}>
                  <div className="mt-2">
                   <button
-                    onClick={() => { setActiveIndex(i); setLbIdx(i); }}
+                    onClick={() => { setActiveIndex(i); setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
                     className="block w-full"
                     aria-label={`Open image ${i + 1}`}
                   >
@@ -1538,7 +1596,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
                     alt={cat.label}          // no filename
                     className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
-                    onClick={() => setLbIdx(i)}
+                    onClick={() => { setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
                   />
                 </div>
               </figure>
@@ -1552,7 +1610,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
               {items.map((it, i) => (
                 <button
                   key={`thumb-${i}`}
-                  onClick={() => goTo(i)}
+                  onClick={() => { goTo(i); trackEvent("thumb_click", { category: cat.label, idx: i + 1 }); }}
                   aria-label={`Go to image ${i + 1}`}
                   className={`
                     h-14 w-10 rounded-md overflow-hidden border transition
@@ -1572,7 +1630,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
             {items.map((it, i) => (
               <button
                 key={it.sha || i}
-                onClick={() => { setActiveIndex(i); setLbIdx(i); }}
+                onClick={() => { setActiveIndex(i); setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
                 className="mb-3 sm:mb-4 md:mb-5 w-full overflow-hidden rounded-2xl border shadow-sm hover:shadow-md transition"
                 style={{ breakInside: "avoid" }}
               >
@@ -1590,9 +1648,9 @@ function PortfolioPage({ T, cat, state, onBack }) {
           role="dialog"
           aria-modal="true"
           aria-label="Image viewer"
-          onClick={closeLbAndSync}
-          onTouchStart={onLbTouchStart}
-          onTouchEnd={onLbTouchEnd}
+          onClick={() => { closeLbAndSync(); trackEvent("lightbox_close", { category: cat.label }); }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
         >
           {/* edge controls */}
           <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
@@ -1645,6 +1703,96 @@ function MobileLayoutFab({ visible, layout, setLayout }) {
         {layout[0].toUpperCase()}
       </button>
     </div>
+  );
+}
+
+/* ===== Persistent Sticky CTA (hidden when Booking is visible) ===== */
+function StickyCTA({ T }) {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const booking = document.getElementById("booking");
+    if (!booking) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const inView = entries.some(e => e.isIntersecting && e.intersectionRatio > 0.3);
+        setVisible(!inView);
+      },
+      { threshold: [0, 0.3, 1] }
+    );
+    io.observe(booking);
+    return () => io.disconnect();
+  }, []);
+
+  if (!visible) return null;
+
+  const waText = encodeURIComponent("Hi! I’d like to book a shoot via your website (Sticky CTA).");
+  const waHref =
+    WHATSAPP_NUMBER && !WHATSAPP_NUMBER.includes("X")
+      ? `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}&utm_source=site&utm_medium=sticky_cta&utm_campaign=booking`
+      : "";
+
+  return (
+    <>
+      {/* Desktop: floating pill (bottom-right) */}
+      <div className="hidden sm:flex fixed right-4 bottom-6 z-[70] items-center gap-2 rounded-full shadow-lg border px-3 py-2 backdrop-blur bg-white/90 text-black">
+        <button
+          onClick={() => {
+            document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            trackEvent("cta_click", { location: "sticky", cta: "book" });
+          }}
+          className="rounded-full bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
+          aria-label="Book a shoot"
+        >
+          Book a Shoot
+        </button>
+        {waHref && (
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border px-3 py-2 text-sm hover:bg-black/5"
+            aria-label="WhatsApp chat"
+            onClick={() => trackEvent("cta_click", { location: "sticky", cta: "whatsapp" })}
+          >
+            WhatsApp
+          </a>
+        )}
+      </div>
+
+      {/* Mobile: full-width bottom bar */}
+      <div className="sm:hidden fixed inset-x-0 bottom-0 z-[70]">
+        <div className="mx-2 mb-2 rounded-2xl shadow-xl border overflow-hidden bg-white/95">
+          <div className="flex">
+            <button
+              onClick={() => {
+                document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                trackEvent("cta_click", { location: "sticky_mobile", cta: "book" });
+              }}
+              className="flex-1 bg-black text-white py-3 font-medium"
+              aria-label="Book a shoot"
+            >
+              Book a Shoot
+            </button>
+            {waHref && (
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noreferrer"
+                className="w-[44%] bg-white py-3 text-center text-sm font-medium"
+                aria-label="WhatsApp chat"
+                onClick={() =>
+                  trackEvent("cta_click", { location: "sticky_mobile", cta: "whatsapp" })
+                }
+              >
+                WhatsApp
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1762,6 +1910,7 @@ function SectionTiles({ openId, setOpenId, T }) {
               onClick={() => {
                 setOpenId(t.id);
                 if (t.id === "portfolio") window.location.hash = "#portfolio";
+                trackEvent("tiles_click", { to: t.id });
               }}
               className={`flex items-center gap-2 rounded-2xl border px-4 py-2 transition shadow-sm ${
                 active ? T.chipActive : T.chipInactive
@@ -1862,15 +2011,24 @@ function BookingSection({ T }) {
         body: JSON.stringify({ ...form, source: "website" }),
       });
 
+      // GA4: form success
+      trackEvent("form_submit", {
+        location: "booking",
+        status: "success",
+        service: form.service,
+        city: form.city || "NA",
+      });
+
       // success UI
       const cleanPhone = normalizePhone(form.phone);
       const waText = encodeURIComponent(
         `Hi Pradhu! This is ${form.name}. I just sent an enquiry from your website.\nService: ${form.service}\nCity: ${form.city}\nPreferred date: ${form.date ? fmtHuman(form.date) : "TBD"}\nDetails: ${form.message || "—"}`
       );
+      const utm = "utm_source=site&utm_medium=booking_success_cta&utm_campaign=booking";
       const waHref =
         WHATSAPP_NUMBER.includes("X")
           ? ""
-          : `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}`;
+          : `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}&${utm}`;
 
       setNote({ kind: "success", text: "Thanks! Your enquiry was submitted. I’ll reply shortly." });
       setWhatsCTA(waHref);
@@ -1888,6 +2046,12 @@ function BookingSection({ T }) {
     } catch (err) {
       console.error(err);
       setNote({ kind: "error", text: "Couldn’t submit right now. Please try again." });
+      // GA4: form failure
+      trackEvent("form_submit", {
+        location: "booking",
+        status: "error",
+        error: String(err?.message || "unknown"),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1918,6 +2082,7 @@ function BookingSection({ T }) {
                 aria-label="Instagram"
                 title="Instagram"
                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+                onClick={() => trackEvent("social_click", { network: "instagram", location: "about" })}
               >
                 <Icon name="camera" className="h-5 w-5" />
               </a>
@@ -1932,12 +2097,13 @@ function BookingSection({ T }) {
                 </span>
               ) : (
                 <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  href={`https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${encodeURIComponent("Hi! Found your site (About icon).")}&utm_source=site&utm_medium=about_whatsapp_icon&utm_campaign=booking`}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="WhatsApp"
                   title="WhatsApp"
                   className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+                  onClick={() => trackEvent("cta_click", { location: "about", cta: "whatsapp_icon" })}
                 >
                   <Icon name="whatsapp" className="h-5 w-5" />
                 </a>
@@ -1948,6 +2114,7 @@ function BookingSection({ T }) {
                 aria-label="Email"
                 title="Email"
                 className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg} transition hover:scale-[1.04] hover:shadow-sm`}
+                onClick={() => trackEvent("cta_click", { location: "about", cta: "email" })}
               >
                 <Icon name="mail" className="h-5 w-5" />
               </a>
@@ -2047,6 +2214,7 @@ function BookingSection({ T }) {
                     type="submit"
                     disabled={submitting}
                     className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
+                    onClick={() => trackEvent("cta_click", { location: "booking_form", cta: "submit" })}
                   >
                     {submitting ? "Submitting…" : "Send Enquiry"}
                   </button>
@@ -2066,13 +2234,19 @@ function BookingSection({ T }) {
                     </span>
                   ) : null}
 
-                  {/* FIX #2: WhatsApp CTA on success */}
+                  {/* FIX #2 + UTMs: WhatsApp CTA on success */}
                   {whatsCTA && (
                     <a
                       href={whatsCTA}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
+                      onClick={() =>
+                        trackEvent("cta_click", {
+                          location: "booking_success",
+                          cta: "whatsapp",
+                        })
+                      }
                     >
                       <Icon name="whatsapp" className="h-4 w-4" />
                       Continue on WhatsApp
@@ -2158,6 +2332,7 @@ export default function App() {
       if (el) el.scrollIntoView({ behavior: "smooth" });
     }
     setMenuOpen(false);
+    trackEvent("nav_click", { to: id });
   };
 
   const closeIntro = () => {
@@ -2273,6 +2448,9 @@ export default function App() {
 
       {/* CONTACT / ENQUIRY */}
       <BookingSection T={T} />
+
+      {/* PERSISTENT CTA (hidden when booking visible) */}
+      <StickyCTA T={T} />
 
       {/* FOOTER */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
