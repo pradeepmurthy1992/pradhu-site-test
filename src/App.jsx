@@ -1856,7 +1856,7 @@ export default function App() {
         <div className={`${CONTAINER} py-10 text-sm`}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <p className={T.muted}>© {new Date().getFullYear()} PRADHU — All rights reserved.</p>
-            <p className={T.muted}>Pune · pradhuphotography@gmail.com · +91 93225 84410</p>
+            <p className={T.muted}>As long as i have camera, there are infinite perspectives!</p>
           </div>
         </div>
       </footer>
