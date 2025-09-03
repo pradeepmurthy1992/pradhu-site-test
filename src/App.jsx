@@ -561,29 +561,77 @@ function ServicesPricingPage({ T }) {
 
 
 /* ===================== Portfolio Landing + Page (kept) ===================== */
-const TILE_COVERS = {};
-const pickCoverForCategory = (images = [], label = "") => {
+// --- Category tile covers (optional explicit picks; case-insensitive) ---
+const TILE_COVERS = {
+  // Events: "00_cover.jpg",
+  // Fashion: "lookbook_cover.jpg",
+};
+
+// Choose tile cover: explicit > token > leading zeros > first image
+function pickCoverForCategory(images = [], label = "") {
   if (!images?.length) return "";
   const want = TILE_COVERS[label];
   if (want) {
-    const m = images.find((it) => (it.name || "").toLowerCase() === want.toLowerCase().trim());
-    if (m) return m.url;
+    const wantLc = want.toLowerCase().trim();
+    const match = images.find((it) => (it.name || "").toLowerCase() === wantLc);
+    if (match) return match.url;
   }
-  const byToken = images.find((it) => /(^|[-_])(cover|tile|hero|thumb)([-_]|\.|$)/i.test(it.name || ""));
+  const byToken = images.find((it) =>
+    /(^|[-_])(cover|tile|hero|thumb)([-_]|\.|$)/i.test(it.name || "")
+  );
   if (byToken) return byToken.url;
   const byLeadingZero = images.find((it) => /^0+/.test(it.name || ""));
   if (byLeadingZero) return byLeadingZero.url;
   return images[0]?.url || "";
-};
+}
+
+/* ===================== Portfolio ===================== */
+
+// (Optional utility, kept if needed later)
+function useEdgeSpacers(containerRef, slideSelector) {
+  const [spacer, setSpacer] = useState(0);
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const compute = () => {
+      const slide = root.querySelector(slideSelector);
+      if (!slide) return setSpacer(0);
+      const cw = root.clientWidth;
+      const sw = slide.clientWidth || 0;
+      setSpacer(Math.max(0, (cw - sw) / 2));
+    };
+    const rafCompute = () => requestAnimationFrame(compute);
+    compute();
+    const ro = new ResizeObserver(rafCompute);
+    ro.observe(root);
+    window.addEventListener("resize", rafCompute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", rafCompute);
+    };
+  }, [containerRef, slideSelector]);
+  return spacer;
+}
+
+// Toggles for landing UI
+const SHOW_ARROW_NAV = true;
+const SHOW_CHIP_BAR = true;
 
 function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
+  const [hoverIdx, setHoverIdx] = useState(-1);
   const [active, setActive] = useState(0);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+  const [edge, setEdge] = useState(null); // 'left' | 'right' | null
   const trackRef = useRef(null);
   const wrapRef = useRef(null);
+
+  // FIX #5: compute global failed/empty state
   const allLoaded = states.every((s) => !s.loading);
   const anyImages = states.some((s) => (s.images?.length || 0) > 0);
   const showMediaBanner = allLoaded && !anyImages;
 
+  // Center the given initial index when landing
   useEffect(() => {
     if (!trackRef.current) return;
     const idx = Math.min(cats.length - 1, Math.max(0, initialIdx));
@@ -594,79 +642,213 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
     });
   }, [initialIdx, cats.length]);
 
+  // Track centered tile & scrollability
   useEffect(() => {
     const root = trackRef.current;
     if (!root) return;
+
     const update = () => {
       const slides = Array.from(root.querySelectorAll("[data-idx]"));
       if (!slides.length) return;
+
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0, bestDist = Infinity;
+      let best = 0,
+        bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) { bestDist = d; best = i; }
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
       });
       setActive(best);
+
+      const sl = root.scrollLeft;
+      const max = root.scrollWidth - root.clientWidth;
+      setCanLeft(sl > 8);
+      setCanRight(sl < max - 8);
     };
+
     update();
     root.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
-    return () => { root.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
+    return () => {
+      root.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
   const scrollToIdx = (idx) => {
-    const el = trackRef.current?.querySelector(`[data-idx="${Math.max(0, Math.min(cats.length - 1, idx))}"]`);
+    const clamped = Math.min(cats.length - 1, Math.max(0, idx));
+    const el = trackRef.current?.querySelector(`[data-idx="${clamped}"]`);
     el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
-  const go = (d) => scrollToIdx(active + d);
+
+  const go = (dir) => scrollToIdx(active + dir);
+
+  // Edge-hover reveal for arrows
+  const EDGE_ZONE = 88;
+  const onPointerMove = (e) => {
+    const host = wrapRef.current;
+    if (!host) return;
+    const r = host.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    if (x <= EDGE_ZONE) setEdge("left");
+    else if (x >= r.width - EDGE_ZONE) setEdge("right");
+    else setEdge(null);
+  };
+  const onPointerLeave = () => setEdge(null);
+
+  const showLeft = SHOW_ARROW_NAV && edge === "left" && canLeft;
+  const showRight = SHOW_ARROW_NAV && edge === "right" && canRight;
 
   return (
-    <section className="py-2">
+    <section id="portfolio" className="py-2">
       <header className="mb-4">
-        <h1 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>Portfolio</h1>
-        <p className={`mt-2 ${T.muted}`}>Browse by category.</p>
+        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+          Portfolio
+        </h2>
+        <p className={`mt-2 ${T.muted}`}>Hover near the edges for arrows, or use chips to jump.</p>
+
         {showMediaBanner && (
           <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm p-3">
-            Couldn’t load images. Ensure your manifest.json paths are valid, or try <code>?refresh=1</code>.
+            Couldn’t load images right now. If this is a new deploy, ensure your
+            <span className="font-medium"> manifest.json</span> contains category paths, or try a refresh (<code>?refresh=1</code>).
           </div>
         )}
       </header>
 
-      <div ref={wrapRef} className="relative">
+      {SHOW_CHIP_BAR && (
+        <nav
+          aria-label="Categories"
+          className="mb-3 -mx-2 sm:-mx-3 md:-mx-4 px-2 sm:px-3 md:px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="flex gap-2">
+            {cats.map((c, i) => {
+              const isActive = i === active;
+              return (
+                <li key={`chip-${c.label}`}>
+                  <button
+                    onClick={() => scrollToIdx(i)}
+                    className={`px-3 py-1.5 rounded-2xl border text-sm transition shadow-sm ${
+                      isActive ? T.chipActive : T.chipInactive
+                    }`}
+                    aria-current={isActive ? "true" : undefined}
+                    onMouseDown={() => trackEvent("portfolio_chip_click", { category: c.label })}
+                  >
+                    {c.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
+
+      <div ref={wrapRef} className="relative" onMouseMove={onPointerMove} onMouseLeave={onPointerLeave}>
+        {SHOW_ARROW_NAV && (
+          <>
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              className={[
+                "pointer-events-auto absolute left-2 md:left-3 top-1/2 -translate-y-1/2",
+                "h-9 w-9 md:h-10 md:w-10 rounded-full border grid place-items-center transition",
+                "backdrop-blur-sm text-white",
+                showLeft ? "bg-black/40 hover:bg-black/55 border-white/20 opacity-100" : "opacity-0 pointer-events-none",
+              ].join(" ")}
+              aria-label="Previous category"
+              style={{ zIndex: 5 }}
+            >
+              ←
+            </button>
+
+            <button
+              type="button"
+              onClick={() => go(1)}
+              className={[
+                "pointer-events-auto absolute right-2 md:right-3 top-1/2 -translate-y-1/2",
+                "h-9 w-9 md:h-10 md:w-10 rounded-full border grid place-items-center transition",
+                "backdrop-blur-sm text-white",
+                showRight ? "bg-black/40 hover:bg-black/55 border-white/20 opacity-100" : "opacity-0 pointer-events-none",
+              ].join(" ")}
+              aria-label="Next category"
+              style={{ zIndex: 5 }}
+            >
+              →
+            </button>
+          </>
+        )}
+
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto px-2 sm:px-3 md:px-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="region" aria-roledescription="carousel" aria-label="Category cards" tabIndex={0}
+          className="
+            flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto px-2 sm:px-3 md:px-4
+            snap-x snap-mandatory
+            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+          "
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Category cards"
+          tabIndex={0}
         >
           <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
+
           {cats.map((c, i) => {
             const st = states[i] || { images: [], loading: true, error: "" };
             const cover = pickCoverForCategory(st.images, c.label);
+            const [rx, ry, s] = hoverIdx === i ? [4, -4, 1.02] : [0, 0, 1];
             const isActive = i === active;
+
             return (
-              <article key={c.label} data-idx={i}
-                       className="snap-center relative flex-shrink-0 w-[64%] sm:w-[44%] md:w-[30%] lg:w-[24%] xl:w-[20%]">
-                <button type="button"
-                        onClick={() => { openCat(c.label); trackEvent("portfolio_card_open", { category: c.label }); }}
-                        className={["group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
-                          isActive ? "ring-2 ring-white/80" : "", T.panelBg, T.panelBorder].join(" ")}
-                        aria-label={`Open ${c.label}`}>
+              <article
+                key={c.label}
+                data-idx={i}
+                className="snap-center relative flex-shrink-0 w-[64%] sm:w-[44%] md:w-[30%] lg:w-[24%] xl:w-[20%]"
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx(-1)}
+                onFocus={() => setHoverIdx(i)}
+                onBlur={() => setHoverIdx(-1)}
+              >
+                <button
+                  type="button"
+                  onClick={() => { openCat(c.label); trackEvent("portfolio_card_open", { category: c.label }); }}
+                  className={[
+                    "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
+                    isActive ? "ring-2 ring-white/80" : "",
+                    T.cardBorder,
+                    T.cardBg,
+                  ].join(" ")}
+                  style={{ transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})` }}
+                  aria-label={`Open ${c.label}`}
+                >
                   <div className="aspect-[3/4] relative">
-                    {cover ? <img src={cover} alt={c.label} className="absolute inset-0 h-full w-full object-cover" loading="lazy" /> :
-                      <div className="absolute inset-0 bg-neutral-600/30" />}
+                    {cover ? (
+                      <img
+                        src={cover}
+                        alt={c.label}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-neutral-600/30" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50" />
                     <div className="absolute left-3 right-3 bottom-3">
                       <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(18px,2.2vw,28px)] drop-shadow">
                         {c.label}
                       </h3>
-                      <span className="inline-flex items-center gap-1 text-white/90 text-[11px] opacity-90">Enter →</span>
+                      <span className="inline-flex items-center gap-1 text-white/90 text-[11px] opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                        Enter →
+                      </span>
                     </div>
                   </div>
                 </button>
               </article>
             );
           })}
+
           <div className="flex-shrink-0 w-[6%] sm:w-[10%] md:w-[14%]" aria-hidden="true" />
         </div>
       </div>
@@ -674,126 +856,523 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   );
 }
 
+/* Page (horizontal carousel) — with floating quick-exit pill */
+/* ===================== Portfolio Page (adds Vertical feed) ===================== */
+/* ===================== Portfolio Page (Vertical default + all layouts) ===================== */
+/* ===================== Portfolio Page (desktop+mobile lightbox fixes; no filenames) ===================== */
+/* ===================== Portfolio Page (desktop+mobile lightbox fixes; no filenames) ===================== */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1);
-  const containerRef = useRef(null);
 
+  // --- Shared state ---
+  const containerRef = useRef(null);        // horizontal carousel container
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [lbIdx, setLbIdx] = useState(-1);   // -1 = lightbox closed
+
+  // --- Layout mode: 'carousel' | 'grid' | 'masonry' | 'vertical'
+  const LAYOUTS = ["carousel", "masonry", "vertical"];
+  const [layout, setLayout] = useState(() => {
+    const u = new URL(window.location.href);
+    const q = (u.searchParams.get("layout") || "").toLowerCase();
+    return LAYOUTS.includes(q) ? q : "carousel";
+  });
   useEffect(() => {
+    const u = new URL(window.location.href);
+    u.searchParams.set("layout", layout);
+    window.history.replaceState(null, "", u.toString());
+  }, [layout]);
+
+  // --- Track centered tile for horizontal carousel ---
+  useEffect(() => {
+    if (layout !== "carousel") return;
     const root = containerRef.current;
     if (!root) return;
+
     const update = () => {
       const slides = Array.from(root.querySelectorAll("[data-idx]"));
       if (!slides.length) return;
+
       const center = root.scrollLeft + root.clientWidth / 2;
       let best = 0, bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) { bestDist = d; best = i; }
+        if (d < bestDist) { best = i; bestDist = d; }
       });
       setActiveIndex(best);
     };
+
     update();
     root.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
-    return () => { root.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
-  }, []);
+    return () => {
+      root.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [layout]);
 
+  // --- Page-level keyboard nav (disabled while lightbox is open) ---
+  useEffect(() => {
+    if (lbIdx >= 0) return; // do not attach when lightbox is open
+
+    const goHoriz = (dir) => {
+      const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
+      const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
+      el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    };
+
+    const onKey = (e) => {
+      if (lbIdx >= 0) return; // double guard
+      if (layout === "vertical") {
+        if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); vertGo(1); }
+        if (e.key === "ArrowUp"   || e.key === "PageUp")   { e.preventDefault(); vertGo(-1); }
+        if (e.key === "Home") vertGoTo(0);
+        if (e.key === "End")  vertGoTo(items.length - 1);
+      } else {
+        if (e.key === "ArrowRight") goHoriz(1);
+        if (e.key === "ArrowLeft")  goHoriz(-1);
+        if (e.key === "Home")       goHoriz(-999);
+        if (e.key === "End")        goHoriz(+999);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeIndex, items.length, lbIdx, layout]);
+
+  // --- Helpers for horizontal carousel direct jump from thumbs ---
   const goTo = (idx) => {
     const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
     el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
+  // --- Lightbox controls ---
+  const navLightbox = (dir) => {
+    setLbIdx((i) => {
+      if (i < 0) return i;
+      const next = Math.min(items.length - 1, Math.max(0, i + dir));
+      return next;
+    });
+  };
+  const closeLbAndSync = () => {
+    const idx = lbIdx;
+    setLbIdx(-1);
+    document.body.classList.remove("lb-open");
+    document.body.style.overflow = "";
+    if (layout === "carousel" && idx >= 0) {
+      const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
+      el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  };
+
+  // --- Lightbox: keyboard (ESC + arrows) ---
+  useEffect(() => {
+    if (lbIdx < 0) return;
+    const onKey = (e) => {
+      // prevent background handlers
+      e.stopPropagation();
+      if (e.key === "Escape") { e.preventDefault(); closeLbAndSync(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); navLightbox(1); }
+      if (e.key === "ArrowLeft")  { e.preventDefault(); navLightbox(-1); }
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, [lbIdx]);
+
+  // --- Lightbox: mobile swipe ---
+  const touchStartX = useRef(null);
+  const onLbTouchStart = (e) => { touchStartX.current = e.touches?.[0]?.clientX ?? null; };
+  const onLbTouchEnd = (e) => {
+    if (touchStartX.current == null) return;
+    const dx = (e.changedTouches?.[0]?.clientX ?? 0) - touchStartX.current;
+    if (Math.abs(dx) > 50) navLightbox(dx < 0 ? 1 : -1);
+    touchStartX.current = null;
+  };
+
+  // prevent background scroll when lightbox open
+  useEffect(() => {
+    if (lbIdx >= 0) {
+      document.body.classList.add("lb-open");
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.classList.remove("lb-open");
+      document.body.style.overflow = "";
+    };
+  }, [lbIdx]);
+
+  // --- Vertical feed: refs + tracking (Insta-style) ---
+  const vWrapRef = useRef(null);
+  const vItemRefs = useRef([]);
+  vItemRefs.current = [];
+  const registerVItem = (el) => { if (el) vItemRefs.current.push(el); };
+
+  const vertGoTo = (idx) => {
+    const el = vItemRefs.current[idx];
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const vertGo = (dir) => {
+    const next = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
+    vertGoTo(next);
+  };
+
+  useEffect(() => {
+    if (layout !== "vertical") return;
+    const root = vWrapRef.current;
+    if (!root) return;
+
+    const snapLine = () => root.getBoundingClientRect().top + window.innerHeight * 0.2;
+
+    let ticking = false;
+    const handle = () => {
+      ticking = false;
+      const line = snapLine();
+      let best = 0, bestDist = Infinity;
+      vItemRefs.current.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const d = Math.abs(r.top - line);
+        if (d < bestDist) { best = i; bestDist = d; }
+      });
+      setActiveIndex(best);
+    };
+
+    const onScroll = () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(handle); }
+    };
+
+    const io = new IntersectionObserver(onScroll, { root: null, threshold: [0, 0.5, 1] });
+    vItemRefs.current.forEach((el) => io.observe(el));
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    handle();
+
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [layout, items.length]);
+
   return (
-    <section className="py-2">
+    <section className="py-2" id="portfolio">
+      {/* Floating quick-exit button */}
+      <div className="fixed left-3 md:left-4 top-[calc(72px+10px)] z-[60]">
+        <button
+          type="button"
+          onClick={() => { onBack(); trackEvent("portfolio_back_to_categories", { category: cat.label }); }}
+          aria-label="Back to categories"
+          className="rounded-full px-3 py-1.5 text-sm border border-white/30 bg-black/30 text-white backdrop-blur-sm hover:bg-black/50"
+        >
+          ← All categories
+        </button>
+      </div>
+
+      {/* Sticky breadcrumb + title */}
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={onBack}>Portfolio</button>
+          <button className={`${T.linkSubtle} text-sm`} onClick={() => { onBack(); trackEvent("breadcrumb_back", { from: cat.label }); }}>
+            Portfolio
+          </button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h1 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
+        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
           {cat.label}
-        </h1>
+        </h2>
         {blurb ? <p className={`mt-1 ${T.muted}`}>{blurb}</p> : null}
       </div>
 
-      {!items.length ? (
+      {/* Layout picker (desktop + mobile chips already in your app) */}
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs opacity-70">Layout:</span>
+        {["carousel", "masonry", "vertical"].map((k) => (
+          <button
+            key={k}
+            onClick={() => { setLayout(k); trackEvent("layout_change", { category: cat.label, layout: k }); }}
+            className={[
+              "text-xs rounded-full border px-3 py-1 transition",
+              layout === k
+                ? "bg-black text-white border-black"
+                : "border-neutral-300 hover:bg-neutral-100"
+            ].join(" ")}
+            aria-pressed={layout === k}
+          >
+            {k.charAt(0).toUpperCase() + k.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Right side counter */}
+      <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none z-[60]">
+        {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
+      </div>
+
+      {/* ======== GALLERY CONDITIONAL ======== */}
+      {state.error ? (
+        <div className="text-red-500">{String(state.error)}</div>
+      ) : state.loading ? (
+        <div className={`${T.muted2}`}>Loading…</div>
+      ) : !items.length ? (
         <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
-      ) : (
+      ) : layout === "vertical" ? (
+        /* ===== VERTICAL (Insta-style) ===== */
+        <div
+          ref={vWrapRef}
+          className="
+            mx-auto max-w-[980px]
+            px-2 sm:px-3 md:px-4
+            space-y-6 sm:space-y-8
+            overflow-y-auto
+            scroll-smooth
+            snap-y snap-mandatory
+          "
+          style={{ maxHeight: "calc(100vh - 110px)" }}
+        >
+          {items.map((it, i) => (
+            <article key={it.sha || i} ref={registerVItem} data-idx={i} className="snap-start">
+              <div className={`rounded-2xl border shadow-sm ${T.cardBg} ${T.cardBorder}`}>
+                 <div className="mt-2">
+                  <button
+                    onClick={() => { setActiveIndex(i); setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
+                    className="block w-full"
+                    aria-label={`Open image ${i + 1}`}
+                  >
+                    <img
+                      src={it.url}
+                      alt={cat.label}          // no filename
+                      loading="lazy"
+                      className="w-full h-auto max-h-[88vh] object-contain bg-black/5"
+                    />
+                  </button>
+                </div>
+
+                {/* show caption only if provided */}
+                {it.caption && (
+                  <div className="px-4 py-3">
+                    <p className={`text-sm ${T.muted}`}>{it.caption}</p>
+                  </div>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : layout === "carousel" ? (
+        /* ===== HORIZONTAL CAROUSEL ===== */
         <>
-          <div ref={containerRef}
-               role="region" aria-roledescription="carousel" aria-label={`${cat.label} images`}
-               className="mx-auto max-w-[1600px] overflow-x-auto snap-x snap-mandatory flex items-stretch gap-4 px-2 pb-6
-                          [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none">
+          <div
+            ref={containerRef}
+            role="region"
+            aria-roledescription="carousel"
+            aria-label={`${cat.label} images`}
+            aria-live="polite"
+            tabIndex={0}
+            className="
+              mx-auto max-w-[1600px]
+              overflow-x-auto
+              snap-x snap-mandatory
+              flex items-stretch gap-4 sm:gap-5 md:gap-6
+              px-2 sm:px-3 md:px-4
+              pb-6
+              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+              select-none
+            "
+          >
             <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
             {items.map((it, i) => (
-              <figure key={it.sha || i} data-idx={i}
-                      className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300
-                                 ${i === activeIndex ? "scale-[1.01]" : "scale-[0.995]"}`}>
+              <figure
+                key={it.sha || i}
+                data-idx={i}
+                className={`
+                  relative flex-shrink-0
+                  w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%]
+                  snap-center transition-transform duration-300
+                  ${i === activeIndex ? "scale-[1.01]" : "scale-[0.995]"}
+                `}
+              >
                 <div className={`rounded-2xl ${i === activeIndex ? "shadow-lg" : "shadow-sm"}`}>
-                  <img src={it.url} alt={cat.label} className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[64vh] cursor-zoom-in"
-                       loading="lazy" onClick={() => setLbIdx(i)} />
+                  <img
+                    src={it.url}
+                    alt={cat.label}          // no filename
+                    className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
+                    loading="lazy"
+                    onClick={() => { setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
+                  />
                 </div>
               </figure>
             ))}
             <div className="flex-shrink-0 w-[9%] sm:w-[14%] md:w-[18%] lg:w-[21%]" aria-hidden="true" />
           </div>
 
-          {/* Thumbs */}
+          {/* Thumbnails */}
           <div className="mt-2 flex justify-center">
             <div className="flex gap-2 overflow-x-auto px-2 pb-1" style={{ scrollbarWidth: "none" }}>
               {items.map((it, i) => (
-                <button key={`thumb-${i}`} onClick={() => goTo(i)}
-                        className={`h-14 w-10 rounded-md overflow-hidden border transition
-                                   ${i === activeIndex ? "opacity-100 ring-2 ring-white" : "opacity-60 hover:opacity-90"}`}>
+                <button
+                  key={`thumb-${i}`}
+                  onClick={() => { goTo(i); trackEvent("thumb_click", { category: cat.label, idx: i + 1 }); }}
+                  aria-label={`Go to image ${i + 1}`}
+                  className={`
+                    h-14 w-10 rounded-md overflow-hidden border transition
+                    ${i === activeIndex ? "opacity-100 ring-2 ring-white" : "opacity-60 hover:opacity-90"}
+                  `}
+                >
                   <img src={it.url} alt="" className="h-full w-full object-cover" loading="lazy" />
                 </button>
               ))}
             </div>
           </div>
         </>
+      ) : (
+        /* ===== MASONRY (CSS columns) ===== */
+        <div className="mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4 md:gap-5 [column-fill:_balance]">
+            {items.map((it, i) => (
+              <button
+                key={it.sha || i}
+                onClick={() => { setActiveIndex(i); setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
+                className="mb-3 sm:mb-4 md:mb-5 w-full overflow-hidden rounded-2xl border shadow-sm hover:shadow-md transition"
+                style={{ breakInside: "avoid" }}
+              >
+                <img src={it.url} alt={cat.label} className="w-full h-auto block" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* Lightbox */}
+      {/* ===== Lightbox ===== */}
       {lbIdx >= 0 && (
-        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
-             role="dialog" aria-modal="true" onClick={() => setLbIdx(-1)}>
-          <img src={items[lbIdx].url} alt={cat.label} className="max-h-[92vh] max-w-[92vw] object-contain cursor-zoom-out" />
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image viewer"
+          onClick={() => { closeLbAndSync(); trackEvent("lightbox_close", { category: cat.label }); }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
+          {/* edge controls */}
+          <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navLightbox(-1); }}
+              className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
+              aria-label="Previous image"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navLightbox(1); }}
+              className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
+              aria-label="Next image"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+
+          <img
+            src={items[lbIdx].url}
+            alt={cat.label}  // no filename
+            className="max-h-[92vh] max-w-[92vw] object-contain cursor-zoom-out"
+            onClick={(e) => { e.stopPropagation(); closeLbAndSync(); }}
+            onTouchStart={onLbTouchStart}
+            onTouchEnd={onLbTouchEnd}
+          />
         </div>
       )}
     </section>
   );
 }
 
+function MobileLayoutFab({ visible, layout, setLayout }) {
+  const order = ["vertical", "carousel", "masonry"];
+  const nextLayout = () => {
+    const i = order.indexOf(layout);
+    setLayout(order[(i + 1) % order.length]);
+    try { window.navigator.vibrate?.(10); } catch {}
+  };
+  if (!visible) return null;
+  return (
+    <div className="sm:hidden fixed right-4 bottom-20 z-[60]">
+      <button onClick={nextLayout} className="h-12 w-12 rounded-full bg-black/70 text-white">
+        {layout[0].toUpperCase()}
+      </button>
+    </div>
+  );
+}
+
+/* ===== Wrapper (hash-driven view switch) ===== */
 function Portfolio({ T }) {
-  const [states, setStates] = useState(() => GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] })));
+  const [states, setStates] = useState(() =>
+    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
+  );
+  const [hash, setHash] = useHash();
   const [view, setView] = useState("landing"); // "landing" | "page"
   const [activeIdx, setActiveIdx] = useState(-1);
 
   const openCat = (label) => {
+    // normalize label from hash (case-insensitive)
     const idx = GH_CATEGORIES.findIndex((c) => c.label.toLowerCase() === label.toLowerCase());
     if (idx < 0) return;
-    try { sessionStorage.setItem("pradhu:lastCat", String(idx)); } catch {}
+    try {
+      sessionStorage.setItem("pradhu:lastCat", String(idx));
+    } catch {}
     setActiveIdx(idx);
     setView("page");
+    setHash(`#portfolio/${encodeURIComponent(GH_CATEGORIES[idx].label)}`);
+    const el = document.getElementById("portfolio");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const goLanding = () => { setView("landing"); setActiveIdx(-1); };
 
+  const goLanding = () => {
+    setView("landing");
+    setActiveIdx(-1);
+    setHash("#portfolio");
+  };
+
+  // hash → view
+  useEffect(() => {
+    if (!hash.startsWith("#portfolio")) return;
+    const seg = hash.split("/");
+    if (seg.length >= 2 && seg[1]) {
+      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
+      const idx = GH_CATEGORIES.findIndex((c) => c.label.toLowerCase() === label.toLowerCase());
+      if (idx >= 0) {
+        setActiveIdx(idx);
+        setView("page");
+        return;
+      }
+    }
+    setView("landing");
+    setActiveIdx(-1);
+  }, [hash]);
+
+  // fetch images (manifest-first)
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const results = await Promise.all(GH_CATEGORIES.map(async (cat) => {
-        try { const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
-              return { loading: false, error: "", images: list }; }
-        catch (e) { return { loading: false, error: e?.message || "Failed to load", images: [] }; }
-      }));
+      const results = await Promise.all(
+        GH_CATEGORIES.map(async (cat) => {
+          try {
+            const list = await ghListFolder(GH_OWNER, GH_REPO, cat.path, GH_BRANCH);
+            return { loading: false, error: "", images: list };
+          } catch (e) {
+            return { loading: false, error: e?.message || "Failed to load", images: [] };
+          }
+        })
+      );
       if (!cancelled) setStates(results);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (view === "page" && activeIdx >= 0) {
@@ -803,11 +1382,23 @@ function Portfolio({ T }) {
   }
 
   const lastIdx = (() => {
-    try { const n = Number(sessionStorage.getItem("pradhu:lastCat") || 0); return Number.isFinite(n) ? n : 0; }
-    catch { return 0; }
+    try {
+      const n = Number(sessionStorage.getItem("pradhu:lastCat") || 0);
+      return Number.isFinite(n) ? n : 0;
+    } catch {
+      return 0;
+    }
   })();
 
-  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} initialIdx={lastIdx} />;
+  return (
+    <PortfolioLanding
+      T={T}
+      cats={GH_CATEGORIES}
+      states={states}
+      openCat={openCat}
+      initialIdx={lastIdx}
+    />
+  );
 }
 
 /* ===================== About + Contact (Booking) ===================== */
