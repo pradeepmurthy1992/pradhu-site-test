@@ -1,12 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-/* ===== Minimal hash router: #/route ===== */
-const ROUTES = ["/", "/portfolio", "/services", "/pricing", "/about", "/reviews", "/contact"];
+/* ============================================================
+   PRADHU — Router pages + Original Portfolio UX (restored)
+   - Minimal hash router (#/route) with deep-link support
+   - Services & Pricing merged into one page
+   - Portfolio landing/page/lightbox/layouts kept exactly
+   - Sticky CTA + GA4 hooks preserved
+============================================================ */
+
+/* ===== Minimal hash router: #/route (supports #/portfolio/...) ===== */
+const ROUTES = ["/", "/portfolio", "/services", "/about", "/reviews", "/contact"];
 const useHashRoute = () => {
   const getPath = () => {
     const h = window.location.hash || "#/";
-    const path = h.replace(/^#/, "");
-    return ROUTES.includes(path) ? path : "/404";
+    const raw = h.replace(/^#/, "");
+    if (ROUTES.includes(raw)) return raw;
+    // Accept deep links like "#/portfolio/Category" or "#portfolio/Category"
+    if (raw.startsWith("/portfolio")) return "/portfolio";
+    if (raw.startsWith("portfolio")) return "/portfolio";
+    return "/404";
   };
   const [path, setPath] = useState(getPath);
   useEffect(() => {
@@ -21,7 +33,7 @@ const useHashRoute = () => {
   return [path, nav];
 };
 
-/* ===================== CONFIG (kept from your file) ===================== */
+/* ===================== CONFIG (from your file) ===================== */
 const INTRO_ENABLED = true;
 const INTRO_BRAND = "PRADEEP";
 const INTRO_NAME = "Pradhu Photography";
@@ -112,7 +124,9 @@ function HeadFonts() {
   return null;
 }
 function trackEvent(name, params = {}) {
-  try { window.gtag?.("event", name, params); } catch {}
+  try {
+    window.gtag?.("event", name, params);
+  } catch {}
 }
 
 /* ===================== Theme ===================== */
@@ -139,6 +153,8 @@ function useThemeTokens(theme) {
     inputBorder: "border-neutral-300",
     inputText: "text-neutral-900",
     placeholder: "placeholder-neutral-400",
+    cardBg: "bg-white",
+    cardBorder: "border-rose-200",
   };
   const dark = {
     pageBg: "bg-[#1c1e26]",
@@ -162,45 +178,98 @@ function useThemeTokens(theme) {
     inputBorder: "border-neutral-600",
     inputText: "text-neutral-100",
     placeholder: "placeholder-neutral-500",
+    cardBg: "bg-[#2a2d36]",
+    cardBorder: "border-[#3a3d46]",
   };
   return theme === "light" ? light : dark;
 }
 
 /* ===================== Icons ===================== */
 function Icon({ name, className = "h-4 w-4" }) {
-  const p = { className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6,
-    strokeLinecap: "round", strokeLinejoin: "round" };
+  const p = { className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
   switch (name) {
-    case "home": return (<svg {...p}><path d="M3 11.5L12 4l9 7.5"/><path d="M5 10.5V20h5v-6h4v6h5v-9.5"/></svg>);
-    case "grid": return (<svg {...p}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>);
-    case "briefcase": return (<svg {...p}><path d="M3.5 8.5h17A1.5 1.5 0 0122 10v7a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 014 17v-7a1.5 1.5 0 011.5-1.5"/><path d="M8 8.5V6.5A2.5 2.5 0 0110.5 4h3A2.5 2.5 0 0116 6.5v2"/><path d="M2 12.5h20"/></svg>);
-    case "tag": return (<svg {...p}><path d="M3 12l8.5 8.5a2 2 0 002.8 0L21 13.8a2 2 0 000-2.8L12.2 2H6a3 3 0 00-3 3v6z"/><circle cx="8" cy="8" r="1.2"/></svg>);
-    case "user": return (<svg {...p}><circle cx="12" cy="8" r="3.2"/><path d="M4 20a8 8 0 0116 0"/></svg>);
-    case "mail": return (<svg {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>);
-    case "sun": return (<svg {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>);
-    case "moon": return (<svg {...p}><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>);
-    default: return null;
+    case "home":
+      return (
+        <svg {...p}>
+          <path d="M3 11.5L12 4l9 7.5" />
+          <path d="M5 10.5V20h5v-6h4v6h5v-9.5" />
+        </svg>
+      );
+    case "grid":
+      return (
+        <svg {...p}>
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      );
+    case "briefcase":
+      return (
+        <svg {...p}>
+          <path d="M3.5 8.5h17A1.5 1.5 0 0122 10v7a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 014 17v-7a1.5 1.5 0 011.5-1.5" />
+          <path d="M8 8.5V6.5A2.5 2.5 0 0110.5 4h3A2.5 2.5 0 0116 6.5v2" />
+          <path d="M2 12.5h20" />
+        </svg>
+      );
+    case "tag":
+      return (
+        <svg {...p}>
+          <path d="M3 12l8.5 8.5a2 2 0 002.8 0L21 13.8a2 2 0 000-2.8L12.2 2H6a3 3 0 00-3 3v6z" />
+          <circle cx="8" cy="8" r="1.2" />
+        </svg>
+      );
+    case "user":
+      return (
+        <svg {...p}>
+          <circle cx="12" cy="8" r="3.2" />
+          <path d="M4 20a8 8 0 0116 0" />
+        </svg>
+      );
+    case "mail":
+      return (
+        <svg {...p}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 7l9 6 9-6" />
+        </svg>
+      );
+    case "sun":
+      return (
+        <svg {...p}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        </svg>
+      );
+    case "moon":
+      return (
+        <svg {...p}>
+          <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z" />
+        </svg>
+      );
+    default:
+      return null;
   }
 }
 
-/* ===================== Intro (unchanged behavior) ===================== */
+/* ===================== Intro Overlay (short a11y version) ===================== */
 function IntroOverlay({ onClose }) {
-  const [phase, setPhase] = useState("typeName");
+  const [phase, setPhase] = useState("typeName"); // typeName → typeBrand → revealImg → titles
   const NAME = "PRADEEP MOORTHY";
   const BRAND = "PRADHU PHOTOGRAPHY";
   const [typed, setTyped] = useState("");
   const [step, setStep] = useState(0);
   const typingRef = useRef(null);
-  const imgRef = useRef(null);
   const rippleLayerRef = useRef(null);
-  const dialogRef = useRef(null);
   const enterBtnRef = useRef(null);
 
   useEffect(() => {
     enterBtnRef.current?.focus({ preventScroll: true });
     const onKey = (e) => {
       if (e.key === "Enter") onClose();
-      if (e.key === "Escape") { e.preventDefault(); onClose(); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -210,7 +279,7 @@ function IntroOverlay({ onClose }) {
     const host = rippleLayerRef.current;
     if (!host) return;
     const rect = host.getBoundingClientRect();
-    const mk = (cls) => {
+    const elem = (cls) => {
       const el = document.createElement("span");
       el.className = cls;
       el.style.left = `${x - rect.left}px`;
@@ -218,8 +287,8 @@ function IntroOverlay({ onClose }) {
       host.appendChild(el);
       setTimeout(() => el.remove(), cls.includes("flash") ? 360 : 800);
     };
-    mk("cin-ripple circle");
-    if (withFlash) mk("cin-flash");
+    elem("cin-ripple circle");
+    if (withFlash) elem("cin-flash");
   };
 
   useEffect(() => {
@@ -230,13 +299,16 @@ function IntroOverlay({ onClose }) {
     clearInterval(typingRef.current);
     let i = 0;
     typingRef.current = setInterval(() => {
-      i++; setTyped(str.slice(0, i));
+      i++;
+      setTyped(str.slice(0, i));
       if (i >= str.length) {
         clearInterval(typingRef.current);
         setStep(1);
         setTimeout(() => {
           setStep(2);
-          setTimeout(() => { setPhase(phase === "typeName" ? "typeBrand" : "revealImg"); }, 520);
+          setTimeout(() => {
+            setPhase(phase === "typeName" ? "typeBrand" : "revealImg");
+          }, 520);
         }, phase === "typeName" ? 600 : 700);
       }
     }, 75);
@@ -254,8 +326,13 @@ function IntroOverlay({ onClose }) {
   const renderTyping = (text) => (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div className="text-white text-center">
-        <div className={["inline-flex items-center gap-1 font-['Playfair_Display'] uppercase tracking-[0.08em]",
-          "text-[clamp(26px,7vw,88px)] leading-none whitespace-nowrap", step === 2 ? "cin-explode-out" : ""].join(" ")}>
+        <div
+          className={[
+            "inline-flex items-center gap-1 font-['Playfair_Display'] uppercase tracking-[0.08em]",
+            "text-[clamp(26px,7vw,88px)] leading-none whitespace-nowrap",
+            step === 2 ? "cin-explode-out" : "",
+          ].join(" ")}
+        >
           <span>{text}</span>
           {step === 0 ? <span className="cin-caret w-[0.5ch] inline-block align-bottom" /> : null}
         </div>
@@ -264,35 +341,47 @@ function IntroOverlay({ onClose }) {
   );
 
   return (
-    <div ref={dialogRef} className="fixed inset-0 bg-black text-white" style={{ zIndex: 9999 }}
-      role="dialog" aria-modal="true" onClick={onAnyClick}>
+    <div className="fixed inset-0 bg-black text-white" style={{ zIndex: 9999 }} role="dialog" aria-modal="true" onClick={onAnyClick}>
       <div ref={rippleLayerRef} className="absolute inset-0 cin-ripple-layer" />
       {phase === "typeName" && renderTyping(typed)}
       {phase === "typeBrand" && renderTyping(typed)}
-      <div className={["h-full w-full grid items-center justify-center p-6",
-        "md:grid-cols-[640px_1fr] gap-4",
-        phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100"].join(" ")}>
+
+      <div
+        className={[
+          "h-full w-full grid items-center justify-center p-6",
+          "md:grid-cols-[640px_1fr] gap-4",
+          phase === "typeName" || phase === "typeBrand" ? "opacity-0" : "opacity-100",
+        ].join(" ")}
+      >
         <div className="relative cin-image-holder">
-          <img ref={imgRef} src={INTRO_LEFT_IMAGE_URL} alt="Intro"
-               className={["w-full h-auto object-contain max-h-[78vh]",
-                 phase === "revealImg" ? "cin-radial-reveal cin-image-move-in" : "",
-                 phase === "titles" ? "opacity-100" : ""].join(" ")} />
+          <img
+            src={INTRO_LEFT_IMAGE_URL}
+            alt="Intro"
+            className={[
+              "w-full h-auto object-contain max-h-[78vh]",
+              phase === "revealImg" ? "cin-radial-reveal cin-image-move-in" : "",
+              phase === "titles" ? "opacity-100" : "",
+            ].join(" ")}
+          />
           <div className="pointer-events-none absolute inset-0 cin-vignette" />
         </div>
-        <div className={["flex flex-col items-end gap-3 text-right whitespace-nowrap select-none",
-          phase === "titles" ? "opacity-100" : "opacity-0"].join(" ")}>
-          <div className={["text-[12px] tracking-[0.25em] opacity-80",
-            phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>VISUAL & HONEST STORIES</div>
-          <h1 className={["mt-1 font-['Playfair_Display'] uppercase",
-            "text-[clamp(32px,6vw,72px)] leading-tight",
-            phase === "titles" ? "cin-overshoot-in delay-[480ms]" : ""].join(" ")}>PRADEEP MOORTHY</h1>
-          <div className={["mt-0.5 font-['Playfair_Display'] uppercase",
-            "text-[clamp(24px,4.5vw,50px)] leading-tight",
-            phase === "titles" ? "cin-overshoot-in delay-[850ms]" : ""].join(" ")}>PRADHU PHOTOGRAPHY</div>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }}
-                  className={["rounded-full border border-white/40 px-5 py-2 text-sm",
-                    "hover:bg-white/10 transition mt-6",
-                    phase === "titles" ? "cin-fade-in-delayed" : "opacity-0"].join(" ")} ref={enterBtnRef}>
+
+        <div className={["flex flex-col items-end gap-3 text-right whitespace-nowrap select-none", phase === "titles" ? "opacity-100" : "opacity-0"].join(" ")}>
+          <div className={["text-[12px] tracking-[0.25em] opacity-80", phase === "titles" ? "cin-overshoot-in" : ""].join(" ")}>VISUAL & HONEST STORIES</div>
+          <h1 className={["mt-1 font-['Playfair_Display'] uppercase", "text-[clamp(32px,6vw,72px)] leading-tight", phase === "titles" ? "cin-overshoot-in delay-[480ms]" : ""].join(" ")}>
+            PRADEEP MOORTHY
+          </h1>
+          <div className={["mt-0.5 font-['Playfair_Display'] uppercase", "text-[clamp(24px,4.5vw,50px)] leading-tight", phase === "titles" ? "cin-overshoot-in delay-[850ms]" : ""].join(" ")}>
+            PRADHU PHOTOGRAPHY
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className={["rounded-full border border-white/40 px-5 py-2 text-sm", "hover:bg-white/10 transition mt-6", phase === "titles" ? "cin-fade-in-delayed" : "opacity-0"].join(" ")}
+            ref={enterBtnRef}
+          >
             Enter ↵
           </button>
         </div>
@@ -301,10 +390,10 @@ function IntroOverlay({ onClose }) {
   );
 }
 
-/* ===================== GH helper ===================== */
+/* ===================== GitHub helper ===================== */
 const GH_API = "https://api.github.com";
 const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
-const isImageName = (n="") => IMG_EXTS.some((e) => n.toLowerCase().endsWith(e));
+const isImageName = (n = "") => IMG_EXTS.some((e) => n.toLowerCase().endsWith(e));
 async function ghListFolder(owner, repo, path, ref) {
   const key = `pradhu:gh:${owner}/${repo}@${ref}/${path}`;
   const tkey = key + ":ts";
@@ -322,11 +411,14 @@ async function ghListFolder(owner, repo, path, ref) {
       const r = await fetch(MEDIA_MANIFEST_URL, { cache: "no-store" });
       if (r.ok) {
         const manifest = await r.json();
-        const list = (manifest[path] || []).filter(Boolean).map((fullPath) => ({
-          name: fullPath.split("/").pop(),
-          url: `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fullPath}`,
-          sha: fullPath, size: 0,
-        }));
+        const list = (manifest[path] || [])
+          .filter(Boolean)
+          .map((fullPath) => ({
+            name: fullPath.split("/").pop(),
+            url: `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fullPath}`,
+            sha: fullPath,
+            size: 0,
+          }));
         if (list.length) {
           sessionStorage.setItem(key, JSON.stringify(list));
           sessionStorage.setItem(tkey, String(now));
@@ -340,8 +432,7 @@ async function ghListFolder(owner, repo, path, ref) {
   if (!res.ok) return [];
   const json = await res.json();
   const files = Array.isArray(json) ? json.filter((it) => it.type === "file") : [];
-  const imgs = files.filter((f) => isImageName(f.name))
-    .map((f) => ({ name: f.name, url: f.download_url, sha: f.sha, size: f.size }));
+  const imgs = files.filter((f) => isImageName(f.name)).map((f) => ({ name: f.name, url: f.download_url, sha: f.sha, size: f.size }));
   sessionStorage.setItem(key, JSON.stringify(imgs));
   sessionStorage.setItem(tkey, String(now));
   return imgs;
@@ -356,8 +447,7 @@ function Hero() {
       : "";
   return (
     <section className="relative min-h-[68vh] md:min-h-[78vh]">
-      <img src={HERO_BG_URL} alt="" aria-hidden="true"
-           className="absolute inset-0 z-0 h-full w-full object-cover pointer-events-none" loading="eager" />
+      <img src={HERO_BG_URL} alt="" aria-hidden="true" className="absolute inset-0 z-0 h-full w-full object-cover pointer-events-none" loading="eager" />
       <div className="absolute inset-0 z-[1] bg-black/45" />
       <div className="absolute inset-x-0 bottom-0 z-[1] h-40 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 z-[2]">
@@ -365,26 +455,28 @@ function Hero() {
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
             Collect the Treasure. <span className="opacity-90">ONE PIECE at a time.</span>
           </h1>
-          <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">
-            Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
-          </p>
+          <p className="mt-3 max-w-3xl text-sm md:text-base text-neutral-200">Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .</p>
           <div className="mt-5 flex items-center gap-3">
-            <a href="#/contact"
-               className="rounded-xl bg-white text-black px-5 py-2.5 font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white/70"
-               aria-label="Book a Shoot"
-               onClick={() => trackEvent("cta_click", { location: "hero", cta: "book" })}>
+            <a
+              href="#/contact"
+              className="rounded-xl bg-white text-black px-5 py-2.5 font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white/70"
+              aria-label="Book a Shoot"
+              onClick={() => trackEvent("cta_click", { location: "hero", cta: "book" })}
+            >
               Book a Shoot
             </a>
             {waHref && (
-              <a href={waHref} target="_blank" rel="noreferrer"
-                 className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
-                 onClick={() => trackEvent("cta_click", { location: "hero", cta: "whatsapp" })}>
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+                onClick={() => trackEvent("cta_click", { location: "hero", cta: "whatsapp" })}
+              >
                 WhatsApp
               </a>
             )}
-            <a href="tel:+919322584410"
-               className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
-               onClick={() => trackEvent("cta_click", { location: "hero", cta: "call" })}>
+            <a href="tel:+919322584410" className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10" onClick={() => trackEvent("cta_click", { location: "hero", cta: "call" })}>
               Call
             </a>
           </div>
@@ -394,7 +486,7 @@ function Hero() {
   );
 }
 
-/* ===================== FAQ / Services / Pricing (from your code) ===================== */
+/* ===================== FAQ / Services+Pricing ===================== */
 function FaqSection({ T, showTitle = true }) {
   const items = [
     { q: "How do I receive photos?", a: "Private, watermark-free online gallery with high-res downloads." },
@@ -416,93 +508,60 @@ function FaqSection({ T, showTitle = true }) {
     </section>
   );
 }
+
 function ServicesPricingPage({ T }) {
   const tiers = [
     {
       name: "Portrait Session",
       price: "from ₹4,500",
-      includes: [
-        "60–90 min · up to 2 outfits",
-        "6 lightly retouched hero shots",
-        "Curated 3–5 edited images per outfit",
-        "Location & styling guidance",
-      ],
+      includes: ["60–90 min · up to 2 outfits", "6 lightly retouched hero shots", "Curated 3–5 edited images per outfit", "Location & styling guidance"],
     },
     {
       name: "Headshots (Solo/Team)",
       price: "from ₹5,000",
-      includes: [
-        "Consistent lighting & framing",
-        "On-location or studio",
-        "Curated 3–5 edited images per outfit",
-      ],
+      includes: ["Consistent lighting & framing", "On-location or studio", "Curated 3–5 edited images per outfit"],
     },
     {
       name: "Fashion / Editorial (Half-day)",
       price: "from ₹10,000",
-      includes: [
-        "Pre-production & moodboard",
-        "Lighting & look management",
-        "Team coordination on request",
-      ],
+      includes: ["Pre-production & moodboard", "Lighting & look management", "Team coordination on request"],
     },
     {
       name: "Event Coverage (2 hrs)",
       price: "from ₹8,000",
-      includes: [
-        "Focused coverage of key moments",
-        "Colour-graded selects",
-        "Extendable by hour",
-      ],
+      includes: ["Focused coverage of key moments", "Colour-graded selects", "Extendable by hour"],
     },
   ];
 
   return (
     <section className="py-6">
       {/* One H1 for the page */}
-      <h1 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
-        Services & Pricing
-      </h1>
-      <p className={`mt-2 ${T.muted}`}>
-        Multi-genre coverage designed around your brief. Share your concept and I’ll tailor looks,
-        lighting windows and locations. Final quotes depend on scope, team and timelines.
-      </p>
+      <h1 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>Services & Pricing</h1>
+      <p className={`mt-2 ${T.muted}`}>Multi-genre coverage designed around your brief. Share your concept and I’ll tailor looks, lighting windows and locations. Final quotes depend on scope, team and timelines.</p>
 
       {/* Services overview (cards) */}
       <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
         {[
-          ["Portraits & Headshots", [
-            "60–90 min · up to 2 outfits",
-            "Natural retouching with clean skin tones",
-            "Wardrobe & posing guidance",
-            "On-location or studio",
-          ]],
-          ["Fashion / Editorial", [
-            "Moodboard & looks planning",
-            "On-set lighting & styling coordination",
-            "Clean, contemporary colour and skin tones",
-            "Half-day / full-day options",
-          ]],
-          ["Events & Candids", [
-            "By hours or blocks",
-            "Key moments & people, storytelling frames",
-            "Balanced set of colour-graded selects",
-          ]],
+          [
+            "Portraits & Headshots",
+            ["60–90 min · up to 2 outfits", "Natural retouching with clean skin tones", "Wardrobe & posing guidance", "On-location or studio"],
+          ],
+          [
+            "Fashion / Editorial",
+            ["Moodboard & looks planning", "On-set lighting & styling coordination", "Clean, contemporary colour and skin tones", "Half-day / full-day options"],
+          ],
+          ["Events & Candids", ["By hours or blocks", "Key moments & people, storytelling frames", "Balanced set of colour-graded selects"]],
         ].map(([title, lines]) => (
           <article key={title} className={`rounded-2xl border p-5 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
             <h2 className={`text-lg font-medium ${T.navTextStrong}`}>{title}</h2>
-            <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
-              {lines.map((l) => <li key={l}>{l}</li>)}
-            </ul>
+            <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>{lines.map((l) => <li key={l}>{l}</li>)}</ul>
           </article>
         ))}
       </div>
 
       {/* Pricing tiers */}
       <div className="mt-10">
-        <h2 className={`text-2xl md:text-3xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
-          Indicative Packages
-        </h2>
+        <h2 className={`text-2xl md:text-3xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>Indicative Packages</h2>
         <p className={`mt-2 ${T.muted}`}>Request a custom estimate for multi-day shoots, larger teams or special deliverables.</p>
 
         <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -512,14 +571,8 @@ function ServicesPricingPage({ T }) {
                 <h3 className={`text-lg font-medium ${T.navTextStrong}`}>{t.name}</h3>
                 <span className="text-sm opacity-80">{t.price}</span>
               </div>
-              <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>
-                {t.includes.map((l) => <li key={l}>{l}</li>)}
-              </ul>
-              <a
-                href="#/contact"
-                className={`${T.link} text-sm mt-4 inline-block`}
-                onClick={() => trackEvent("nav_click", { to: "contact_from_services_pricing" })}
-              >
+              <ul className={`mt-3 text-sm list-disc pl-5 ${T.muted}`}>{t.includes.map((l) => <li key={l}>{l}</li>)}</ul>
+              <a href="#/contact" className={`${T.link} text-sm mt-4 inline-block`} onClick={() => trackEvent("nav_click", { to: "contact_from_services_pricing" })}>
                 Request a quote →
               </a>
             </article>
@@ -530,7 +583,7 @@ function ServicesPricingPage({ T }) {
       {/* Add-ons + Policy */}
       <div className="mt-10 grid md:grid-cols-2 gap-6">
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
-          <h2 className={`text-lg font-medium ${T.navTextStrong}`}>Add-ons</h2>
+          <h2 className={`font-medium ${T.navTextStrong}`}>Add-ons</h2>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>HMUA / Styling coordination (billed at cost)</li>
             <li>Studio rental (venue rates apply)</li>
@@ -542,7 +595,7 @@ function ServicesPricingPage({ T }) {
         </div>
 
         <div className={`rounded-2xl border p-5 ${T.panelBg} ${T.panelBorder}`}>
-          <h2 className={`text-lg font-medium ${T.navTextStrong}`}>Turnaround & Booking</h2>
+          <h2 className={`font-medium ${T.navTextStrong}`}>Turnaround & Booking</h2>
           <ul className={`mt-2 text-sm list-disc pl-5 ${T.muted}`}>
             <li>Portraits / Fashion: 7–12 days; Weddings/Events: ~3–4 weeks for full gallery.</li>
             <li>Entire shoot previews shared within 3–5 days.</li>
@@ -557,17 +610,13 @@ function ServicesPricingPage({ T }) {
   );
 }
 
-
-
-
-/* ===================== Portfolio Landing + Page (kept) ===================== */
-// --- Category tile covers (optional explicit picks; case-insensitive) ---
+/* ===================== Portfolio helpers ===================== */
+// Category tile covers (optional explicit picks)
 const TILE_COVERS = {
   // Events: "00_cover.jpg",
   // Fashion: "lookbook_cover.jpg",
 };
 
-// Choose tile cover: explicit > token > leading zeros > first image
 function pickCoverForCategory(images = [], label = "") {
   if (!images?.length) return "";
   const want = TILE_COVERS[label];
@@ -576,44 +625,30 @@ function pickCoverForCategory(images = [], label = "") {
     const match = images.find((it) => (it.name || "").toLowerCase() === wantLc);
     if (match) return match.url;
   }
-  const byToken = images.find((it) =>
-    /(^|[-_])(cover|tile|hero|thumb)([-_]|\.|$)/i.test(it.name || "")
-  );
+  const byToken = images.find((it) => /(^|[-_])(cover|tile|hero|thumb)([-_]|\.|$)/i.test(it.name || ""));
   if (byToken) return byToken.url;
   const byLeadingZero = images.find((it) => /^0+/.test(it.name || ""));
   if (byLeadingZero) return byLeadingZero.url;
   return images[0]?.url || "";
 }
 
-/* ===================== Portfolio ===================== */
-
-// (Optional utility, kept if needed later)
-function useEdgeSpacers(containerRef, slideSelector) {
-  const [spacer, setSpacer] = useState(0);
+/* ===== Simple hash reader used inside Portfolio (independent of router) ===== */
+function useHash() {
+  const [hash, setHash] = useState(() => window.location.hash || "");
   useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-    const compute = () => {
-      const slide = root.querySelector(slideSelector);
-      if (!slide) return setSpacer(0);
-      const cw = root.clientWidth;
-      const sw = slide.clientWidth || 0;
-      setSpacer(Math.max(0, (cw - sw) / 2));
-    };
-    const rafCompute = () => requestAnimationFrame(compute);
-    compute();
-    const ro = new ResizeObserver(rafCompute);
-    ro.observe(root);
-    window.addEventListener("resize", rafCompute);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", rafCompute);
-    };
-  }, [containerRef, slideSelector]);
-  return spacer;
+    const onHash = () => setHash(window.location.hash || "");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  return [
+    hash,
+    (h) => {
+      if (h !== window.location.hash) window.location.hash = h;
+    },
+  ];
 }
 
-// Toggles for landing UI
+/* ===================== Portfolio Landing ===================== */
 const SHOW_ARROW_NAV = true;
 const SHOW_CHIP_BAR = true;
 
@@ -626,12 +661,11 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   const trackRef = useRef(null);
   const wrapRef = useRef(null);
 
-  // FIX #5: compute global failed/empty state
+  // banner when manifest empty or GH limit
   const allLoaded = states.every((s) => !s.loading);
   const anyImages = states.some((s) => (s.images?.length || 0) > 0);
   const showMediaBanner = allLoaded && !anyImages;
 
-  // Center the given initial index when landing
   useEffect(() => {
     if (!trackRef.current) return;
     const idx = Math.min(cats.length - 1, Math.max(0, initialIdx));
@@ -642,7 +676,6 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
     });
   }, [initialIdx, cats.length]);
 
-  // Track centered tile & scrollability
   useEffect(() => {
     const root = trackRef.current;
     if (!root) return;
@@ -687,7 +720,6 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
 
   const go = (dir) => scrollToIdx(active + dir);
 
-  // Edge-hover reveal for arrows
   const EDGE_ZONE = 88;
   const onPointerMove = (e) => {
     const host = wrapRef.current;
@@ -706,9 +738,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   return (
     <section id="portfolio" className="py-2">
       <header className="mb-4">
-        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
-          Portfolio
-        </h2>
+        <h2 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>Portfolio</h2>
         <p className={`mt-2 ${T.muted}`}>Hover near the edges for arrows, or use chips to jump.</p>
 
         {showMediaBanner && (
@@ -720,10 +750,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
       </header>
 
       {SHOW_CHIP_BAR && (
-        <nav
-          aria-label="Categories"
-          className="mb-3 -mx-2 sm:-mx-3 md:-mx-4 px-2 sm:px-3 md:px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
+        <nav aria-label="Categories" className="mb-3 -mx-2 sm:-mx-3 md:-mx-4 px-2 sm:px-3 md:px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <ul className="flex gap-2">
             {cats.map((c, i) => {
               const isActive = i === active;
@@ -731,9 +758,7 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
                 <li key={`chip-${c.label}`}>
                   <button
                     onClick={() => scrollToIdx(i)}
-                    className={`px-3 py-1.5 rounded-2xl border text-sm transition shadow-sm ${
-                      isActive ? T.chipActive : T.chipInactive
-                    }`}
+                    className={`px-3 py-1.5 rounded-2xl border text-sm transition shadow-sm ${isActive ? T.chipActive : T.chipInactive}`}
                     aria-current={isActive ? "true" : undefined}
                     onMouseDown={() => trackEvent("portfolio_chip_click", { category: c.label })}
                   >
@@ -813,7 +838,10 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
               >
                 <button
                   type="button"
-                  onClick={() => { openCat(c.label); trackEvent("portfolio_card_open", { category: c.label }); }}
+                  onClick={() => {
+                    openCat(c.label);
+                    trackEvent("portfolio_card_open", { category: c.label });
+                  }}
                   className={[
                     "group block w-full rounded-2xl overflow-hidden border shadow-sm transition-transform duration-200",
                     isActive ? "ring-2 ring-white/80" : "",
@@ -825,20 +853,13 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
                 >
                   <div className="aspect-[3/4] relative">
                     {cover ? (
-                      <img
-                        src={cover}
-                        alt={c.label}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                        loading="lazy"
-                      />
+                      <img src={cover} alt={c.label} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" loading="lazy" />
                     ) : (
                       <div className="absolute inset-0 bg-neutral-600/30" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50" />
                     <div className="absolute left-3 right-3 bottom-3">
-                      <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(18px,2.2vw,28px)] drop-shadow">
-                        {c.label}
-                      </h3>
+                      <h3 className="text-white font-['Playfair_Display'] uppercase tracking-[0.08em] text-[clamp(18px,2.2vw,28px)] drop-shadow">{c.label}</h3>
                       <span className="inline-flex items-center gap-1 text-white/90 text-[11px] opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
                         Enter →
                       </span>
@@ -856,21 +877,16 @@ function PortfolioLanding({ T, cats, states, openCat, initialIdx = 0 }) {
   );
 }
 
-/* Page (horizontal carousel) — with floating quick-exit pill */
-/* ===================== Portfolio Page (adds Vertical feed) ===================== */
-/* ===================== Portfolio Page (Vertical default + all layouts) ===================== */
-/* ===================== Portfolio Page (desktop+mobile lightbox fixes; no filenames) ===================== */
-/* ===================== Portfolio Page (desktop+mobile lightbox fixes; no filenames) ===================== */
+/* ===================== Portfolio Page (original behaviors) ===================== */
 function PortfolioPage({ T, cat, state, onBack }) {
   const items = state.images || [];
   const blurb = GH_CATEGORIES_EXT[cat.label]?.blurb || "";
 
-  // --- Shared state ---
-  const containerRef = useRef(null);        // horizontal carousel container
+  const containerRef = useRef(null); // horizontal carousel container
   const [activeIndex, setActiveIndex] = useState(0);
-  const [lbIdx, setLbIdx] = useState(-1);   // -1 = lightbox closed
+  const [lbIdx, setLbIdx] = useState(-1); // -1 = lightbox closed
 
-  // --- Layout mode: 'carousel' | 'grid' | 'masonry' | 'vertical'
+  // 'carousel' | 'masonry' | 'vertical'
   const LAYOUTS = ["carousel", "masonry", "vertical"];
   const [layout, setLayout] = useState(() => {
     const u = new URL(window.location.href);
@@ -883,7 +899,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
     window.history.replaceState(null, "", u.toString());
   }, [layout]);
 
-  // --- Track centered tile for horizontal carousel ---
+  // Track centered tile for horizontal carousel
   useEffect(() => {
     if (layout !== "carousel") return;
     const root = containerRef.current;
@@ -894,11 +910,15 @@ function PortfolioPage({ T, cat, state, onBack }) {
       if (!slides.length) return;
 
       const center = root.scrollLeft + root.clientWidth / 2;
-      let best = 0, bestDist = Infinity;
+      let best = 0,
+        bestDist = Infinity;
       slides.forEach((el, i) => {
         const mid = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(mid - center);
-        if (d < bestDist) { best = i; bestDist = d; }
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
       });
       setActiveIndex(best);
     };
@@ -912,9 +932,9 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
   }, [layout]);
 
-  // --- Page-level keyboard nav (disabled while lightbox is open) ---
+  // Page-level keyboard nav (disabled while lightbox is open)
   useEffect(() => {
-    if (lbIdx >= 0) return; // do not attach when lightbox is open
+    if (lbIdx >= 0) return;
 
     const goHoriz = (dir) => {
       const idx = Math.min(items.length - 1, Math.max(0, activeIndex + dir));
@@ -923,17 +943,23 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
 
     const onKey = (e) => {
-      if (lbIdx >= 0) return; // double guard
+      if (lbIdx >= 0) return;
       if (layout === "vertical") {
-        if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); vertGo(1); }
-        if (e.key === "ArrowUp"   || e.key === "PageUp")   { e.preventDefault(); vertGo(-1); }
+        if (e.key === "ArrowDown" || e.key === "PageDown") {
+          e.preventDefault();
+          vertGo(1);
+        }
+        if (e.key === "ArrowUp" || e.key === "PageUp") {
+          e.preventDefault();
+          vertGo(-1);
+        }
         if (e.key === "Home") vertGoTo(0);
-        if (e.key === "End")  vertGoTo(items.length - 1);
+        if (e.key === "End") vertGoTo(items.length - 1);
       } else {
         if (e.key === "ArrowRight") goHoriz(1);
-        if (e.key === "ArrowLeft")  goHoriz(-1);
-        if (e.key === "Home")       goHoriz(-999);
-        if (e.key === "End")        goHoriz(+999);
+        if (e.key === "ArrowLeft") goHoriz(-1);
+        if (e.key === "Home") goHoriz(-999);
+        if (e.key === "End") goHoriz(+999);
       }
     };
 
@@ -941,13 +967,13 @@ function PortfolioPage({ T, cat, state, onBack }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [activeIndex, items.length, lbIdx, layout]);
 
-  // --- Helpers for horizontal carousel direct jump from thumbs ---
+  // Helpers for carousel direct jump from thumbs
   const goTo = (idx) => {
     const el = containerRef.current?.querySelector(`[data-idx="${idx}"]`);
     el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
-  // --- Lightbox controls ---
+  // Lightbox controls
   const navLightbox = (dir) => {
     setLbIdx((i) => {
       if (i < 0) return i;
@@ -966,23 +992,33 @@ function PortfolioPage({ T, cat, state, onBack }) {
     }
   };
 
-  // --- Lightbox: keyboard (ESC + arrows) ---
+  // Lightbox keyboard
   useEffect(() => {
     if (lbIdx < 0) return;
     const onKey = (e) => {
-      // prevent background handlers
       e.stopPropagation();
-      if (e.key === "Escape") { e.preventDefault(); closeLbAndSync(); }
-      if (e.key === "ArrowRight") { e.preventDefault(); navLightbox(1); }
-      if (e.key === "ArrowLeft")  { e.preventDefault(); navLightbox(-1); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeLbAndSync();
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        navLightbox(1);
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        navLightbox(-1);
+      }
     };
     window.addEventListener("keydown", onKey, { capture: true });
     return () => window.removeEventListener("keydown", onKey, { capture: true });
   }, [lbIdx]);
 
-  // --- Lightbox: mobile swipe ---
+  // Lightbox swipe
   const touchStartX = useRef(null);
-  const onLbTouchStart = (e) => { touchStartX.current = e.touches?.[0]?.clientX ?? null; };
+  const onLbTouchStart = (e) => {
+    touchStartX.current = e.touches?.[0]?.clientX ?? null;
+  };
   const onLbTouchEnd = (e) => {
     if (touchStartX.current == null) return;
     const dx = (e.changedTouches?.[0]?.clientX ?? 0) - touchStartX.current;
@@ -1002,11 +1038,13 @@ function PortfolioPage({ T, cat, state, onBack }) {
     };
   }, [lbIdx]);
 
-  // --- Vertical feed: refs + tracking (Insta-style) ---
+  // Vertical layout observers
   const vWrapRef = useRef(null);
   const vItemRefs = useRef([]);
   vItemRefs.current = [];
-  const registerVItem = (el) => { if (el) vItemRefs.current.push(el); };
+  const registerVItem = (el) => {
+    if (el) vItemRefs.current.push(el);
+  };
 
   const vertGoTo = (idx) => {
     const el = vItemRefs.current[idx];
@@ -1028,17 +1066,24 @@ function PortfolioPage({ T, cat, state, onBack }) {
     const handle = () => {
       ticking = false;
       const line = snapLine();
-      let best = 0, bestDist = Infinity;
+      let best = 0,
+        bestDist = Infinity;
       vItemRefs.current.forEach((el, i) => {
         const r = el.getBoundingClientRect();
         const d = Math.abs(r.top - line);
-        if (d < bestDist) { best = i; bestDist = d; }
+        if (d < bestDist) {
+          best = i;
+          bestDist = d;
+        }
       });
       setActiveIndex(best);
     };
 
     const onScroll = () => {
-      if (!ticking) { ticking = true; requestAnimationFrame(handle); }
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(handle);
+      }
     };
 
     const io = new IntersectionObserver(onScroll, { root: null, threshold: [0, 0.5, 1] });
@@ -1060,7 +1105,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
       <div className="fixed left-3 md:left-4 top-[calc(72px+10px)] z-[60]">
         <button
           type="button"
-          onClick={() => { onBack(); trackEvent("portfolio_back_to_categories", { category: cat.label }); }}
+          onClick={() => {
+            onBack();
+            trackEvent("portfolio_back_to_categories", { category: cat.label });
+          }}
           aria-label="Back to categories"
           className="rounded-full px-3 py-1.5 text-sm border border-white/30 bg-black/30 text-white backdrop-blur-sm hover:bg-black/50"
         >
@@ -1071,31 +1119,33 @@ function PortfolioPage({ T, cat, state, onBack }) {
       {/* Sticky breadcrumb + title */}
       <div className="mb-4 sticky top-[72px] z-[1] backdrop-blur">
         <div className="pt-3">
-          <button className={`${T.linkSubtle} text-sm`} onClick={() => { onBack(); trackEvent("breadcrumb_back", { from: cat.label }); }}>
+          <button
+            className={`underline text-sm ${T.linkSubtle}`}
+            onClick={() => {
+              onBack();
+              trackEvent("breadcrumb_back", { from: cat.label });
+            }}
+          >
             Portfolio
           </button>
           <span className={`mx-2 ${T.muted2}`}>/</span>
           <span className={`text-sm ${T.navTextStrong}`}>{cat.label}</span>
         </div>
-        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>
-          {cat.label}
-        </h2>
+        <h2 className={`mt-1 text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>{cat.label}</h2>
         {blurb ? <p className={`mt-1 ${T.muted}`}>{blurb}</p> : null}
       </div>
 
-      {/* Layout picker (desktop + mobile chips already in your app) */}
+      {/* Layout picker */}
       <div className="mb-4 flex items-center gap-2">
         <span className="text-xs opacity-70">Layout:</span>
         {["carousel", "masonry", "vertical"].map((k) => (
           <button
             key={k}
-            onClick={() => { setLayout(k); trackEvent("layout_change", { category: cat.label, layout: k }); }}
-            className={[
-              "text-xs rounded-full border px-3 py-1 transition",
-              layout === k
-                ? "bg-black text-white border-black"
-                : "border-neutral-300 hover:bg-neutral-100"
-            ].join(" ")}
+            onClick={() => {
+              setLayout(k);
+              trackEvent("layout_change", { category: cat.label, layout: k });
+            }}
+            className={["text-xs rounded-full border px-3 py-1 transition", layout === k ? "bg-black text-white border-black" : "border-neutral-300 hover:bg-neutral-100"].join(" ")}
             aria-pressed={layout === k}
           >
             {k.charAt(0).toUpperCase() + k.slice(1)}
@@ -1104,9 +1154,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       </div>
 
       {/* Right side counter */}
-      <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none z-[60]">
-        {items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}
-      </div>
+      <div className="fixed right-4 md:right-6 top-[calc(72px+12px)] text-[11px] tracking-[0.25em] opacity-80 pointer-events-none z-[60]">{items.length ? `${activeIndex + 1} / ${items.length}` : "0 / 0"}</div>
 
       {/* ======== GALLERY CONDITIONAL ======== */}
       {state.error ? (
@@ -1116,7 +1164,7 @@ function PortfolioPage({ T, cat, state, onBack }) {
       ) : !items.length ? (
         <div className={`${T.muted}`}>No images yet for {cat.label}.</div>
       ) : layout === "vertical" ? (
-        /* ===== VERTICAL (Insta-style) ===== */
+        /* ===== VERTICAL ===== */
         <div
           ref={vWrapRef}
           className="
@@ -1132,22 +1180,20 @@ function PortfolioPage({ T, cat, state, onBack }) {
           {items.map((it, i) => (
             <article key={it.sha || i} ref={registerVItem} data-idx={i} className="snap-start">
               <div className={`rounded-2xl border shadow-sm ${T.cardBg} ${T.cardBorder}`}>
-                 <div className="mt-2">
+                <div className="mt-2">
                   <button
-                    onClick={() => { setActiveIndex(i); setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
+                    onClick={() => {
+                      setActiveIndex(i);
+                      setLbIdx(i);
+                      trackEvent("image_open", { category: cat.label, idx: i + 1 });
+                    }}
                     className="block w-full"
                     aria-label={`Open image ${i + 1}`}
                   >
-                    <img
-                      src={it.url}
-                      alt={cat.label}          // no filename
-                      loading="lazy"
-                      className="w-full h-auto max-h-[88vh] object-contain bg-black/5"
-                    />
+                    <img src={it.url} alt={cat.label} loading="lazy" className="w-full h-auto max-h-[88vh] object-contain bg-black/5" />
                   </button>
                 </div>
 
-                {/* show caption only if provided */}
                 {it.caption && (
                   <div className="px-4 py-3">
                     <p className={`text-sm ${T.muted}`}>{it.caption}</p>
@@ -1183,20 +1229,20 @@ function PortfolioPage({ T, cat, state, onBack }) {
               <figure
                 key={it.sha || i}
                 data-idx={i}
-                className={`
-                  relative flex-shrink-0
-                  w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%]
-                  snap-center transition-transform duration-300
-                  ${i === activeIndex ? "scale-[1.01]" : "scale-[0.995]"}
-                `}
+                className={`relative flex-shrink-0 w-[82%] sm:w-[72%] md:w-[64%] lg:w-[58%] snap-center transition-transform duration-300 ${
+                  i === activeIndex ? "scale-[1.01]" : "scale-[0.995]"
+                }`}
               >
                 <div className={`rounded-2xl ${i === activeIndex ? "shadow-lg" : "shadow-sm"}`}>
                   <img
                     src={it.url}
-                    alt={cat.label}          // no filename
+                    alt={cat.label}
                     className="mx-auto rounded-2xl object-contain max-h-[68vh] w-auto h-[58vh] sm:h-[64vh] md:h-[68vh] cursor-zoom-in"
                     loading="lazy"
-                    onClick={() => { setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
+                    onClick={() => {
+                      setLbIdx(i);
+                      trackEvent("image_open", { category: cat.label, idx: i + 1 });
+                    }}
                   />
                 </div>
               </figure>
@@ -1210,12 +1256,14 @@ function PortfolioPage({ T, cat, state, onBack }) {
               {items.map((it, i) => (
                 <button
                   key={`thumb-${i}`}
-                  onClick={() => { goTo(i); trackEvent("thumb_click", { category: cat.label, idx: i + 1 }); }}
+                  onClick={() => {
+                    goTo(i);
+                    trackEvent("thumb_click", { category: cat.label, idx: i + 1 });
+                  }}
                   aria-label={`Go to image ${i + 1}`}
-                  className={`
-                    h-14 w-10 rounded-md overflow-hidden border transition
-                    ${i === activeIndex ? "opacity-100 ring-2 ring-white" : "opacity-60 hover:opacity-90"}
-                  `}
+                  className={`h-14 w-10 rounded-md overflow-hidden border transition ${
+                    i === activeIndex ? "opacity-100 ring-2 ring-white" : "opacity-60 hover:opacity-90"
+                  }`}
                 >
                   <img src={it.url} alt="" className="h-full w-full object-cover" loading="lazy" />
                 </button>
@@ -1224,13 +1272,17 @@ function PortfolioPage({ T, cat, state, onBack }) {
           </div>
         </>
       ) : (
-        /* ===== MASONRY (CSS columns) ===== */
+        /* ===== MASONRY ===== */
         <div className="mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4">
           <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4 md:gap-5 [column-fill:_balance]">
             {items.map((it, i) => (
               <button
                 key={it.sha || i}
-                onClick={() => { setActiveIndex(i); setLbIdx(i); trackEvent("image_open", { category: cat.label, idx: i + 1 }); }}
+                onClick={() => {
+                  setActiveIndex(i);
+                  setLbIdx(i);
+                  trackEvent("image_open", { category: cat.label, idx: i + 1 });
+                }}
                 className="mb-3 sm:mb-4 md:mb-5 w-full overflow-hidden rounded-2xl border shadow-sm hover:shadow-md transition"
                 style={{ breakInside: "avoid" }}
               >
@@ -1248,7 +1300,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
           role="dialog"
           aria-modal="true"
           aria-label="Image viewer"
-          onClick={() => { closeLbAndSync(); trackEvent("lightbox_close", { category: cat.label }); }}
+          onClick={() => {
+            closeLbAndSync();
+            trackEvent("lightbox_close", { category: cat.label });
+          }}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
         >
@@ -1256,7 +1311,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
           <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); navLightbox(-1); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navLightbox(-1);
+              }}
               className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
               aria-label="Previous image"
             >
@@ -1267,7 +1325,10 @@ function PortfolioPage({ T, cat, state, onBack }) {
 
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); navLightbox(1); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navLightbox(1);
+              }}
               className="pointer-events-auto mx-2 md:mx-4 h-12 w-12 md:h-14 md:w-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center"
               aria-label="Next image"
             >
@@ -1279,11 +1340,23 @@ function PortfolioPage({ T, cat, state, onBack }) {
 
           <img
             src={items[lbIdx].url}
-            alt={cat.label}  // no filename
+            alt={cat.label}
             className="max-h-[92vh] max-w-[92vw] object-contain cursor-zoom-out"
-            onClick={(e) => { e.stopPropagation(); closeLbAndSync(); }}
-            onTouchStart={onLbTouchStart}
-            onTouchEnd={onLbTouchEnd}
+            onClick={(e) => {
+              e.stopPropagation();
+              closeLbAndSync();
+            }}
+            onTouchStart={(e) => {
+              const x = e.touches?.[0]?.clientX ?? null;
+              touchStartX.current = x;
+            }}
+            onTouchEnd={(e) => {
+              const x0 = touchStartX.current;
+              if (x0 == null) return;
+              const dx = (e.changedTouches?.[0]?.clientX ?? 0) - x0;
+              if (Math.abs(dx) > 50) navLightbox(dx < 0 ? 1 : -1);
+              touchStartX.current = null;
+            }}
           />
         </div>
       )}
@@ -1291,34 +1364,14 @@ function PortfolioPage({ T, cat, state, onBack }) {
   );
 }
 
-function MobileLayoutFab({ visible, layout, setLayout }) {
-  const order = ["vertical", "carousel", "masonry"];
-  const nextLayout = () => {
-    const i = order.indexOf(layout);
-    setLayout(order[(i + 1) % order.length]);
-    try { window.navigator.vibrate?.(10); } catch {}
-  };
-  if (!visible) return null;
-  return (
-    <div className="sm:hidden fixed right-4 bottom-20 z-[60]">
-      <button onClick={nextLayout} className="h-12 w-12 rounded-full bg-black/70 text-white">
-        {layout[0].toUpperCase()}
-      </button>
-    </div>
-  );
-}
-
-/* ===== Wrapper (hash-driven view switch) ===== */
+/* ===================== Portfolio Wrapper (hash-driven) ===================== */
 function Portfolio({ T }) {
-  const [states, setStates] = useState(() =>
-    GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] }))
-  );
+  const [states, setStates] = useState(() => GH_CATEGORIES.map(() => ({ loading: true, error: "", images: [] })));
   const [hash, setHash] = useHash();
-  const [view, setView] = useState("landing"); // "landing" | "page"
+  const [view, setView] = useState("landing"); // 'landing' | 'page'
   const [activeIdx, setActiveIdx] = useState(-1);
 
   const openCat = (label) => {
-    // normalize label from hash (case-insensitive)
     const idx = GH_CATEGORIES.findIndex((c) => c.label.toLowerCase() === label.toLowerCase());
     if (idx < 0) return;
     try {
@@ -1326,7 +1379,8 @@ function Portfolio({ T }) {
     } catch {}
     setActiveIdx(idx);
     setView("page");
-    setHash(`#portfolio/${encodeURIComponent(GH_CATEGORIES[idx].label)}`);
+    // IMPORTANT: keep inside router namespace
+    setHash(`#/portfolio/${encodeURIComponent(GH_CATEGORIES[idx].label)}`);
     const el = document.getElementById("portfolio");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -1334,15 +1388,16 @@ function Portfolio({ T }) {
   const goLanding = () => {
     setView("landing");
     setActiveIdx(-1);
-    setHash("#portfolio");
+    setHash("#/portfolio");
   };
 
-  // hash → view
+  // hash → view (works for "#/portfolio/..." and "#portfolio/...")
   useEffect(() => {
-    if (!hash.startsWith("#portfolio")) return;
-    const seg = hash.split("/");
+    const h = hash.startsWith("#/") ? hash.slice(2) : hash.slice(1);
+    if (!h.startsWith("portfolio")) return;
+    const seg = h.split("/");
     if (seg.length >= 2 && seg[1]) {
-      const label = decodeURIComponent(seg[1].replace(/^#?portfolio\/?/, ""));
+      const label = decodeURIComponent(seg[1].replace(/^portfolio\/?/, ""));
       const idx = GH_CATEGORIES.findIndex((c) => c.label.toLowerCase() === label.toLowerCase());
       if (idx >= 0) {
         setActiveIdx(idx);
@@ -1354,7 +1409,7 @@ function Portfolio({ T }) {
     setActiveIdx(-1);
   }, [hash]);
 
-  // fetch images (manifest-first)
+  // fetch images
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1390,25 +1445,17 @@ function Portfolio({ T }) {
     }
   })();
 
-  return (
-    <PortfolioLanding
-      T={T}
-      cats={GH_CATEGORIES}
-      states={states}
-      openCat={openCat}
-      initialIdx={lastIdx}
-    />
-  );
+  return <PortfolioLanding T={T} cats={GH_CATEGORIES} states={states} openCat={openCat} initialIdx={lastIdx} />;
 }
 
-/* ===================== About + Contact (Booking) ===================== */
+/* ===================== About + Contact ===================== */
 function AboutBlock({ T }) {
   return (
     <section className="py-6">
       <h1 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>About PRADHU</h1>
       <p className={`mt-3 ${T.muted}`}>
-        Aspiring photographer from Kanchipuram, working across fashion, portraits, candids and events. Client-first process
-        with tailored recommendations on looks, lighting, locations and timelines.
+        Aspiring photographer from Kanchipuram, working across fashion, portraits, candids and events. Client-first process with tailored recommendations on looks, lighting, locations and
+        timelines.
       </p>
       <ul className={`mt-4 text-sm list-disc pl-5 space-y-1 ${T.muted}`}>
         <li>Genres: Fashion, High Fashion, Portraits, Editorials, Candids, Portfolio, Headshots, Street, Studio</li>
@@ -1425,11 +1472,7 @@ function AboutBlock({ T }) {
         >
           <Icon name="grid" className="h-5 w-5" />
         </a>
-        <a
-          href={`mailto:${CONTACT_EMAIL}`}
-          className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg}`}
-          title="Email"
-        >
+        <a href={`mailto:${CONTACT_EMAIL}`} className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl border ${T.panelBorder} ${T.panelBg}`} title="Email">
           <Icon name="mail" className="h-5 w-5" />
         </a>
       </div>
@@ -1440,9 +1483,19 @@ function AboutBlock({ T }) {
 function Input({ T, label, name, value, onChange, type = "text", required = false, placeholder = "" }) {
   return (
     <div>
-      <label htmlFor={name} className={`text-sm ${T.muted}`}>{label} {required ? <span className="text-red-500">*</span> : null}</label>
-      <input id={name} name={name} type={type} value={value} onChange={onChange} placeholder={placeholder} required={required}
-             className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`} />
+      <label htmlFor={name} className={`text-sm ${T.muted}`}>
+        {label} {required ? <span className="text-red-500">*</span> : null}
+      </label>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+      />
     </div>
   );
 }
@@ -1454,8 +1507,10 @@ function ContactPage({ T }) {
   const [whatsCTA, setWhatsCTA] = useState("");
 
   const minDateStr = useMemo(() => {
-    const d = new Date(); d.setDate(d.getDate() + 2);
-    const off = d.getTimezoneOffset(); const local = new Date(d.getTime() - off * 60000);
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off * 60000);
     return local.toISOString().slice(0, 10);
   }, []);
   const fmtHuman = (s) => {
@@ -1463,7 +1518,11 @@ function ContactPage({ T }) {
     const [y, m, d] = s.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
   };
-  const onChange = (e) => { setWhatsCTA(""); setNote({ kind: "", text: "" }); setForm({ ...form, [e.target.name]: e.target.value }); };
+  const onChange = (e) => {
+    setWhatsCTA("");
+    setNote({ kind: "", text: "" });
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
   const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   const normalizePhone = (v) => v.replace(/[^\d]/g, "");
   const isValidINPhone = (v) => /^(?:\+?91)?[6-9]\d{9}$/.test(normalizePhone(v)) || /^0[6-9]\d{9}$/.test(normalizePhone(v));
@@ -1485,7 +1544,9 @@ function ContactPage({ T }) {
       trackEvent("form_submit", { location: "contact", status: "success", service: form.service, city: form.city || "NA" });
 
       const waText = encodeURIComponent(
-        `Hi Pradhu! This is ${form.name}. I just sent an enquiry from your website.\nService: ${form.service}\nCity: ${form.city}\nPreferred date: ${form.date ? fmtHuman(form.date) : "TBD"}\nDetails: ${form.message || "—"}`
+        `Hi Pradhu! This is ${form.name}. I just sent an enquiry from your website.\nService: ${form.service}\nCity: ${form.city}\nPreferred date: ${
+          form.date ? fmtHuman(form.date) : "TBD"
+        }\nDetails: ${form.message || "—"}`
       );
       const utm = "utm_source=site&utm_medium=booking_success_cta&utm_campaign=booking";
       const waHref = `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}&${utm}`;
@@ -1495,7 +1556,9 @@ function ContactPage({ T }) {
     } catch (err) {
       setNote({ kind: "error", text: "Couldn’t submit right now. Please try again." });
       trackEvent("form_submit", { location: "contact", status: "error", error: String(err?.message || "unknown") });
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -1503,8 +1566,9 @@ function ContactPage({ T }) {
       <h1 className={`text-4xl md:text-5xl font-['Playfair_Display'] uppercase tracking-[0.08em] ${T.navTextStrong}`}>Contact</h1>
       <p className={`mt-2 ${T.muted}`}>Share details and I’ll reply with availability and a quote.</p>
 
-      {/* About summary block on top for this page */}
-      <div className="mt-6"><AboutBlock T={T} /></div>
+      <div className="mt-6">
+        <AboutBlock T={T} />
+      </div>
 
       <form onSubmit={onSubmit} className={`mt-4 rounded-2xl border p-6 shadow-sm ${T.panelBg} ${T.panelBorder}`}>
         <div className="grid grid-cols-1 gap-4">
@@ -1514,56 +1578,79 @@ function ContactPage({ T }) {
 
           <div>
             <label className={`text-sm ${T.muted}`}>Preferred Date</label>
-            <input name="date" type="date" min={minDateStr} value={form.date}
-                   onKeyDown={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}
-                   onChange={(e) => {
-                     let v = e.target.value;
-                     if (v && v < minDateStr) { v = minDateStr; setNote({ kind: "info", text: `Earliest available date is ${fmtHuman(minDateStr)}.` }); }
-                     setForm({ ...form, date: v });
-                   }}
-                   className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`} />
+            <input
+              name="date"
+              type="date"
+              min={minDateStr}
+              value={form.date}
+              onKeyDown={(e) => e.preventDefault()}
+              onPaste={(e) => e.preventDefault()}
+              onChange={(e) => {
+                let v = e.target.value;
+                if (v && v < minDateStr) {
+                  v = minDateStr;
+                  setNote({ kind: "info", text: `Earliest available date is ${fmtHuman(minDateStr)}.` });
+                }
+                setForm({ ...form, date: v });
+              }}
+              className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+            />
             <p className="text-xs opacity-70 mt-1">Earliest selectable: {fmtHuman(minDateStr)}</p>
           </div>
 
           <div>
             <label className={`text-sm ${T.muted}`}>Message</label>
-            <textarea name="message" value={form.message} onChange={onChange} rows={5}
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
-                      placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc." />
+            <textarea
+              name="message"
+              value={form.message}
+              onChange={onChange}
+              rows={5}
+              className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText} ${T.placeholder}`}
+              placeholder="Shoot location, timings, concept, references, usage (personal/commercial), etc."
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={`text-sm ${T.muted}`}>Service</label>
-              <select name="service" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.service} onChange={onChange}>
-                {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => <option key={s} value={s}>{s}</option>)}
+              <select name="service" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`} value={form.service} onChange={onChange}>
+                {["Portraits", "Fashion", "Candids", "Street", "Events", "Other"].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label className={`text-sm ${T.muted}`}>City</label>
-              <select name="city" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`}
-                      value={form.city} onChange={onChange}>
-                <option>Pune</option><option>Mumbai</option><option>Chennai</option><option>Bengaluru</option><option>Other</option>
+              <select name="city" className={`mt-1 w-full rounded-xl border px-3 py-2 ${T.inputBg} ${T.inputBorder} ${T.inputText}`} value={form.city} onChange={onChange}>
+                <option>Pune</option>
+                <option>Mumbai</option>
+                <option>Chennai</option>
+                <option>Bengaluru</option>
+                <option>Other</option>
               </select>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={submitting}
-                    className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
-                    onClick={() => trackEvent("cta_click", { location: "contact_form", cta: "submit" })}>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-xl bg-neutral-900 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
+              onClick={() => trackEvent("cta_click", { location: "contact_form", cta: "submit" })}
+            >
               {submitting ? "Submitting…" : "Send Enquiry"}
             </button>
-            {note.text ? (
-              <span className={`text-sm ${note.kind === "error" ? "text-red-600" : note.kind === "success" ? "text-emerald-600" : "opacity-80"}`}>
-                {note.text}
-              </span>
-            ) : null}
+            {note.text ? <span className={`text-sm ${note.kind === "error" ? "text-red-600" : note.kind === "success" ? "text-emerald-600" : "opacity-80"}`}>{note.text}</span> : null}
             {whatsCTA && (
-              <a href={whatsCTA} target="_blank" rel="noreferrer"
-                 className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
-                 onClick={() => trackEvent("cta_click", { location: "contact_success", cta: "whatsapp" })}>
+              <a
+                href={whatsCTA}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
+                onClick={() => trackEvent("cta_click", { location: "contact_success", cta: "whatsapp" })}
+              >
                 Continue on WhatsApp
               </a>
             )}
@@ -1585,7 +1672,7 @@ function ReviewsPage({ T }) {
   );
 }
 
-/* ===================== Sticky CTA (hidden on Contact when form visible) ===================== */
+/* ===================== Sticky CTA ===================== */
 function StickyCTA({ T, hide }) {
   if (hide) return null;
   const waText = encodeURIComponent("Hi! I’d like to book a shoot via your website (Sticky CTA).");
@@ -1593,20 +1680,34 @@ function StickyCTA({ T, hide }) {
   return (
     <>
       <div className="hidden sm:flex fixed right-4 bottom-6 z-[70] items-center gap-2 rounded-full shadow-lg border px-3 py-2 backdrop-blur bg-white/90 text-black">
-        <a href="#/contact" className="rounded-full bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
-           onClick={() => trackEvent("cta_click", { location: "sticky", cta: "book" })}>Book a Shoot</a>
-        <a href={waHref} target="_blank" rel="noreferrer"
-           className="rounded-full border px-3 py-2 text-sm hover:bg-black/5"
-           onClick={() => trackEvent("cta_click", { location: "sticky", cta: "whatsapp" })}>WhatsApp</a>
+        <a href="#/contact" className="rounded-full bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90" onClick={() => trackEvent("cta_click", { location: "sticky", cta: "book" })}>
+          Book a Shoot
+        </a>
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-full border px-3 py-2 text-sm hover:bg-black/5"
+          onClick={() => trackEvent("cta_click", { location: "sticky", cta: "whatsapp" })}
+        >
+          WhatsApp
+        </a>
       </div>
       <div className="sm:hidden fixed inset-x-0 bottom-0 z-[70]">
         <div className="mx-2 mb-2 rounded-2xl shadow-xl border overflow-hidden bg-white/95">
           <div className="flex">
-            <a href="#/contact" className="flex-1 bg-black text-white py-3 font-medium text-center"
-               onClick={() => trackEvent("cta_click", { location: "sticky_mobile", cta: "book" })}>Book a Shoot</a>
-            <a href={waHref} target="_blank" rel="noreferrer"
-               className="w-[44%] bg-white py-3 text-center text-sm font-medium"
-               onClick={() => trackEvent("cta_click", { location: "sticky_mobile", cta: "whatsapp" })}>WhatsApp</a>
+            <a href="#/contact" className="flex-1 bg-black text-white py-3 font-medium text-center" onClick={() => trackEvent("cta_click", { location: "sticky_mobile", cta: "book" })}>
+              Book a Shoot
+            </a>
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noreferrer"
+              className="w-[44%] bg-white py-3 text-center text-sm font-medium"
+              onClick={() => trackEvent("cta_click", { location: "sticky_mobile", cta: "whatsapp" })}
+            >
+              WhatsApp
+            </a>
           </div>
         </div>
       </div>
@@ -1617,7 +1718,11 @@ function StickyCTA({ T, hide }) {
 /* ===================== Main App (router) ===================== */
 export default function App() {
   const [theme, setTheme] = useState(() => {
-    try { return sessionStorage.getItem("pradhu:theme") || "dark"; } catch { return "dark"; }
+    try {
+      return sessionStorage.getItem("pradhu:theme") || "dark";
+    } catch {
+      return "dark";
+    }
   });
   const T = useThemeTokens(theme);
   const [showIntro, setShowIntro] = useState(() => {
@@ -1628,18 +1733,28 @@ export default function App() {
     if (!INTRO_REMEMBER) return true;
     return sessionStorage.getItem("pradhu:intro:dismissed") !== "1";
   });
-  const closeIntro = () => { setShowIntro(false); try { if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1"); } catch {} };
+  const closeIntro = () => {
+    setShowIntro(false);
+    try {
+      if (INTRO_REMEMBER) sessionStorage.setItem("pradhu:intro:dismissed", "1");
+    } catch {}
+  };
 
   const [path, nav] = useHashRoute();
-  useEffect(() => { if (!window.location.hash) nav("/"); }, []); // default to home
-  useEffect(() => { try { sessionStorage.setItem("pradhu:theme", theme); } catch {} }, [theme]);
+  useEffect(() => {
+    if (!window.location.hash) nav("/");
+  }, []); // default to home
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("pradhu:theme", theme);
+    } catch {}
+  }, [theme]);
 
   const isContact = path === "/contact";
   const NAV_BRAND = "PRADHU PHOTOGRAPHY";
 
   return (
-    <main aria-hidden={showIntro ? "true" : undefined}
-          className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${theme === "light" ? "bg-dots-light" : "bg-dots-dark"}`}>
+    <main aria-hidden={showIntro ? "true" : undefined} className={`min-h-screen ${T.pageBg} ${T.pageText} font-['Inter'] ${theme === "light" ? "bg-dots-light" : "bg-dots-dark"}`}>
       <HeadFonts />
       {showIntro && <IntroOverlay onClose={closeIntro} />}
 
@@ -1647,16 +1762,16 @@ export default function App() {
       <header className={`sticky top-0 z-50 backdrop-blur border-b ${T.navBg} ${T.navBorder}`}>
         <nav className={`${CONTAINER} py-4 lg:py-5 grid grid-cols-[1fr_auto_auto] items-center gap-3`}>
           <div className="min-w-0">
-            <p className={`font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none ${T.navTextStrong}
-                           text-[clamp(20px,2.4vw,40px)] whitespace-nowrap`}>{NAV_BRAND}</p>
+            <p className={`font-['Playfair_Display'] uppercase tracking-[0.08em] leading-none ${T.navTextStrong} text-[clamp(20px,2.4vw,40px)] whitespace-nowrap`}>{NAV_BRAND}</p>
           </div>
           <ul className="hidden lg:flex items-center gap-2 text-sm">
             {NAV_ITEMS.map(({ label, id, icon }) => (
               <li key={id}>
-                <a href={`#${id}`}
-                   onClick={() => trackEvent("nav_click", { to: id })}
-                   className={`relative group flex items-center gap-2 px-3 py-2 rounded-2xl border transition shadow-sm ${
-                     path === id ? T.chipActive : T.chipInactive}`}>
+                <a
+                  href={`#${id}`}
+                  onClick={() => trackEvent("nav_click", { to: id })}
+                  className={`relative group flex items-center gap-2 px-3 py-2 rounded-2xl border transition shadow-sm ${path === id ? T.chipActive : T.chipInactive}`}
+                >
                   <Icon name={icon} className={`h-4 w-4 ${path === id ? "opacity-100" : "opacity-60"}`} />
                   <span className="text-sm">{label}</span>
                 </a>
@@ -1676,14 +1791,11 @@ export default function App() {
             <div className="flex gap-3 overflow-x-auto whitespace-nowrap pb-2" style={{ scrollbarWidth: "none" }}>
               {[
                 { id: "/portfolio", label: "Portfolio", icon: "grid" },
-                { id: "/services", label: "Services", icon: "briefcase" },
-                { id: "/pricing", label: "Pricing", icon: "tag" },
+                { id: "/services", label: "Services & Pricing", icon: "briefcase" },
                 { id: "/about", label: "About", icon: "user" },
                 { id: "/contact", label: "Contact", icon: "mail" },
               ].map((t) => (
-                <a key={t.id} href={`#${t.id}`}
-                   className={`flex items-center gap-2 rounded-2xl border px-4 py-2 transition shadow-sm ${T.chipInactive}`}
-                   onClick={() => trackEvent("tiles_click", { to: t.id })}>
+                <a key={t.id} href={`#${t.id}`} className={`flex items-center gap-2 rounded-2xl border px-4 py-2 transition shadow-sm ${T.chipInactive}`} onClick={() => trackEvent("tiles_click", { to: t.id })}>
                   <Icon name={t.icon} className="h-4 w-4 opacity-60" />
                   <span className="text-sm">{t.label}</span>
                 </a>
@@ -1698,11 +1810,12 @@ export default function App() {
           <Portfolio T={T} />
         </div>
       )}
+
       {path === "/services" && (
-  <div className={`${CONTAINER} py-12`}>
-    <ServicesPricingPage T={T} />
-  </div>
-)}
+        <div className={`${CONTAINER} py-12`}>
+          <ServicesPricingPage T={T} />
+        </div>
+      )}
 
       {path === "/about" && (
         <div className={`${CONTAINER} py-12`}>
@@ -1710,20 +1823,28 @@ export default function App() {
           <FaqSection T={T} showTitle />
         </div>
       )}
+
       {path === "/reviews" && (
         <div className={`${CONTAINER} py-12`}>
           <ReviewsPage T={T} />
         </div>
       )}
+
       {path === "/contact" && (
         <div className={`${CONTAINER} py-12`}>
           <ContactPage T={T} />
         </div>
       )}
+
       {path === "/404" && (
         <div className={`${CONTAINER} py-20`}>
           <h1 className="text-3xl font-semibold">Page not found</h1>
-          <p className="mt-2">Go back <a className="underline" href="#/">home</a>.</p>
+          <p className="mt-2">
+            Go back <a className="underline" href="#/">
+              home
+            </a>
+            .
+          </p>
         </div>
       )}
 
@@ -1748,20 +1869,20 @@ function ThemeSlider({ theme, setTheme }) {
   const isDark = theme === "dark";
   const setLight = () => setTheme("light");
   const setDark = () => setTheme("dark");
-  const onKeyDown = (e) => { if (e.key === "ArrowLeft") setLight(); if (e.key === "ArrowRight") setDark(); };
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowLeft") setLight();
+    if (e.key === "ArrowRight") setDark();
+  };
   return (
     <div className="relative h-9 w-[150px] select-none" role="tablist" aria-label="Theme" onKeyDown={onKeyDown}>
       <div className="absolute inset-0 rounded-full border border-neutral-300 bg-neutral-100" />
-      <div className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${
-        isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"}`} aria-hidden="true" />
+      <div className={`absolute top-0 left-0 h-full w-1/2 rounded-full shadow-sm transition-transform duration-200 ${isDark ? "translate-x-full bg-neutral-900" : "translate-x-0 bg-white border border-neutral-300"}`} aria-hidden="true" />
       <div className="relative z-10 grid grid-cols-2 h-full">
-        <button type="button" role="tab" aria-selected={!isDark} onClick={setLight}
-                className="flex items-center justify-center gap-1.5 px-3 h-full">
+        <button type="button" role="tab" aria-selected={!isDark} onClick={setLight} className="flex items-center justify-center gap-1.5 px-3 h-full">
           <Icon name="sun" className={`h-4 w-4 ${isDark ? "opacity-40 text-neutral-600" : "opacity-100 text-neutral-900"}`} />
           <span className={`text-xs ${isDark ? "opacity-50 text-neutral-700" : "opacity-100 text-neutral-900 font-medium"}`}>Light</span>
         </button>
-        <button type="button" role="tab" aria-selected={isDark} onClick={setDark}
-                className="flex items-center justify-center gap-1.5 px-3 h-full">
+        <button type="button" role="tab" aria-selected={isDark} onClick={setDark} className="flex items-center justify-center gap-1.5 px-3 h-full">
           <Icon name="moon" className={`h-4 w-4 ${isDark ? "opacity-100 text-white" : "opacity-40 text-neutral-600"}`} />
           <span className={`text-xs ${isDark ? "opacity-100 text-white font-medium" : "opacity-50 text-neutral-700"}`}>Dark</span>
         </button>
