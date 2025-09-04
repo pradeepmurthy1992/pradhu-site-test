@@ -430,6 +430,7 @@ function Hero() {
             Fashion · Portraits · Candids · Portfolio · Professional headshots · Events .
           </p>
           <div className="mt-5 flex items-center gap-3">
+            {/* Primary CTA visible on all screens */}
             <a
               href="#/contact"
               className="rounded-xl bg-white text-black px-5 py-2.5 font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white/70"
@@ -438,21 +439,23 @@ function Hero() {
             >
               Book a Shoot
             </a>
+
+            {/* Mobile-only WA + Call (desktop hides) */}
             {waHref && (
               <a
                 href={waHref}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
-                onClick={() => trackEvent("cta_click", { location: "hero", cta: "whatsapp" })}
+                className="md:hidden rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+                onClick={() => trackEvent("cta_click", { location: "hero", cta: "whatsapp_mobile" })}
               >
                 WhatsApp
               </a>
             )}
             <a
               href="tel:+919322584410"
-              className="rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
-              onClick={() => trackEvent("cta_click", { location: "hero", cta: "call" })}
+              className="md:hidden rounded-xl border border-white/40 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+              onClick={() => trackEvent("cta_click", { location: "hero", cta: "call_mobile" })}
             >
               Call
             </a>
@@ -1622,13 +1625,14 @@ function ReviewsPage({ T }) {
   );
 }
 
-/* ===================== Sticky CTA ===================== */
+/* ===================== Sticky CTA (Desktop-only) ===================== */
 function StickyCTA({ T, hide }) {
   if (hide) return null;
   const waText = encodeURIComponent("Hi! I’d like to book a shoot via your website (Sticky CTA).");
   const waHref = `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}&utm_source=site&utm_medium=sticky_cta&utm_campaign=booking`;
   return (
     <>
+      {/* Desktop only */}
       <div className="hidden sm:flex fixed right-4 bottom-6 z-[70] items-center gap-2 rounded-full shadow-lg border px-3 py-2 backdrop-blur bg-white/90 text-black">
         <a
           href="#/contact"
@@ -1647,29 +1651,67 @@ function StickyCTA({ T, hide }) {
           WhatsApp
         </a>
       </div>
-      <div className="sm:hidden fixed inset-x-0 bottom-0 z-[70]">
-        <div className="mx-2 mb-2 rounded-2xl shadow-xl border overflow-hidden bg-white/95">
-          <div className="flex">
-            <a
-              href="#/contact"
-              className="flex-1 bg-black text-white py-3 font-medium text-center"
-              onClick={() => trackEvent("cta_click", { location: "sticky_mobile", cta: "book" })}
-            >
-              Book a Shoot
-            </a>
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noreferrer"
-              className="w-[44%] bg-white py-3 text-center text-sm font-medium"
-              onClick={() => trackEvent("cta_click", { location: "sticky_mobile", cta: "whatsapp" })}
-            >
-              WhatsApp
-            </a>
-          </div>
+    </>
+  );
+}
+
+/* ===================== Mobile Action FAB (site-wide, mobile only) ===================== */
+function MobileActionFab({ hide }) {
+  const [open, setOpen] = useState(false);
+  if (hide) return null;
+
+  const waText = encodeURIComponent("Hi! I’d like to book a shoot via your website (Mobile FAB).");
+  const waHref = `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${waText}&utm_source=site&utm_medium=fab&utm_campaign=booking`;
+
+  return (
+    <div className="sm:hidden fixed right-3 bottom-4 z-[75]">
+      {/* Expanded pill */}
+      <div
+        className={[
+          "transition-all duration-200 overflow-hidden rounded-full shadow-xl border bg-white/95",
+          open ? "w-[300px] opacity-100 translate-y-0" : "w-0 opacity-0 translate-y-2 pointer-events-none"
+        ].join(" ")}
+        aria-hidden={!open}
+      >
+        <div className="flex">
+          <a
+            href="#/contact"
+            className="flex-1 bg-black text-white py-3 font-medium text-center"
+            onClick={() => {
+              setOpen(false);
+              trackEvent("cta_click", { location: "mobile_fab", cta: "book" });
+            }}
+          >
+            Book a Shoot
+          </a>
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noreferrer"
+            className="w-[44%] bg-white py-3 text-center text-sm font-medium"
+            onClick={() => {
+              setOpen(false);
+              trackEvent("cta_click", { location: "mobile_fab", cta: "whatsapp" });
+            }}
+          >
+            WhatsApp
+          </a>
         </div>
       </div>
-    </>
+
+      {/* Small round button */}
+      <button
+        type="button"
+        aria-label={open ? "Close actions" : "Open actions"}
+        onClick={() => setOpen((v) => !v)}
+        className={[
+          "mt-2 h-12 w-12 rounded-full shadow-lg border bg-white/95 grid place-items-center",
+          "active:scale-95 transition"
+        ].join(" ")}
+      >
+        <span className="text-lg leading-none">{open ? "×" : "⋯"}</span>
+      </button>
+    </div>
   );
 }
 
@@ -1804,8 +1846,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Sticky CTA */}
+      {/* CTAs */}
       <StickyCTA T={T} hide={isContact} />
+      <MobileActionFab hide={isContact} />
 
       {/* FOOTER */}
       <footer className={`border-t ${T.footerBorder} ${T.footerBg}`}>
